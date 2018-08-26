@@ -10,7 +10,7 @@
     <depends>com.intellij.modules.clion</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
+        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="CompilerExplorerToolWindowFactory"/>
     </extensions>
 
     <actions>
