@@ -11,26 +11,31 @@ import java.awt.*;
 public class CompilerExplorerToolWindowForm {
     private JButton refreshButton;
     private JPanel content;
-    private JPanel headerPanel;
     private JPanel mainPanel;
     private EditorTextField editor;
 
-    CompilerExplorerToolWindowForm(Project project) {
-        editor = new EditorTextField(EditorFactory.getInstance().createDocument("text"), project, PlainTextFileType.INSTANCE, true, false);
-    }
-
-    void init() {
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.add(editor, BorderLayout.CENTER);
+    CompilerExplorerToolWindowForm(@NotNull Project project) {
+        editor = createEditor(project);
+        addEditorToMainPanel();
     }
 
     @NotNull
-    JPanel getContent() {
+    JComponent getContent() {
         return content;
     }
 
     @NotNull
     JButton getRefreshButton() {
         return refreshButton;
+    }
+
+    @NotNull
+    static private EditorTextField createEditor(@NotNull Project project) {
+        return new EditorTextField(EditorFactory.getInstance().createDocument("text"), project, PlainTextFileType.INSTANCE, true, false);
+    }
+
+    private void addEditorToMainPanel() {
+        mainPanel.setLayout(new BorderLayout());
+        mainPanel.add(editor, BorderLayout.CENTER);
     }
 }

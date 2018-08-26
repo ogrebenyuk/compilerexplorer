@@ -6,15 +6,24 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
+
 public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        addContentToToolWindow(createContent(project), toolWindow);
+    }
+
+    @NotNull
+    private static JComponent createContent(@NotNull Project project) {
         CompilerExplorer explorer = new CompilerExplorer();
+
         CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm(project);
-        form.init();
         form.getRefreshButton().addActionListener(event -> explorer.refresh());
 
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
-        Content content = contentFactory.createContent(form.getContent(), "", false);
-        toolWindow.getContentManager().addContent(content);
+        return form.getContent();
+    }
+
+    private static void addContentToToolWindow(@NotNull JComponent content, @NotNull ToolWindow toolWindow) {
+        toolWindow.getContentManager().addContent(ContentFactory.SERVICE.getInstance().createContent(content, "", false));
     }
 }
