@@ -7,16 +7,10 @@ import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
 public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
-    public CompilerExplorerToolWindowFactory() {
-        Messages.showMessageDialog("CompilerExplorerToolWindowFactory()", "Event", Messages.getInformationIcon());
-    }
-
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        Messages.showMessageDialog(project, "createToolWindowContent()", "Event", Messages.getInformationIcon());
-
         CompilerExplorer explorer = new CompilerExplorer();
-        CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm();
-
+        CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm(project);
+        form.init();
         form.getRefreshButton().addActionListener(event -> explorer.refresh());
 
         ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
