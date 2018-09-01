@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.compilerexplorer.compilerexplorer</id>
+    <id>com.compilerexplorer</id>
     <name>Compiler Explorer</name>
     <vendor email="grebenyukoleksandr@gmail.com">Oleksandr Grebenyuk</vendor>
 
@@ -10,13 +10,6 @@
     <depends>com.intellij.modules.clion</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="CompilerExplorerToolWindowFactory"/>
+        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory"/>
     </extensions>
-
-    <actions>
-        <group id="MyPlugin.SampleMenu" text="Greeting" description="Greeting menu">
-            <add-to-group group-id="MainMenu" anchor="last"/>
-            <action id="Myplugin.Textboxes" class="HelloAction" text="Hello" description="Says hello"/>
-        </group>
-    </actions>
 </idea-plugin>

@@ -1,3 +1,9 @@
+package com.compilerexplorer;
+
+import com.compilerexplorer.base.Explorer;
+import com.compilerexplorer.base.Gui;
+import com.compilerexplorer.explorer.CompilerExplorer;
+import com.compilerexplorer.gui.CompilerExplorerToolWindowForm;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.project.Project;
@@ -13,10 +19,10 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
 
     @NotNull
     private static JComponent createContent(@NotNull Project project) {
-        CompilerExplorerEvents events = new CompilerExplorerEvents();
-        CompilerExplorer explorer = new CompilerExplorer(project);
-        CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm(project, event -> events.refresh());
-        events.set(explorer, form);
+        Gui form = new CompilerExplorerToolWindowForm(project);
+        Explorer explorer = new CompilerExplorer(project);
+        form.setRefreshClickHandler(explorer::refresh);
+        explorer.setTextConsumer(form::setMainText);
         return form.getContent();
     }
 
