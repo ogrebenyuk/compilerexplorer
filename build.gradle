@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.1-SNAPSHOT'
+version '1.2-SNAPSHOT'
 
 sourceCompatibility = 1.8
 
@@ -23,7 +23,8 @@ intellij {
 
 patchPluginXml {
     changeNotes """
-      Change notes
+      Addded tool window on the right
+      Specified that this plugin is for CLion only
     """
 }
 

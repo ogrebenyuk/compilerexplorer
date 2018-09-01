@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 public class CompilerExplorerToolWindowForm {
     private JButton refreshButton;
@@ -14,7 +15,8 @@ public class CompilerExplorerToolWindowForm {
     private JPanel mainPanel;
     private EditorTextField editor;
 
-    CompilerExplorerToolWindowForm(@NotNull Project project) {
+    CompilerExplorerToolWindowForm(@NotNull Project project, @NotNull ActionListener refreshListener) {
+        refreshButton.addActionListener(refreshListener);
         editor = createEditor(project);
         addEditorToMainPanel();
     }
@@ -24,14 +26,13 @@ public class CompilerExplorerToolWindowForm {
         return content;
     }
 
-    @NotNull
-    JButton getRefreshButton() {
-        return refreshButton;
+    void setText(@NotNull String text) {
+        editor.setText(text);
     }
 
     @NotNull
     static private EditorTextField createEditor(@NotNull Project project) {
-        return new EditorTextField(EditorFactory.getInstance().createDocument("text"), project, PlainTextFileType.INSTANCE, true, false);
+        return new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
     }
 
     private void addEditorToMainPanel() {

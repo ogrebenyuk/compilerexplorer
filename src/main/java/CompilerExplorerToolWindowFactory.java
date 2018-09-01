@@ -1,8 +1,6 @@
-import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,11 +13,10 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
 
     @NotNull
     private static JComponent createContent(@NotNull Project project) {
-        CompilerExplorer explorer = new CompilerExplorer();
-
-        CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm(project);
-        form.getRefreshButton().addActionListener(event -> explorer.refresh());
-
+        CompilerExplorerEvents events = new CompilerExplorerEvents();
+        CompilerExplorer explorer = new CompilerExplorer(project);
+        CompilerExplorerToolWindowForm form = new CompilerExplorerToolWindowForm(project, event -> events.refresh());
+        events.set(explorer, form);
         return form.getContent();
     }
 
