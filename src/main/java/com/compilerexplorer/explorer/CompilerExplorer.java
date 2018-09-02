@@ -16,13 +16,18 @@ import com.intellij.openapi.roots.ModuleRootListener;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Function;
+import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
+import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
+import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerSettings;
+import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchRoot;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.jetbrains.cidr.lang.psi.*;
+import com.jetbrains.cidr.lang.workspace.OCWorkspace;
 
 public class CompilerExplorer implements Explorer {
     @NotNull
@@ -102,6 +107,25 @@ public class CompilerExplorer implements Explorer {
 
         for (RunnerAndConfigurationSettings se : RunManager.getInstance(project).getAllSettings()) {
             addText("RunnerAndConfigurationSettings: name " + se.getName() + ", unique id " + se.getUniqueID() + ", folder name " + se.getFolderName() + ", configuration " + se.getConfiguration().getName() + ", type display name " + se.getType().getDisplayName());
+        }
+
+        OCWorkspace workspace = OCWorkspace.getInstance(project);
+        for (OCResolveConfiguration configuration : workspace.getConfigurations()) {
+            addText("OCResolveConfiguration: getDisplayName(true) " + configuration.getDisplayName(true) +
+                    ", getDisplayName(false) " + configuration.getDisplayName(false) +
+                    ", getUniqueId() " + configuration.getUniqueId());
+            OCCompilerSettings compilerSettings = configuration.getCompilerSettings();
+            addText("getSources():\n" + configuration.getSources().stream().map(v -> {
+                    return v.getUrl()
+                            + ", lang " + configuration.getDeclaredLanguageKind(v).getDisplayName()
+                            + ", compiler " + compilerSettings.getCompiler(configuration.getDeclaredLanguageKind(v)).toString() + ", " + compilerSettings.getCompilerExecutable(configuration.getDeclaredLanguageKind(v)).getAbsolutePath()
+                            + ", CompilerWorkingDir " + compilerSettings.getCompilerWorkingDir().getAbsolutePath()
+                            + ", switches " + compilerSettings.getCompilerSwitches(configuration.getDeclaredLanguageKind(v), v).getList(CidrCompilerSwitches.Format.RAW).stream().collect(Collectors.joining(" "))
+                            + "\ngetLibraryHeadersRoots:\n" + configuration.getLibraryHeadersRoots(configuration.getDeclaredLanguageKind(v), v).stream().map(HeadersSearchRoot::toString).collect(Collectors.joining("\n"))
+                            ;
+                /* + " " + configuration.getPreprocessorDefines(configuration.getDeclaredLanguageKind(v), v)*/
+                    }
+            ).collect(Collectors.joining("\n")));
         }
     }
 
