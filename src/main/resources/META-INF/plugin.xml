@@ -7,7 +7,11 @@
     Compiler Explorer UI
     ]]></description>
 
+    <idea-version since-build="180"/>
+
     <depends>com.intellij.modules.clion</depends>
+    <depends>com.intellij.modules.cidr.lang</depends>
+    <depends>com.intellij.modules.cidr.debugger</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory"/>

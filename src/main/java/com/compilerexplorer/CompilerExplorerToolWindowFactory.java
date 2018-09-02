@@ -3,7 +3,7 @@ package com.compilerexplorer;
 import com.compilerexplorer.base.Explorer;
 import com.compilerexplorer.base.Gui;
 import com.compilerexplorer.explorer.CompilerExplorer;
-import com.compilerexplorer.gui.CompilerExplorerToolWindowForm;
+import com.compilerexplorer.gui.CompilerExplorerGui;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.project.Project;
@@ -19,7 +19,7 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
 
     @NotNull
     private static JComponent createContent(@NotNull Project project) {
-        Gui form = new CompilerExplorerToolWindowForm(project);
+        Gui form = new CompilerExplorerGui(project);
         Explorer explorer = new CompilerExplorer(project);
         form.setRefreshClickHandler(explorer::refresh);
         explorer.setTextConsumer(form::setMainText);

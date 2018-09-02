@@ -1,4 +1,4 @@
-package com.compilerexplorer.base;
+package com.compilerexplorer.base.handlers;
 
 import org.jetbrains.annotations.NotNull;
 
