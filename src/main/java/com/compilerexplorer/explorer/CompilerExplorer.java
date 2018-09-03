@@ -1,9 +1,6 @@
 package com.compilerexplorer.explorer;
 
-import com.compilerexplorer.common.MainTextConsumer;
-import com.compilerexplorer.common.ProjectSettings;
-import com.compilerexplorer.common.SourceSettings;
-import com.compilerexplorer.common.SourceSettingsConsumer;
+import com.compilerexplorer.common.*;
 import com.intellij.ProjectTopics;
 import com.intellij.execution.*;
 import com.intellij.execution.configurations.RunConfiguration;
@@ -37,13 +34,11 @@ import java.util.stream.Collectors;
 
 import com.jetbrains.cidr.lang.workspace.OCWorkspace;
 
-public class CompilerExplorer implements SourceSettingsConsumer {
+public class CompilerExplorer implements PreprocessedSourceConsumer {
     @NotNull
     private final Project project;
-
     @NotNull
     private final MainTextConsumer textConsumer;
-
     @NotNull
     private String currentText = "";
 
@@ -51,6 +46,22 @@ public class CompilerExplorer implements SourceSettingsConsumer {
         project = project_;
         textConsumer = textConsumer_;
     }
+
+    @Override
+    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource) {
+        addText(preprocessedSource.getPreprocessedText());
+    }
+
+    @Override
+    public void clearPreprocessedSource(@NotNull String reason) {
+        addText("CLEAR " + reason);
+    }
+
+    private void addText(@NotNull String text) {
+        currentText = currentText + "\n" + text;
+        textConsumer.setMainText(currentText);
+    }
+
 /*
     public void refresh() {
         String projectName = project.getName();
@@ -145,19 +156,4 @@ public class CompilerExplorer implements SourceSettingsConsumer {
 
     }
 */
-
-    @Override
-    public void setSourceSetting(@NotNull SourceSettings sourceSettings) {
-        addText(sourceSettings.getCompiler().getAbsolutePath() + " " + String.join(" ", sourceSettings.getSwitches()) + " " + sourceSettings.getSource().getPath());
-    }
-
-    @Override
-    public void clearSourceSetting() {
-        addText("CLEAR");
-    }
-
-    private void addText(@NotNull String text) {
-        currentText = currentText + "\n" + text;
-        textConsumer.setMainText(currentText);
-    }
 }

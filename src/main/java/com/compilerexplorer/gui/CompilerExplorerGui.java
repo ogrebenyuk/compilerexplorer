@@ -5,26 +5,19 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
-import com.intellij.ui.components.JBList;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.util.Vector;
 
 public class CompilerExplorerGui implements ProjectSettingsConsumer, MainTextConsumer {
     @NotNull
     private final JPanel content;
     @NotNull
-    private final JPanel headPanel;
-    @NotNull
     private final ComboBox<SourceSettings> projectSettingsList;
-    @NotNull
-    private final JPanel mainPanel;
     @NotNull
     private final EditorTextField editor;
 
@@ -33,17 +26,17 @@ public class CompilerExplorerGui implements ProjectSettingsConsumer, MainTextCon
 
     public CompilerExplorerGui(@NotNull Project project) {
         content = new JPanel(new BorderLayout());
-        headPanel = new JPanel(new BorderLayout());
+        JPanel headPanel = new JPanel(new BorderLayout());
         projectSettingsList = new ComboBox<>();
         projectSettingsList.setRenderer(new ListCellRendererWrapper<SourceSettings>() {
             @Override
             public void customize(JList list, SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
-                setText(value.getSource().getPath());
+                setText(value.getSource().getPresentableName());
             }
         });
         headPanel.add(projectSettingsList, BorderLayout.CENTER);
         content.add(headPanel, BorderLayout.NORTH);
-        mainPanel = new JPanel(new BorderLayout());
+        JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
         mainPanel.add(editor, BorderLayout.CENTER);

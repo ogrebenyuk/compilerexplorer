@@ -16,11 +16,11 @@ import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceModificationListener;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceRunConfigurationListener;
+import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
@@ -111,14 +111,13 @@ public class ProjectListener {
         if (configuration != null) {
             OCCompilerSettings compilerSettings = configuration.getCompilerSettings();
             settings = configuration.getSources().stream().map(virtualFile -> {
-                OCLanguageKind lang = configuration.getDeclaredLanguageKind(virtualFile);
-                if (lang != null) {
-                    File compiler = compilerSettings.getCompilerExecutable(lang);
-                    if (compiler != null) {
-                        CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches(lang, virtualFile);
-                        if (switches != null) {
-                            return new SourceSettings(virtualFile, compiler, switches.getList(CidrCompilerSwitches.Format.RAW));
-                        }
+                OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
+                if (language != null) {
+                    File compiler = compilerSettings.getCompilerExecutable(language);
+                    OCCompilerKind compilerKind = compilerSettings.getCompiler(language);
+                    CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches(language, virtualFile);
+                    if (compiler != null && compilerKind != null && switches != null) {
+                        return new SourceSettings(virtualFile, language, compiler, compilerKind, switches.getList(CidrCompilerSwitches.Format.RAW));
                     }
                 }
                 return null;

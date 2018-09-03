@@ -2,6 +2,7 @@ package com.compilerexplorer;
 
 import com.compilerexplorer.explorer.CompilerExplorer;
 import com.compilerexplorer.gui.CompilerExplorerGui;
+import com.compilerexplorer.preprocessor.SourcePreprocessor;
 import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
@@ -21,7 +22,8 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
         CompilerExplorerGui form = new CompilerExplorerGui(project);
         ProjectListener projectListener = new ProjectListener(project, form);
         CompilerExplorer explorer = new CompilerExplorer(project, form);
-        form.setSourceSettingsConsumer(explorer);
+        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
+        form.setSourceSettingsConsumer(preprocessor);
         projectListener.refresh();
         return form.getContent();
     }
