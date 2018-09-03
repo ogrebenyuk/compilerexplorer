@@ -56,14 +56,14 @@ class CompilerExplorerSettingsGui {
         mainPanel.add(url, BorderLayout.CENTER);
         JButton connectButton = new JButton();
         connectButton.setText("Connect");
-        connectButton.addActionListener(e -> CompilerExplorerConnection.connect(project, state, false));
+        connectButton.addActionListener(e -> CompilerExplorerConnection.tryConnect(project, state));
         mainPanel.add(connectButton, BorderLayout.EAST);
         ignoreUpdates = false;
     }
 
     void loadState(@NotNull CompilerExplorerState state_) {
-        state.copyFrom(state_);
         ignoreUpdates = true;
+        state.copyFrom(state_);
         url.setText(state.getUrl());
         ignoreUpdates = false;
     }

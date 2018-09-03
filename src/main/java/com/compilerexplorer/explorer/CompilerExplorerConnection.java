@@ -11,7 +11,15 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 public class CompilerExplorerConnection {
-    public static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
+    public static void connect(@NotNull Project project, @NotNull CompilerExplorerState state) {
+        connect(project, state, true);
+    }
+
+    public static void tryConnect(@NotNull Project project, @NotNull CompilerExplorerState state) {
+        connect(project, state, false);
+    }
+
+    private static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
         Task.Backgroundable task = new Task.Backgroundable(project, "Connecting to Compiler Explorer instance " + state.getUrl()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -32,7 +40,11 @@ public class CompilerExplorerConnection {
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, new BackgroundableProcessIndicator(task));
     }
 
-    public static void publishConnection(@NotNull Project project) {
-        ApplicationManager.getApplication().invokeLater(() -> project.getMessageBus().syncPublisher(CompilerExplorerConnectionConsumer.TOPIC).connected());
+    public static void publishConnectionLater(@NotNull Project project) {
+        ApplicationManager.getApplication().invokeLater(() -> publishConnection(project));
+    }
+
+    private static void publishConnection(@NotNull Project project) {
+        project.getMessageBus().syncPublisher(CompilerExplorerConnectionConsumer.TOPIC).connected();
     }
 }

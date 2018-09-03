@@ -34,7 +34,7 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     public CompilerExplorerState getState() {
         createStateIfNeeded();
         if (state.isConnectionCleared()) {
-            CompilerExplorerConnection.connect(project, state, true);
+            CompilerExplorerConnection.connect(project, state);
         }
         return state;
     }
@@ -43,7 +43,7 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     public void loadState(@NotNull CompilerExplorerState state_) {
         createStateIfNeeded();
         state.copyFrom(state_);
-        CompilerExplorerConnection.publishConnection(project);
+        CompilerExplorerConnection.publishConnectionLater(project);
     }
 
     private void createStateIfNeeded() {
