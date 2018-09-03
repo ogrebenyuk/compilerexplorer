@@ -1,6 +1,7 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.explorer.CompilerExplorer;
+import com.compilerexplorer.explorer.CompilerExplorerConnectionListener;
 import com.compilerexplorer.gui.CompilerExplorerGui;
 import com.compilerexplorer.preprocessor.SourcePreprocessor;
 import com.compilerexplorer.project.ProjectListener;
@@ -22,6 +23,7 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
         CompilerExplorerGui form = new CompilerExplorerGui(project);
         ProjectListener projectListener = new ProjectListener(project, form);
         CompilerExplorer explorer = new CompilerExplorer(project, form);
+        new CompilerExplorerConnectionListener(project, explorer);
         SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
         form.setSourceSettingsConsumer(preprocessor);
         projectListener.refresh();

@@ -7,26 +7,53 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.stream.Collectors;
 
-public class CompilerExplorer implements PreprocessedSourceConsumer {
+public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExplorerConnectionConsumer {
     @NotNull
     private final Project project;
     @NotNull
     private final CompiledTextConsumer compiledTextConsumer;
+    private PreprocessedSource preprocessedSource;
+    private String reason;
 
     public CompilerExplorer(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
         project = project_;
         compiledTextConsumer = compiledTextConsumer_;
-        CompilerExplorerSettingsProvider.getInstance(project).getState().setUrl(CompilerExplorerSettingsProvider.getInstance(project).getState().getUrl() + "A");
     }
 
     @Override
-    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource) {
-        compiledTextConsumer.setCompiledText(CompilerExplorerSettingsProvider.getInstance(project).getState().getUrl() + "\n" + preprocessedSource.getPreprocessedText());
+    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource_) {
+        preprocessedSource = preprocessedSource_;
+        reason = null;
+        refresh();
     }
 
     @Override
-    public void clearPreprocessedSource(@NotNull String reason) {
-        compiledTextConsumer.clearCompiledText(reason);
+    public void clearPreprocessedSource(@NotNull String reason_) {
+        preprocessedSource = null;
+        reason = reason_;
+        refresh();
+    }
+
+    @Override
+    public void connected() {
+        refresh();
+    }
+
+    private void refresh() {
+        if (reason == null) {
+            CompilerExplorerState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+            if (state.getConnected()) {
+                if (preprocessedSource != null) {
+                    compiledTextConsumer.setCompiledText(state.getUrl() + " " + state.getConnected() + " " + state.getLastConnectionStatus() + "\n" + preprocessedSource.getPreprocessedText());
+                } else {
+                    compiledTextConsumer.clearCompiledText("No source");
+                }
+            } else {
+                compiledTextConsumer.clearCompiledText(state.getLastConnectionStatus().isEmpty() ? "Not connected" : state.getLastConnectionStatus());
+            }
+        } else {
+            compiledTextConsumer.clearCompiledText(reason);
+        }
     }
 
     @NotNull

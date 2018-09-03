@@ -1,6 +1,7 @@
 package com.compilerexplorer.settings;
 
 import com.compilerexplorer.common.CompilerExplorerState;
+import com.compilerexplorer.explorer.CompilerExplorerConnection;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
@@ -32,6 +33,9 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     @NotNull
     public CompilerExplorerState getState() {
         createStateIfNeeded();
+        if (state.isConnectionCleared()) {
+            CompilerExplorerConnection.connect(project, state, true);
+        }
         return state;
     }
 
@@ -39,18 +43,12 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     public void loadState(@NotNull CompilerExplorerState state_) {
         createStateIfNeeded();
         state.copyFrom(state_);
-        connectIfNeeded();
+        CompilerExplorerConnection.publishConnection(project);
     }
 
     private void createStateIfNeeded() {
         if (state == null) {
             state = new CompilerExplorerState();
-        }
-    }
-
-    private void connectIfNeeded() {
-        if (!state.getConnected() && state.getLastConnectionStatus().isEmpty()) {
-            CompilerExplorerConnection.connect(project, state);
         }
     }
 }

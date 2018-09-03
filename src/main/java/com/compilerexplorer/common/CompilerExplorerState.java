@@ -45,6 +45,15 @@ public class CompilerExplorerState {
         lastConnectionStatus = lastConnectionStatus_;
     }
 
+    public boolean isConnectionCleared() {
+        return !getConnected() && getLastConnectionStatus().isEmpty();
+    }
+
+    public void clearConnection() {
+        setConnected(false);
+        setLastConnectionStatus("");
+    }
+
     public void copyFrom(@NotNull CompilerExplorerState other) {
         url = other.url;
         connected = other.connected;
