@@ -5,12 +5,14 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import java.util.HashMap;
+import java.util.Map;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class CompilerExplorerState {
     @NotNull
     @Property
-    private String url = "https://localhost:12345";
+    private String url = "http://localhost:10240";
 
     @Property
     private boolean connected = false;
@@ -18,6 +20,10 @@ public class CompilerExplorerState {
     @NotNull
     @Property
     private String lastConnectionStatus = "";
+
+    @NotNull
+    @Property
+    private Map<String, String> compilers = new HashMap<>();
 
     @NotNull
     public String getUrl() {
@@ -45,6 +51,15 @@ public class CompilerExplorerState {
         lastConnectionStatus = lastConnectionStatus_;
     }
 
+    @NotNull
+    public Map<String, String> getCompilers() {
+        return compilers;
+    }
+
+    public void setCompilers(@NotNull Map<String, String> compilers_) {
+        compilers = compilers_;
+    }
+
     public boolean isConnectionCleared() {
         return !getConnected() && getLastConnectionStatus().isEmpty();
     }
@@ -58,13 +73,16 @@ public class CompilerExplorerState {
         url = other.url;
         connected = other.connected;
         lastConnectionStatus = other.lastConnectionStatus;
+        compilers = other.compilers;
     }
 
     @Override
     public int hashCode() {
         return url.hashCode()
              + (connected ? 1 : 0)
-             + lastConnectionStatus.hashCode();
+             + lastConnectionStatus.hashCode()
+             + compilers.hashCode()
+        ;
     }
 
     @Override
@@ -75,6 +93,8 @@ public class CompilerExplorerState {
         CompilerExplorerState other = (CompilerExplorerState)obj;
         return url.equals(other.url)
             && connected == other.connected
-            && lastConnectionStatus.equals(other.lastConnectionStatus);
+            && lastConnectionStatus.equals(other.lastConnectionStatus)
+            && compilers.equals(other.compilers)
+        ;
     }
 }

@@ -45,6 +45,7 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
             if (state.getConnected()) {
                 if (preprocessedSource != null) {
                     compiledTextConsumer.setCompiledText(state.getUrl() + " " + state.getConnected() + " " + state.getLastConnectionStatus() + "\n" + preprocessedSource.getPreprocessedText());
+//                    compiledTextConsumer.setCompiledText(state.getCompilers().keySet().stream().map(k -> k + " " + state.getCompilers().get(k)).collect(Collectors.joining("\n")));
                 } else {
                     compiledTextConsumer.clearCompiledText("No source");
                 }

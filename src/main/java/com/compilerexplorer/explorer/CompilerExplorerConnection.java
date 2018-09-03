@@ -2,13 +2,27 @@ package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.CompilerExplorerConnectionConsumer;
 import com.compilerexplorer.common.CompilerExplorerState;
+import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpGet;
 
 public class CompilerExplorerConnection {
     public static void connect(@NotNull Project project, @NotNull CompilerExplorerState state) {
@@ -19,18 +33,56 @@ public class CompilerExplorerConnection {
         connect(project, state, false);
     }
 
+    private static class CompilerId {
+        String id;
+        String name;
+    }
+
     private static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
+        CompilerExplorerState tmpState = new CompilerExplorerState();
+        tmpState.copyFrom(state);
         Task.Backgroundable task = new Task.Backgroundable(project, "Connecting to Compiler Explorer instance " + state.getUrl()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
+                tmpState.setConnected(false);
+                tmpState.setLastConnectionStatus("");
+                String url = tmpState.getUrl() + "/api/compilers";
                 try {
-                    Thread.sleep(5000);
-                } catch (Exception e) {
+                    CloseableHttpClient httpClient = HttpClients.createDefault();
+                    HttpGet getRequest = new HttpGet(url);
+                    getRequest.addHeader("accept", "application/json");
+                    HttpResponse response = httpClient.execute(getRequest);
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        httpClient.close();
+                        throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
+                    }
+                    BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                    String output = "";
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        indicator.checkCanceled();
+                        output = output.concat(line);
+                    }
+                    httpClient.close();
+                    indicator.checkCanceled();
+
+                    JsonArray array = new JsonParser().parse(output).getAsJsonArray();
+                    Gson gson = new Gson();
+                    Map<String, String> compilers = new HashMap<>();
+                    for (JsonElement elem : array) {
+                        CompilerId compilerId = gson.fromJson(elem, CompilerId.class);
+                        compilers.put(compilerId.id, compilerId.name);
+                    }
+                    tmpState.setCompilers(compilers);
+                    tmpState.setConnected(true);
+                } catch (ProcessCanceledException canceledException) {
                     // empty
+                } catch (Exception e) {
+                    tmpState.setLastConnectionStatus("Exception reading from " + url + ": " + e.getMessage());
                 }
                 indicator.checkCanceled();
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    state.setConnected(true);
+                    state.copyFrom(tmpState);
                     if (publish) {
                         publishConnection(project);
                     }
