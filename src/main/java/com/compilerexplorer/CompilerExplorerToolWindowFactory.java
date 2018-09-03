@@ -14,7 +14,7 @@ import javax.swing.*;
 
 public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        addContentToToolWindow(createContent(project), toolWindow);
+        addContentToToolWindow(toolWindow, createContent(project));
     }
 
     @NotNull
@@ -28,7 +28,7 @@ public class CompilerExplorerToolWindowFactory implements ToolWindowFactory {
         return form.getContent();
     }
 
-    private static void addContentToToolWindow(@NotNull JComponent content, @NotNull ToolWindow toolWindow) {
+    private static void addContentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent content) {
         toolWindow.getContentManager().addContent(ContentFactory.SERVICE.getInstance().createContent(content, "", false));
     }
 }

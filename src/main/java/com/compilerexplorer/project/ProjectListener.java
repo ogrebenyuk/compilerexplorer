@@ -30,19 +30,19 @@ public class ProjectListener {
     @NotNull
     private final Project project;
     @NotNull
-    private final ProjectSettingsConsumer consumer;
+    private final ProjectSettingsConsumer projectSettingsConsumer;
 
-    public ProjectListener(@NotNull Project project_, @NotNull ProjectSettingsConsumer consumer_) {
+    public ProjectListener(@NotNull Project project_, @NotNull ProjectSettingsConsumer projectSettingsConsumer_) {
         project = project_;
-        consumer = consumer_;
-        subscribe();
+        projectSettingsConsumer = projectSettingsConsumer_;
+        subscribeToProjectChanges();
     }
 
     public void refresh() {
-        consumer.setProjectSetting(collect(project));
+        projectSettingsConsumer.setProjectSetting(collect(project));
     }
 
-    private void subscribe() {
+    private void subscribeToProjectChanges() {
         project.getMessageBus().connect().subscribe(RunManagerListener.TOPIC, new RunManagerListener() {
             public void runConfigurationSelected() {
                 refresh();

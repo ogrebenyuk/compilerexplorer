@@ -26,13 +26,13 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
     @NotNull
     private final Project project;
     @NotNull
-    private final PreprocessedSourceConsumer consumer;
+    private final PreprocessedSourceConsumer preprocessedSourceConsumer;
     @Nullable
     private BackgroundableProcessIndicator currentProgressIndicator;
 
-    public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer consumer_) {
+    public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer preprocessedSourceConsumer_) {
         project = project_;
-        consumer = consumer_;
+        preprocessedSourceConsumer = preprocessedSourceConsumer_;
     }
 
     @Override
@@ -56,41 +56,41 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
                             PreprocessorRunner runner = new PreprocessorRunner(commandLine, compilerWorkingDir, sourceText, indicator);
                             String preprocessedText = runner.getStdout();
                             if (runner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
-                                ApplicationManager.getApplication().invokeLater(() -> consumer.setPreprocessedSource(new PreprocessedSource(preprocessedText)));
+                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(sourceSettings, preprocessedText)));
                             } else {
-                                ApplicationManager.getApplication().invokeLater(() -> consumer.clearPreprocessedSource("Command:\n" + commandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + runner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + runner.getStderr()));
+                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + commandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + runner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + runner.getStderr()));
                             }
                         } catch (ProcessCanceledException canceledException) {
                             // empty
                         } catch (Exception exception) {
-                            ApplicationManager.getApplication().invokeLater(() -> consumer.clearPreprocessedSource("Command:\n" + commandLine + "\nException: " + exception.getMessage()));
+                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + commandLine + "\nException: " + exception.getMessage()));
                         }
                     }
                 };
                 currentProgressIndicator = new BackgroundableProcessIndicator(task);
                 ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, currentProgressIndicator);
             } else {
-                consumer.clearPreprocessedSource("Cannot get document " + sourceSettings.getSource().getPath());
+                preprocessedSourceConsumer.clearPreprocessedSource("Cannot get document " + sourceSettings.getSource().getPath());
             }
         } else {
-            consumer.clearPreprocessedSource("Unsupported compiler type \"" + sourceSettings.getCompilerKind().toString() + "\" for " + sourceSettings.getSource().getPath());
+            preprocessedSourceConsumer.clearPreprocessedSource("Unsupported compiler type \"" + sourceSettings.getCompilerKind().toString() + "\" for " + sourceSettings.getSource().getPath());
         }
     }
 
     @Override
-    public void clearSourceSetting() {
-        consumer.clearPreprocessedSource("No source selected");
+    public void clearSourceSetting(@NotNull String reason) {
+        preprocessedSourceConsumer.clearPreprocessedSource(reason);
     }
 
     @NotNull
     private static String getCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
         return "\"" + sourceSettings.getCompiler().getAbsolutePath()
-                + "\" " + sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-                + " \"-I" + project.getBasePath() + "\""
-                + " -E"
-                + " -o -"
-                + " -x " + sourceSettings.getLanguage().getDisplayName().toLowerCase()
-                + " -c -";
+             + "\" " + sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+             + " \"-I" + project.getBasePath() + "\""
+             + " -E"
+             + " -o -"
+             + " -x " + sourceSettings.getLanguage().getDisplayName().toLowerCase()
+             + " -c -";
     }
 
     private static boolean isSupportedCompilerType(@NotNull OCCompilerKind compilerKind) {

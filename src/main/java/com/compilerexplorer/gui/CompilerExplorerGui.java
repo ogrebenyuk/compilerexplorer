@@ -12,8 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.util.Vector;
 
-public class CompilerExplorerGui implements ProjectSettingsConsumer, MainTextConsumer {
+public class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsumer {
     @NotNull
     private final JPanel content;
     @NotNull
@@ -68,22 +69,25 @@ public class CompilerExplorerGui implements ProjectSettingsConsumer, MainTextCon
         DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings());
         model.setSelectedItem(newSelection);
         projectSettingsList.setModel(model);
-        notifyNewSelection(oldSelection, newSelection);
+        if (newSelection == null) {
+            projectSettingsList.removeAllItems();
+            sourceSettingsConsumer.clearSourceSetting("No source selected");
+        } else if (!newSelection.equals(oldSelection)) {
+            sourceSettingsConsumer.setSourceSetting(newSelection);
+        }
         suppressUpdates = false;
     }
 
     @Override
-    public void setMainText(@NotNull String text) {
+    public void setCompiledText(@NotNull String text) {
         editor.setText(text);
+        editor.setEnabled(true);
     }
 
-    private void notifyNewSelection(SourceSettings oldSelection, SourceSettings newSelection) {
-        if (newSelection == null) {
-            projectSettingsList.removeAllItems();
-            sourceSettingsConsumer.clearSourceSetting();
-        } else if (!newSelection.equals(oldSelection)) {
-            sourceSettingsConsumer.setSourceSetting(newSelection);
-        }
+    @Override
+    public void clearCompiledText(@NotNull String reason) {
+        editor.setText(reason);
+        editor.setEnabled(false);
     }
 }
 

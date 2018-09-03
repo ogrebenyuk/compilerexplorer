@@ -1,65 +1,37 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.intellij.ProjectTopics;
-import com.intellij.execution.*;
-import com.intellij.execution.configurations.RunConfiguration;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.project.ModuleListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.roots.ModuleRootEvent;
-import com.intellij.openapi.roots.ModuleRootListener;
-import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.Function;
-import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
-import com.jetbrains.cidr.cpp.cmake.model.CMakeModel;
-import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
-import com.jetbrains.cidr.cpp.toolchains.CPPToolSet;
-import com.jetbrains.cidr.cpp.toolchains.CPPToolchains;
-import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
-import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-import com.jetbrains.cidr.lang.workspace.OCWorkspaceModificationListener;
-import com.jetbrains.cidr.lang.workspace.OCWorkspaceRunConfigurationListener;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerSettings;
-import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchRoot;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
-
-import com.jetbrains.cidr.lang.workspace.OCWorkspace;
 
 public class CompilerExplorer implements PreprocessedSourceConsumer {
     @NotNull
     private final Project project;
     @NotNull
-    private final MainTextConsumer textConsumer;
-    @NotNull
-    private String currentText = "";
+    private final CompiledTextConsumer compiledTextConsumer;
 
-    public CompilerExplorer(@NotNull Project project_, @NotNull MainTextConsumer textConsumer_) {
+    public CompilerExplorer(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
         project = project_;
-        textConsumer = textConsumer_;
+        compiledTextConsumer = compiledTextConsumer_;
     }
 
     @Override
     public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource) {
-        addText(preprocessedSource.getPreprocessedText());
+        compiledTextConsumer.setCompiledText(preprocessedSource.getPreprocessedText());
     }
 
     @Override
     public void clearPreprocessedSource(@NotNull String reason) {
-        addText("CLEAR " + reason);
+        compiledTextConsumer.clearCompiledText(reason);
     }
 
-    private void addText(@NotNull String text) {
-        currentText = currentText + "\n" + text;
-        textConsumer.setMainText(currentText);
+    @NotNull
+    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
+        return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+             + " -x " + sourceSettings.getLanguage().getDisplayName().toLowerCase()
+             + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 
 /*
