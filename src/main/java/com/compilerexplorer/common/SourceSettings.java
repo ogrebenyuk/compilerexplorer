@@ -68,11 +68,11 @@ public class SourceSettings {
         if (!(obj instanceof  SourceSettings)) {
             return false;
         }
-        SourceSettings rhs = (SourceSettings)obj;
-        return source.equals(rhs.source)
-               && language.equals(rhs.language)
-               && FileUtil.filesEqual(compiler, rhs.compiler)
-               && compilerKind.equals(rhs.compilerKind)
-               && String.join(" ", switches).equals(String.join(" ", rhs.switches));
+        SourceSettings other = (SourceSettings)obj;
+        return source.equals(other.source)
+               && language.equals(other.language)
+               && FileUtil.filesEqual(compiler, other.compiler)
+               && compilerKind.equals(other.compilerKind)
+               && String.join(" ", switches).equals(String.join(" ", other.switches));
     }
 }

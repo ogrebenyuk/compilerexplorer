@@ -12,9 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.util.Vector;
 
-public class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsumer {
+class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsumer {
     @NotNull
     private final JPanel content;
     @NotNull
@@ -25,7 +24,7 @@ public class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTex
     private SourceSettingsConsumer sourceSettingsConsumer;
     private boolean suppressUpdates = false;
 
-    public CompilerExplorerGui(@NotNull Project project) {
+    CompilerExplorerGui(@NotNull Project project) {
         content = new JPanel(new BorderLayout());
         JPanel headPanel = new JPanel(new BorderLayout());
         projectSettingsList = new ComboBox<>();
@@ -49,12 +48,12 @@ public class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTex
         });
     }
 
-    public void setSourceSettingsConsumer(@NotNull SourceSettingsConsumer sourceSettingsConsumer_) {
+    void setSourceSettingsConsumer(@NotNull SourceSettingsConsumer sourceSettingsConsumer_) {
         sourceSettingsConsumer = sourceSettingsConsumer_;
     }
 
     @NotNull
-    public JComponent getContent() {
+    JComponent getContent() {
         return content;
     }
 

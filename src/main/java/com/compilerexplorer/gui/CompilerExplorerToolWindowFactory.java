@@ -1,4 +1,4 @@
-package com.compilerexplorer;
+package com.compilerexplorer.gui;
 
 import com.compilerexplorer.explorer.CompilerExplorer;
 import com.compilerexplorer.gui.CompilerExplorerGui;

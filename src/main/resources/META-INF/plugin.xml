@@ -14,6 +14,8 @@
     <depends>com.intellij.modules.cidr.debugger</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory"/>
+        <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>
+        <projectService serviceImplementation="com.compilerexplorer.settings.CompilerExplorerSettingsProvider"/>
+        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.gui.CompilerExplorerToolWindowFactory"/>
     </extensions>
 </idea-plugin>
