@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
 import org.jetbrains.annotations.NotNull;
+import com.jetbrains.cidr.lang.asm.AsmFileType;
 
 import javax.swing.*;
 import java.awt.*;
@@ -78,13 +79,15 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
     }
 
     @Override
-    public void setCompiledText(@NotNull String text) {
-        editor.setText(text);
+    public void setCompiledText(@NotNull CompiledText compiledText) {
+        //editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
+        editor.setText(compiledText.getCompiledText());
         editor.setEnabled(true);
     }
 
     @Override
     public void clearCompiledText(@NotNull String reason) {
+        //editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
         editor.setText(reason);
         editor.setEnabled(false);
     }

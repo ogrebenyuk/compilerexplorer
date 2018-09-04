@@ -52,10 +52,7 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
                         }
                     }
                     if (!compilerId.isEmpty()) {
-//                        compiledTextConsumer.setCompiledText(compilerId + " : " + preprocessedSource.getCompilerName() + " " + preprocessedSource.getCompilerVersion() + " " + preprocessedSource.getCompilerTarget() + " " + preprocessedSource.getLanguage()
-//                                + "\n" + state.getCompilers().stream().map(e -> e.getId() + ", " + e.getName() + ", " + e.getLanguage()).sorted().collect(Collectors.joining("\n")));
-                        compiledTextConsumer.setCompiledText(state.getUrl() + " " + state.getConnected() + " " + state.getLastConnectionStatus() + "\n" + preprocessedSource.getPreprocessedText());
-
+                        CompilerExplorerConnection.compile(project, state, preprocessedSource, compilerId, getCompilerOptions(preprocessedSource.getSourceSettings(), ""), compiledTextConsumer);
                     } else {
                         compiledTextConsumer.clearCompiledText("Cannot find matching compiler for " + preprocessedSource.getCompilerName() + " " + preprocessedSource.getCompilerVersion() + " " + preprocessedSource.getCompilerTarget());
                     }
@@ -90,7 +87,6 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
     @NotNull
     private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-             + " -x " + sourceSettings.getLanguage().getDisplayName().toLowerCase()
              + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 

@@ -1,7 +1,6 @@
 package com.compilerexplorer.explorer;
 
-import com.compilerexplorer.common.CompilerExplorerConnectionConsumer;
-import com.compilerexplorer.common.CompilerExplorerState;
+import com.compilerexplorer.common.*;
 import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -10,14 +9,17 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -42,7 +44,7 @@ public class CompilerExplorerConnection {
     private static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
         CompilerExplorerState tmpState = new CompilerExplorerState();
         tmpState.copyFrom(state);
-        Task.Backgroundable task = new Task.Backgroundable(project, "Connecting to Compiler Explorer instance " + state.getUrl()) {
+        Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: connecting to " + state.getUrl()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 tmpState.setConnected(false);
@@ -103,5 +105,92 @@ public class CompilerExplorerConnection {
 
     private static void publishConnection(@NotNull Project project) {
         project.getMessageBus().syncPublisher(CompilerExplorerConnectionConsumer.TOPIC).connected();
+    }
+
+    private static class Options {
+        String userArguments;
+    }
+
+    private static class Request {
+        String source;
+        Options options;
+    }
+
+    private static class SourceLocation {
+        String file;
+        int line;
+    }
+
+    private static class CompiledChunk {
+        String text;
+        SourceLocation source;
+    }
+
+    private static class CompiledResult {
+        int code;
+        List<CompiledChunk> stdout;
+        List<CompiledChunk> stderr;
+        List<CompiledChunk> asm;
+    }
+
+    static void compile(@NotNull Project project, @NotNull CompilerExplorerState state, @NotNull PreprocessedSource preprocessedSource, @NotNull String compilerId, @NotNull String userArguments, @NotNull CompiledTextConsumer compiledTextConsumer) {
+        String name = preprocessedSource.getSourceSettings().getSource().getName();
+        compiledTextConsumer.clearCompiledText("Compiling " + name + " ...");
+        Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                String url = state.getUrl() + "/api/compiler/" + compilerId + "/compile";
+                try {
+                    CloseableHttpClient httpClient = HttpClients.createDefault();
+
+                    HttpPost postRequest = new HttpPost(url);
+                    postRequest.addHeader("accept", "application/json");
+
+                    Gson gson = new Gson();
+
+                    Request request = new Request();
+                    request.source = preprocessedSource.getPreprocessedText();
+                    request.options = new Options();
+                    request.options.userArguments = userArguments;
+
+                    postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
+
+                    HttpResponse response = httpClient.execute(postRequest);
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        httpClient.close();
+                        throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
+                    }
+                    BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                    String output = "";
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        indicator.checkCanceled();
+                        output = output.concat(line);
+                    }
+                    httpClient.close();
+                    indicator.checkCanceled();
+
+                    JsonObject obj = new JsonParser().parse(output).getAsJsonObject();
+                    CompiledResult compiledResult = gson.fromJson(obj, CompiledResult.class);
+
+                    String tmp = "Code: " + String.valueOf(compiledResult.code)
+                            + "\nOutput:\n" + compiledResult.stdout.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
+                            + "Errors:\n" + compiledResult.stderr.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
+                            + "\nAsm:\n" + compiledResult.asm.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
+                            ;
+
+                    if (compiledResult.code == 0) {
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, compilerId, tmp)));
+                    } else {
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(tmp));
+                    }
+                } catch (ProcessCanceledException canceledException) {
+                    // empty
+                } catch (Exception e) {
+                    ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText("Exception compiling " + name + ": " + e.getMessage()));
+                }
+            }
+        };
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, new BackgroundableProcessIndicator(task));
     }
 }

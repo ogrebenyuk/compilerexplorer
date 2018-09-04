@@ -40,6 +40,7 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
         if (isSupportedCompilerType(sourceSettings.getCompilerKind())) {
             Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.getSource());
             if (document != null) {
+                preprocessedSourceConsumer.clearPreprocessedSource("Preprocessing...");
                 String sourceText = document.getText();
                 File compiler = sourceSettings.getCompiler();
                 File compilerWorkingDir = compiler.getParentFile();
