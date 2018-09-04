@@ -5,8 +5,10 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class CompilerExplorerState {
@@ -23,7 +25,7 @@ public class CompilerExplorerState {
 
     @NotNull
     @Property
-    private Map<String, String> compilers = new HashMap<>();
+    private List<CompilerInfo> compilers = new ArrayList<>();
 
     @NotNull
     public String getUrl() {
@@ -52,11 +54,11 @@ public class CompilerExplorerState {
     }
 
     @NotNull
-    public Map<String, String> getCompilers() {
+    public List<CompilerInfo> getCompilers() {
         return compilers;
     }
 
-    public void setCompilers(@NotNull Map<String, String> compilers_) {
+    public void setCompilers(@NotNull List<CompilerInfo> compilers_) {
         compilers = compilers_;
     }
 
@@ -96,5 +98,67 @@ public class CompilerExplorerState {
             && lastConnectionStatus.equals(other.lastConnectionStatus)
             && compilers.equals(other.compilers)
         ;
+    }
+
+    @XmlAccessorType(XmlAccessType.PROPERTY)
+    public static class CompilerInfo {
+        @NotNull
+        @Property
+        private String id = "";
+
+        @NotNull
+        @Property
+        private String name = "";
+
+        @NotNull
+        @Property
+        private String language = "";
+
+        @NotNull
+        public String getId() {
+            return id;
+        }
+
+        public void setId(@NotNull String id_) {
+            id = id_;
+        }
+
+        @NotNull
+        public String getName() {
+            return name;
+        }
+
+        public void setName(@NotNull String name_) {
+            name = name_;
+        }
+
+        @NotNull
+        public String getLanguage() {
+            return language;
+        }
+
+        public void setLanguage(@NotNull String language_) {
+            language =language_;
+        }
+
+        @Override
+        public int hashCode() {
+            return id.hashCode()
+                 + name.hashCode()
+                 + language.hashCode()
+            ;
+        }
+
+        @Override
+        public boolean equals(@NotNull Object obj) {
+            if (!(obj instanceof CompilerInfo)) {
+                return false;
+            }
+            CompilerInfo other = (CompilerInfo)obj;
+            return id.equals(other.id)
+                && name.equals(other.name)
+                && language.equals(other.language)
+            ;
+        }
     }
 }

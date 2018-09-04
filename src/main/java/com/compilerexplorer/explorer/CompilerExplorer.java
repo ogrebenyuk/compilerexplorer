@@ -44,8 +44,21 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
             CompilerExplorerState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
             if (state.getConnected()) {
                 if (preprocessedSource != null) {
-                    compiledTextConsumer.setCompiledText(state.getUrl() + " " + state.getConnected() + " " + state.getLastConnectionStatus() + "\n" + preprocessedSource.getPreprocessedText());
-//                    compiledTextConsumer.setCompiledText(state.getCompilers().keySet().stream().map(k -> k + " " + state.getCompilers().get(k)).collect(Collectors.joining("\n")));
+                    String compilerId = findCompilerMatch(state, preprocessedSource.getCompilerName(), preprocessedSource.getCompilerVersion(), preprocessedSource.getCompilerTarget(), preprocessedSource.getLanguage());
+                    if (compilerId.isEmpty()) {
+                        String modifiedVersion = stripLastVersionPart(preprocessedSource.getCompilerVersion());
+                        if (!modifiedVersion.isEmpty()) {
+                            compilerId = findCompilerMatch(state, preprocessedSource.getCompilerName(), modifiedVersion, preprocessedSource.getCompilerTarget(), preprocessedSource.getLanguage());
+                        }
+                    }
+                    if (!compilerId.isEmpty()) {
+//                        compiledTextConsumer.setCompiledText(compilerId + " : " + preprocessedSource.getCompilerName() + " " + preprocessedSource.getCompilerVersion() + " " + preprocessedSource.getCompilerTarget() + " " + preprocessedSource.getLanguage()
+//                                + "\n" + state.getCompilers().stream().map(e -> e.getId() + ", " + e.getName() + ", " + e.getLanguage()).sorted().collect(Collectors.joining("\n")));
+                        compiledTextConsumer.setCompiledText(state.getUrl() + " " + state.getConnected() + " " + state.getLastConnectionStatus() + "\n" + preprocessedSource.getPreprocessedText());
+
+                    } else {
+                        compiledTextConsumer.clearCompiledText("Cannot find matching compiler for " + preprocessedSource.getCompilerName() + " " + preprocessedSource.getCompilerVersion() + " " + preprocessedSource.getCompilerTarget());
+                    }
                 } else {
                     compiledTextConsumer.clearCompiledText("No source");
                 }
@@ -55,6 +68,23 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
         } else {
             compiledTextConsumer.clearCompiledText(reason);
         }
+    }
+
+    @NotNull
+    private static String findCompilerMatch(@NotNull CompilerExplorerState state, @NotNull String name, @NotNull String version, @NotNull String target, @NotNull String language) {
+        return state.getCompilers().stream()
+                .filter(s -> s.getLanguage().equals(language))
+                .filter(s -> s.getName().replaceAll("-", "_").contains(target.replaceAll("-", "_")))
+                .filter(s -> s.getName().contains(name))
+                .filter(s -> s.getName().contains(" " + version))
+                .map(CompilerExplorerState.CompilerInfo::getId)
+                .findFirst()
+                .orElse("");
+    }
+
+    @NotNull
+    private static String stripLastVersionPart(@NotNull String version) {
+        return version.replaceAll("^(.*)\\.[^.]*$", "$1");
     }
 
     @NotNull

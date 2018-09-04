@@ -51,19 +51,38 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
                 Task.Backgroundable task = new Task.Backgroundable(project, "Preprocessing " + sourceSettings.getSource().getPresentableName()) {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
-                        String commandLine = getCommandLine(project, sourceSettings);
+                        String preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings);
                         try {
-                            PreprocessorRunner runner = new PreprocessorRunner(commandLine, compilerWorkingDir, sourceText, indicator);
-                            String preprocessedText = runner.getStdout();
-                            if (runner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
-                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(sourceSettings, preprocessedText)));
+                            PreprocessorRunner preprocessorRunner = new PreprocessorRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
+                            String preprocessedText = preprocessorRunner.getStdout();
+                            if (preprocessorRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
+                                String versionCommandLine = getVersionCommandLine(sourceSettings);
+                                try {
+                                    PreprocessorRunner versionRunner = new PreprocessorRunner(versionCommandLine, compilerWorkingDir, "", indicator);
+                                    String versionText = versionRunner.getStderr();
+                                    if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
+                                        String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);
+                                        String compilerTarget = parseCompilerTarget(versionText);
+                                        if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
+                                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(sourceSettings, preprocessedText, sourceSettings.getLanguage().getDisplayName().toLowerCase(), sourceSettings.getCompilerKind().toString().toLowerCase(), compilerVersion, compilerTarget)));
+                                        } else {
+                                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot parse compiler version:\n" + versionText));
+                                        }
+                                    } else {
+                                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + versionCommandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText));
+                                    }
+                                } catch (ProcessCanceledException canceledException) {
+                                    // empty
+                                } catch (Exception exception) {
+                                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + versionCommandLine + "\nException: " + exception.getMessage()));
+                                }
                             } else {
-                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + commandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + runner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + runner.getStderr()));
+                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + preprocessorCommandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + preprocessorRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + preprocessorRunner.getStderr()));
                             }
                         } catch (ProcessCanceledException canceledException) {
                             // empty
                         } catch (Exception exception) {
-                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + commandLine + "\nException: " + exception.getMessage()));
+                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + preprocessorCommandLine + "\nException: " + exception.getMessage()));
                         }
                     }
                 };
@@ -83,9 +102,9 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
     }
 
     @NotNull
-    private static String getCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
-        return "\"" + sourceSettings.getCompiler().getAbsolutePath()
-             + "\" " + sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+    private static String getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
+        return "\"" + sourceSettings.getCompiler().getAbsolutePath() + "\""
+             + " " + sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
              + " \"-I" + project.getBasePath() + "\""
              + " -E"
              + " -o -"
@@ -93,7 +112,23 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
              + " -c -";
     }
 
+    @NotNull
+    private static String getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
+        return "\"" + sourceSettings.getCompiler().getAbsolutePath() + "\""
+                + " -v";
+    }
+
     private static boolean isSupportedCompilerType(@NotNull OCCompilerKind compilerKind) {
         return compilerKind == GCC || compilerKind == CLANG;
+    }
+
+    @NotNull
+    private static String parseCompilerVersion(@NotNull OCCompilerKind compilerKind, @NotNull String versionText) {
+        return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toString().toLowerCase() + " version ([^ ]*).*", "$1");
+    }
+
+    @NotNull
+    private static String parseCompilerTarget(@NotNull String versionText) {
+        return versionText.replace('\n', ' ').replaceAll(".*Target: ([^-]*).*", "$1");
     }
 }

@@ -13,15 +13,15 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 
 public class CompilerExplorerConnection {
@@ -36,6 +36,7 @@ public class CompilerExplorerConnection {
     private static class CompilerId {
         String id;
         String name;
+        String lang;
     }
 
     private static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
@@ -68,10 +69,14 @@ public class CompilerExplorerConnection {
 
                     JsonArray array = new JsonParser().parse(output).getAsJsonArray();
                     Gson gson = new Gson();
-                    Map<String, String> compilers = new HashMap<>();
+                    List<CompilerExplorerState.CompilerInfo> compilers = new ArrayList<>();
                     for (JsonElement elem : array) {
                         CompilerId compilerId = gson.fromJson(elem, CompilerId.class);
-                        compilers.put(compilerId.id, compilerId.name);
+                        CompilerExplorerState.CompilerInfo info = new CompilerExplorerState.CompilerInfo();
+                        info.setId(compilerId.id);
+                        info.setName(compilerId.name);
+                        info.setLanguage(compilerId.lang);
+                        compilers.add(info);
                     }
                     tmpState.setCompilers(compilers);
                     tmpState.setConnected(true);
