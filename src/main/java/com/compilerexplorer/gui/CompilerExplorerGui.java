@@ -2,6 +2,7 @@ package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.*;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -39,7 +40,15 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
-        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
+        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
+            @Override
+            protected EditorEx createEditor() {
+                EditorEx ed = super.createEditor();
+                ed.setHorizontalScrollbarVisible(true);
+                ed.setVerticalScrollbarVisible(true);
+                return ed;
+            }
+        };
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
