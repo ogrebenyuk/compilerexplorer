@@ -98,8 +98,13 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
     @Override
     public void clearCompiledText(@NotNull String reason) {
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
-        editor.setText(reason);
+        editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
+    }
+
+    @NotNull
+    private static String filterOutTerminalEscapeSequences(@NotNull String terminalText) {
+        return terminalText.replaceAll("\u001B\\[[;\\d]*.", "");
     }
 }
 
