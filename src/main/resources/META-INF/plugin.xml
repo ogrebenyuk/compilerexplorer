@@ -1,5 +1,5 @@
 <idea-plugin>
-    <id>com.compilerexplorer</id>
+    <id>com.compilerexplorer.compilerexplorer</id>
     <name>Compiler Explorer</name>
     <vendor email="grebenyukoleksandr@gmail.com">Oleksandr Grebenyuk</vendor>
 
