@@ -40,6 +40,7 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
+        editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
         projectSettingsList.addItemListener(event -> {
@@ -80,14 +81,14 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
 
     @Override
     public void setCompiledText(@NotNull CompiledText compiledText) {
-        //editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
+        editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
         editor.setText(compiledText.getCompiledText());
         editor.setEnabled(true);
     }
 
     @Override
     public void clearCompiledText(@NotNull String reason) {
-        //editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
+        editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(reason);
         editor.setEnabled(false);
     }

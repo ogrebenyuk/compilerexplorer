@@ -19,6 +19,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.apache.http.HttpResponse;
@@ -173,16 +174,13 @@ public class CompilerExplorerConnection {
                     JsonObject obj = new JsonParser().parse(output).getAsJsonObject();
                     CompiledResult compiledResult = gson.fromJson(obj, CompiledResult.class);
 
-                    String tmp = "Code: " + String.valueOf(compiledResult.code)
-                            + "\nOutput:\n" + compiledResult.stdout.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
-                            + "Errors:\n" + compiledResult.stderr.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
-                            + "\nAsm:\n" + compiledResult.asm.stream().map(c -> (c.text != null ? c.text : "(null)") + " " + ((c.source != null) ? (c.source.file != null ? c.source.file : "(null)") + " " + c.source.line : "")).collect(Collectors.joining("\n"))
-                            ;
+                    String asm = compiledResult.asm.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+                    String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
 
                     if (compiledResult.code == 0) {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, compilerId, tmp)));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, compilerId, asm)));
                     } else {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(tmp));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err));
                     }
                 } catch (ProcessCanceledException canceledException) {
                     // empty

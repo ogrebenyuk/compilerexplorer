@@ -87,6 +87,8 @@ public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExp
     @NotNull
     private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+             + " -fno-diagnostics-color"
+             + " -fpermissive"
              + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 
