@@ -5,12 +5,11 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.2-SNAPSHOT'
+version '1.3-SNAPSHOT'
 
 patchPluginXml {
     changeNotes """
-      Addded tool window on the right
-      Specified that this plugin is for CLion only
+      First minimally working version 
     """
 }
 
