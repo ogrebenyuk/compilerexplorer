@@ -116,8 +116,9 @@ public class ProjectListener {
                     File compiler = compilerSettings.getCompilerExecutable(language);
                     OCCompilerKind compilerKind = compilerSettings.getCompiler(language);
                     CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches(language, virtualFile);
+                    String defines = configuration.getPreprocessorDefines(language, virtualFile);
                     if (compiler != null && compilerKind != null && switches != null) {
-                        return new SourceSettings(virtualFile, language, compiler, compilerKind, switches.getList(CidrCompilerSwitches.Format.RAW));
+                        return new SourceSettings(virtualFile, language, compiler, compilerKind, switches.getList(CidrCompilerSwitches.Format.RAW), defines);
                     }
                 }
                 return null;
