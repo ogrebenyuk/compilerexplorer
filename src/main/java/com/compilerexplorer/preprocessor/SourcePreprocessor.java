@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind.*;
 
@@ -52,12 +53,12 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
                 Task.Backgroundable task = new Task.Backgroundable(project, "Preprocessing " + sourceSettings.getSource().getPresentableName()) {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
-                        String preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings);
+                        String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings);
                         try {
                             PreprocessorRunner preprocessorRunner = new PreprocessorRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
                             String preprocessedText = preprocessorRunner.getStdout();
                             if (preprocessorRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
-                                String versionCommandLine = getVersionCommandLine(sourceSettings);
+                                String[] versionCommandLine = getVersionCommandLine(sourceSettings);
                                 try {
                                     PreprocessorRunner versionRunner = new PreprocessorRunner(versionCommandLine, compilerWorkingDir, "", indicator);
                                     String versionText = versionRunner.getStderr();
@@ -70,20 +71,20 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
                                             ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot parse compiler version:\n" + versionText));
                                         }
                                     } else {
-                                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + versionCommandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText));
+                                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + String.join(" ", versionCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText));
                                     }
                                 } catch (ProcessCanceledException canceledException) {
                                     // empty
                                 } catch (Exception exception) {
-                                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + versionCommandLine + "\nException: " + exception.getMessage()));
+                                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + String.join(" ", versionCommandLine) + "\nException: " + exception.getMessage()));
                                 }
                             } else {
-                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + preprocessorCommandLine + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + preprocessorRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + preprocessorRunner.getStderr()));
+                                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + preprocessorRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + preprocessorRunner.getStderr()));
                             }
                         } catch (ProcessCanceledException canceledException) {
                             // empty
                         } catch (Exception exception) {
-                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + preprocessorCommandLine + "\nException: " + exception.getMessage()));
+                            ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Command:\n" + String.join(" ", preprocessorCommandLine) + "\nException: " + exception.getMessage()));
                         }
                     }
                 };
@@ -103,20 +104,26 @@ public class SourcePreprocessor implements SourceSettingsConsumer {
     }
 
     @NotNull
-    private static String getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
-        return "\"" + sourceSettings.getCompiler().getAbsolutePath() + "\""
-             + " " + sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-             + " \"-I" + project.getBasePath() + "\""
-             + " -E"
-             + " -o -"
-             + " -x " + sourceSettings.getLanguage().getDisplayName().toLowerCase()
-             + " -c -";
+    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
+        return Stream.concat(
+                Stream.concat(
+                        Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
+                        sourceSettings.getSwitches().stream()),
+                Stream.of(
+                        "-I" + project.getBasePath(),
+                        "-E",
+                        "-o", "-",
+                        "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
+                        "-c", "-")
+        ).toArray(String[]::new);
     }
 
     @NotNull
-    private static String getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
-        return "\"" + sourceSettings.getCompiler().getAbsolutePath() + "\""
-                + " -v";
+    private static String[] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
+        return Stream.of(
+                sourceSettings.getCompiler().getAbsolutePath(),
+                "-v"
+        ).toArray(String[]::new);
     }
 
     private static boolean isSupportedCompilerType(@NotNull OCCompilerKind compilerKind) {

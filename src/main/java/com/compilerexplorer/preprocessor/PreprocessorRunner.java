@@ -13,8 +13,8 @@ class PreprocessorRunner {
     private final String stderr;
     private final int exitCode;
 
-    PreprocessorRunner(@NotNull String commandLine, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(commandLine, null, workingDir);
+    PreprocessorRunner(@NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
+        Process process = Runtime.getRuntime().exec(commandArray, null, workingDir);
         OutputStream stdinStream = process.getOutputStream();
         stdinStream.write(stdin.getBytes());
         stdinStream.flush();
