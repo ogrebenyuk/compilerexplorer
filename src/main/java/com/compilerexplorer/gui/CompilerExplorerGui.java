@@ -10,6 +10,7 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
@@ -32,8 +33,8 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
         projectSettingsList = new ComboBox<>();
         projectSettingsList.setRenderer(new ListCellRendererWrapper<SourceSettings>() {
             @Override
-            public void customize(JList list, SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
-                setText(value.getSource().getPresentableName());
+            public void customize(@Nullable JList list, @Nullable SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
+                setText((value != null) ? value.getSource().getPresentableName() : "");
             }
         });
         headPanel.add(projectSettingsList, BorderLayout.CENTER);
