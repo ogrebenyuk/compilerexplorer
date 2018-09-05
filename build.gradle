@@ -1,3 +1,5 @@
+import static org.apache.tools.ant.taskdefs.condition.Os.*
+
 plugins {
     id 'java'
     id 'org.jetbrains.intellij' version '0.3.7'
@@ -27,19 +29,34 @@ dependencies {
 }
 
 intellij {
-    localPath = '.gradle/ide/win/clion-' + clionVersion
+    localPath = '.gradle/ide/clion-' + clionVersion
     updateSinceUntilBuild = false // Disables updating since-build attribute in plugin.xml
 }
 
 task setupClion() {
-    if (!new File('.gradle/ide/win/clion-' + clionVersion).exists()) {
+    def urlPrefix = 'https://download.jetbrains.com/cpp/CLion-'
+    def downloadPrefix = '.gradle/downloads/clion'
+    def targetLocation = ''
+    def ext = ''
+    def tree = fileTree(downloadPrefix)
+    if (isFamily(FAMILY_WINDOWS)) {
+        ext = '.zip'
+        targetLocation = '.gradle/ide/clion-' + clionVersion
+        tree = zipTree(downloadPrefix + ext)
+    }
+    if (isFamily(FAMILY_UNIX)) {
+        ext = '.tar.gz'
+        targetLocation = '.gradle/ide'
+        tree = tarTree(resources.gzip(downloadPrefix + ext))
+    }
+    if (!new File(targetLocation).exists()) {
         download {
-            src 'https://download.jetbrains.com/cpp/CLion-' + clionVersion + '.zip'
-            dest '.gradle/downloads/clion.zip'
+            src urlPrefix + clionVersion + ext
+            dest downloadPrefix + ext
         }
         copy {
-            from zipTree('.gradle/downloads/clion.zip')
-            into '.gradle/ide/win/clion-' + clionVersion
+            from tree
+            into targetLocation
         }
     }
 }
