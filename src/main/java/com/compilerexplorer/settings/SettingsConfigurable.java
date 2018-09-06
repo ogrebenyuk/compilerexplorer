@@ -1,16 +1,17 @@
 package com.compilerexplorer.settings;
 
+import com.compilerexplorer.common.SettingsProvider;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
-public class CompilerExplorerSettingsConfigurable implements Configurable {
+public class SettingsConfigurable implements Configurable {
     @NotNull
-    private final CompilerExplorerSettingsProvider provider;
-    private CompilerExplorerSettingsGui form;
+    private final SettingsProvider provider;
+    private SettingsGui form;
 
-    CompilerExplorerSettingsConfigurable(@NotNull CompilerExplorerSettingsProvider provider_) {
+    SettingsConfigurable(@NotNull SettingsProvider provider_) {
         provider = provider_;
     }
 
@@ -23,7 +24,7 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     @NotNull
     public JComponent createComponent() {
         if (form == null) {
-            form = new CompilerExplorerSettingsGui(provider.getProject());
+            form = new SettingsGui(provider.getProject());
             reset();
         }
         return form.getContent();

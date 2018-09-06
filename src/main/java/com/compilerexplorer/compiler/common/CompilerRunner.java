@@ -1,4 +1,4 @@
-package com.compilerexplorer.preprocessor;
+package com.compilerexplorer.compiler.common;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
@@ -6,14 +6,14 @@ import org.jetbrains.annotations.NotNull;
 import java.io.*;
 import java.util.concurrent.TimeUnit;
 
-class PreprocessorRunner {
+public class CompilerRunner {
     @NotNull
     private final String stdout;
     @NotNull
     private final String stderr;
     private final int exitCode;
 
-    PreprocessorRunner(@NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
+    public CompilerRunner(@NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(commandArray, null, workingDir);
         OutputStream stdinStream = process.getOutputStream();
         stdinStream.write(stdin.getBytes());
@@ -29,16 +29,16 @@ class PreprocessorRunner {
     }
 
     @NotNull
-    String getStdout() {
+    public String getStdout() {
         return stdout;
     }
 
     @NotNull
-    String getStderr() {
+    public String getStderr() {
         return stderr;
     }
 
-    int getExitCode() {
+    public int getExitCode() {
         return exitCode;
     }
 

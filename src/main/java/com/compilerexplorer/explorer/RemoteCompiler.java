@@ -1,92 +1,38 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.settings.CompilerExplorerSettingsProvider;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.stream.Collectors;
 
-public class CompilerExplorer implements PreprocessedSourceConsumer, CompilerExplorerConnectionConsumer {
+public class RemoteCompiler implements PreprocessedSourceConsumer {
     @NotNull
     private final Project project;
     @NotNull
     private final CompiledTextConsumer compiledTextConsumer;
-    private PreprocessedSource preprocessedSource;
-    private String reason;
 
-    public CompilerExplorer(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
+    public RemoteCompiler(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
         project = project_;
         compiledTextConsumer = compiledTextConsumer_;
     }
 
     @Override
-    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource_) {
-        preprocessedSource = preprocessedSource_;
-        reason = null;
-        refresh();
+    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource) {
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SourceSettings sourceSettings = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
+        RemoteConnection.compile(project, state, preprocessedSource, getCompilerOptions(sourceSettings, ""), compiledTextConsumer);
     }
 
     @Override
-    public void clearPreprocessedSource(@NotNull String reason_) {
-        preprocessedSource = null;
-        reason = reason_;
-        refresh();
-    }
-
-    @Override
-    public void connected() {
-        refresh();
-    }
-
-    private void refresh() {
-        if (reason == null) {
-            CompilerExplorerState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
-            if (state.getConnected()) {
-                if (preprocessedSource != null) {
-                    String compilerId = findCompilerMatch(state, preprocessedSource.getCompilerName(), preprocessedSource.getCompilerVersion(), preprocessedSource.getCompilerTarget(), preprocessedSource.getLanguage());
-                    if (compilerId.isEmpty()) {
-                        String modifiedVersion = stripLastVersionPart(preprocessedSource.getCompilerVersion());
-                        if (!modifiedVersion.isEmpty()) {
-                            compilerId = findCompilerMatch(state, preprocessedSource.getCompilerName(), modifiedVersion, preprocessedSource.getCompilerTarget(), preprocessedSource.getLanguage());
-                        }
-                    }
-                    if (!compilerId.isEmpty()) {
-                        CompilerExplorerConnection.compile(project, state, preprocessedSource, compilerId, getCompilerOptions(preprocessedSource.getSourceSettings(), ""), compiledTextConsumer);
-                    } else {
-                        compiledTextConsumer.clearCompiledText("Cannot find matching compiler for " + preprocessedSource.getCompilerName() + " " + preprocessedSource.getCompilerVersion() + " " + preprocessedSource.getCompilerTarget());
-                    }
-                } else {
-                    compiledTextConsumer.clearCompiledText("No source");
-                }
-            } else {
-                compiledTextConsumer.clearCompiledText(state.getLastConnectionStatus().isEmpty() ? "Not connected" : state.getLastConnectionStatus());
-            }
-        } else {
-            compiledTextConsumer.clearCompiledText(reason);
-        }
-    }
-
-    @NotNull
-    private static String findCompilerMatch(@NotNull CompilerExplorerState state, @NotNull String name, @NotNull String version, @NotNull String target, @NotNull String language) {
-        return state.getCompilers().stream()
-                .filter(s -> s.getLanguage().equals(language))
-                .filter(s -> s.getName().replaceAll("-", "_").contains(target.replaceAll("-", "_")))
-                .filter(s -> s.getName().contains(name))
-                .filter(s -> s.getName().contains(" " + version))
-                .map(CompilerExplorerState.CompilerInfo::getId)
-                .findFirst()
-                .orElse("");
-    }
-
-    @NotNull
-    private static String stripLastVersionPart(@NotNull String version) {
-        return version.replaceAll("^(.*)\\.[^.]*$", "$1");
+    public void clearPreprocessedSource(@NotNull String reason) {
+        compiledTextConsumer.clearCompiledText(reason);
     }
 
     @NotNull
     private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+             //+ " -undef"
              + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 

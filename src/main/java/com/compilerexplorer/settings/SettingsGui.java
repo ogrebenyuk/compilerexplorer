@@ -1,7 +1,7 @@
 package com.compilerexplorer.settings;
 
-import com.compilerexplorer.common.CompilerExplorerState;
-import com.compilerexplorer.explorer.CompilerExplorerConnection;
+import com.compilerexplorer.common.SettingsState;
+import com.compilerexplorer.common.RemoteConnection;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,21 +10,21 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 
-class CompilerExplorerSettingsGui {
+class SettingsGui {
     @NotNull
     private final Project project;
     @NotNull
-    private final CompilerExplorerState state;
+    private final SettingsState state;
     @NotNull
     private final JPanel content;
     @NotNull
     private final JTextField url;
     private boolean ignoreUpdates;
 
-    CompilerExplorerSettingsGui(@NotNull Project project_) {
+    SettingsGui(@NotNull Project project_) {
         ignoreUpdates = true;
         project = project_;
-        state = new CompilerExplorerState();
+        state = new SettingsState();
         content = new JPanel(new BorderLayout());
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.NORTH);
@@ -56,12 +56,12 @@ class CompilerExplorerSettingsGui {
         mainPanel.add(url, BorderLayout.CENTER);
         JButton connectButton = new JButton();
         connectButton.setText("Connect");
-        connectButton.addActionListener(e -> CompilerExplorerConnection.tryConnect(project, state));
+        connectButton.addActionListener(e -> RemoteConnection.tryConnect(project, state));
         mainPanel.add(connectButton, BorderLayout.EAST);
         ignoreUpdates = false;
     }
 
-    void loadState(@NotNull CompilerExplorerState state_) {
+    void loadState(@NotNull SettingsState state_) {
         ignoreUpdates = true;
         state.copyFrom(state_);
         url.setText(state.getUrl());
@@ -74,7 +74,7 @@ class CompilerExplorerSettingsGui {
     }
 
     @NotNull
-    CompilerExplorerState getState() {
+    SettingsState getState() {
         return state;
     }
 }

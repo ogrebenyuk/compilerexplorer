@@ -1,6 +1,5 @@
-package com.compilerexplorer.explorer;
+package com.compilerexplorer.common;
 
-import com.compilerexplorer.common.*;
 import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -26,12 +25,12 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.client.methods.HttpGet;
 
-public class CompilerExplorerConnection {
-    public static void connect(@NotNull Project project, @NotNull CompilerExplorerState state) {
+public class RemoteConnection {
+    static void connect(@NotNull Project project, @NotNull SettingsState state) {
         connect(project, state, true);
     }
 
-    public static void tryConnect(@NotNull Project project, @NotNull CompilerExplorerState state) {
+    public static void tryConnect(@NotNull Project project, @NotNull SettingsState state) {
         connect(project, state, false);
     }
 
@@ -41,8 +40,8 @@ public class CompilerExplorerConnection {
         String lang;
     }
 
-    private static void connect(@NotNull Project project, @NotNull CompilerExplorerState state, boolean publish) {
-        CompilerExplorerState tmpState = new CompilerExplorerState();
+    private static void connect(@NotNull Project project, @NotNull SettingsState state, boolean publish) {
+        SettingsState tmpState = new SettingsState();
         tmpState.copyFrom(state);
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: connecting to " + state.getUrl()) {
             @Override
@@ -71,16 +70,16 @@ public class CompilerExplorerConnection {
 
                     JsonArray array = new JsonParser().parse(output).getAsJsonArray();
                     Gson gson = new Gson();
-                    List<CompilerExplorerState.CompilerInfo> compilers = new ArrayList<>();
+                    List<SettingsState.RemoteCompilerInfo> compilers = new ArrayList<>();
                     for (JsonElement elem : array) {
                         CompilerId compilerId = gson.fromJson(elem, CompilerId.class);
-                        CompilerExplorerState.CompilerInfo info = new CompilerExplorerState.CompilerInfo();
+                        SettingsState.RemoteCompilerInfo info = new SettingsState.RemoteCompilerInfo();
                         info.setId(compilerId.id);
                         info.setName(compilerId.name);
                         info.setLanguage(compilerId.lang);
                         compilers.add(info);
                     }
-                    tmpState.setCompilers(compilers);
+                    tmpState.setRemoteCompilers(compilers);
                     tmpState.setConnected(true);
                 } catch (ProcessCanceledException canceledException) {
                     // empty
@@ -99,16 +98,17 @@ public class CompilerExplorerConnection {
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, new BackgroundableProcessIndicator(task));
     }
 
-    public static void publishConnectionLater(@NotNull Project project) {
+    static void publishConnectionLater(@NotNull Project project) {
         ApplicationManager.getApplication().invokeLater(() -> publishConnection(project));
     }
 
     private static void publishConnection(@NotNull Project project) {
-        project.getMessageBus().syncPublisher(CompilerExplorerConnectionConsumer.TOPIC).connected();
+        project.getMessageBus().syncPublisher(RemoteConnectionConsumer.TOPIC).connected();
     }
 
     private static class Options {
         String userArguments;
+        SettingsState.Filters filters;
     }
 
     private static class Request {
@@ -133,13 +133,14 @@ public class CompilerExplorerConnection {
         List<CompiledChunk> asm;
     }
 
-    static void compile(@NotNull Project project, @NotNull CompilerExplorerState state, @NotNull PreprocessedSource preprocessedSource, @NotNull String compilerId, @NotNull String userArguments, @NotNull CompiledTextConsumer compiledTextConsumer) {
-        String name = preprocessedSource.getSourceSettings().getSource().getName();
+    public static void compile(@NotNull Project project, @NotNull SettingsState state, @NotNull PreprocessedSource preprocessedSource, @NotNull String userArguments, @NotNull CompiledTextConsumer compiledTextConsumer) {
+        String name = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getSource().getName();
         compiledTextConsumer.clearCompiledText("Compiling " + name + " ...");
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String url = state.getUrl() + "/api/compiler/" + compilerId + "/compile";
+                String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerId();
+                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -148,10 +149,12 @@ public class CompilerExplorerConnection {
 
                     Gson gson = new Gson();
 
+                    String source = /*preprocessedSource.getPreprocessableSource().getDefines() + */preprocessedSource.getPreprocessedText();
                     Request request = new Request();
-                    request.source = preprocessedSource.getPreprocessedText();
+                    request.source = source;
                     request.options = new Options();
                     request.options.userArguments = userArguments;
+                    request.options.filters = state.getFilters();
 
                     postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
 
@@ -177,9 +180,9 @@ public class CompilerExplorerConnection {
                     String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
 
                     if (compiledResult.code == 0) {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, compilerId, asm)));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, remoteCompilerId, asm)));
                     } else {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err + "\n" + source));
                     }
                 } catch (ProcessCanceledException canceledException) {
                     // empty

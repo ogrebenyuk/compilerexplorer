@@ -16,7 +16,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 
-class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsumer {
+public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer {
     @NotNull
     private final JPanel content;
     @NotNull
@@ -27,7 +27,7 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
     private SourceSettingsConsumer sourceSettingsConsumer;
     private boolean suppressUpdates = false;
 
-    CompilerExplorerGui(@NotNull Project project) {
+    public ToolWindowGui(@NotNull Project project) {
         content = new JPanel(new BorderLayout());
         JPanel headPanel = new JPanel(new BorderLayout());
         projectSettingsList = new ComboBox<>();
@@ -60,12 +60,12 @@ class CompilerExplorerGui implements ProjectSettingsConsumer, CompiledTextConsum
         });
     }
 
-    void setSourceSettingsConsumer(@NotNull SourceSettingsConsumer sourceSettingsConsumer_) {
+    public void setSourceSettingsConsumer(@NotNull SourceSettingsConsumer sourceSettingsConsumer_) {
         sourceSettingsConsumer = sourceSettingsConsumer_;
     }
 
     @NotNull
-    JComponent getContent() {
+    public JComponent getContent() {
         return content;
     }
 

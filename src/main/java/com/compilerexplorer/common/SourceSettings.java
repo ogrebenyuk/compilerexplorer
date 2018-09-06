@@ -20,16 +20,13 @@ public class SourceSettings {
     private final OCCompilerKind compilerKind;
     @NotNull
     private final List<String> switches;
-    @NotNull
-    private final String defines;
 
-    public SourceSettings(@NotNull VirtualFile source_, @NotNull OCLanguageKind language_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_, @NotNull String defines_) {
+    public SourceSettings(@NotNull VirtualFile source_, @NotNull OCLanguageKind language_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_) {
         source = source_;
         language = language_;
         compiler = compiler_;
         compilerKind = compilerKind_;
         switches = switches_;
-        defines = defines_;
     }
 
     @NotNull
@@ -57,11 +54,6 @@ public class SourceSettings {
         return switches;
     }
 
-    @NotNull
-    public String getDefines() {
-        return defines;
-    }
-
     @Override
     public int hashCode() {
         return source.hashCode()
@@ -69,7 +61,6 @@ public class SourceSettings {
                + FileUtil.fileHashCode(compiler)
                + compilerKind.hashCode()
                 + switches.hashCode()
-                + defines.hashCode()
         ;
     }
 
@@ -84,7 +75,6 @@ public class SourceSettings {
                && FileUtil.filesEqual(compiler, other.compiler)
                && compilerKind.equals(other.compilerKind)
                && String.join(" ", switches).equals(String.join(" ", other.switches))
-               && defines.equals(other.defines)
         ;
     }
 }
