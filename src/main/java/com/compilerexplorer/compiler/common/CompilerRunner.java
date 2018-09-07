@@ -43,8 +43,8 @@ public class CompilerRunner {
             }
 
             progressIndicator.checkCanceled();
-            stdout = stdoutBuilder.toString().replaceAll("\r\n?", "\n");
-            stderr = stderrBuilder.toString().replaceAll("\r\n?", "\n");
+            stdout = stdoutBuilder.toString();
+            stderr = stderrBuilder.toString();
         } catch (Exception exception) {
             process.destroyForcibly();
             throw exception;
@@ -74,6 +74,7 @@ public class CompilerRunner {
         private final ProgressIndicator progressIndicator;
         @Nullable
         private Exception exception;
+        boolean ignoreLF;
 
         StreamGobbler(@NotNull InputStream inputStream_, @NotNull StringBuilder stringBuilder_, @NotNull ProgressIndicator progressIndicator_) {
             inputStream = inputStream_;
@@ -83,9 +84,18 @@ public class CompilerRunner {
 
         public void run() {
             try {
-                int c;
-                while ((c = inputStream.read()) != -1) {
-                    stringBuilder.append((char) c);
+                int ic;
+                while ((ic = inputStream.read()) != -1) {
+                    char c = (char)ic;
+                    if (c == '\r') {
+                        ignoreLF = true;
+                        stringBuilder.append('\n');
+                    } else {
+                        if (c != '\n' || !ignoreLF) {
+                            stringBuilder.append(c);
+                        }
+                        ignoreLF = false;
+                    }
                     progressIndicator.checkCanceled();
                 }
             } catch (IOException x) {
