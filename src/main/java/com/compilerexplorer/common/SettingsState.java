@@ -5,10 +5,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
@@ -32,6 +29,11 @@ public class SettingsState {
     @NotNull
     @Property
     private Filters filters = new Filters();
+    @Property
+    private boolean allowMinorVersionMismatch = false;
+    @NotNull
+    @Property
+    private Map<String, List<String>> compilerMatches = new HashMap<>();
 
     @NotNull
     public String getUrl() {
@@ -95,6 +97,23 @@ public class SettingsState {
         filters = filters_;
     }
 
+    public boolean getAllowMinorVersionMismatch() {
+        return allowMinorVersionMismatch;
+    }
+
+    public void setAllowMinorVersionMismatch(boolean allowMinorVersionMismatch_) {
+        allowMinorVersionMismatch = allowMinorVersionMismatch_;
+    }
+
+    @NotNull
+    public Map<String, List<String>> getCompilerMatches() {
+        return compilerMatches;
+    }
+
+    public void setCompilerMatches(@NotNull Map<String, List<String>> compilerMatches_) {
+        compilerMatches = compilerMatches_;
+    }
+
     public boolean isConnectionCleared() {
         return !getConnected() && getLastConnectionStatus().isEmpty();
     }
@@ -104,10 +123,12 @@ public class SettingsState {
         lastConnectionStatus = "";
         remoteCompilers = new ArrayList<>();
         remoteCompilerDefines = new HashMap<>();
+        compilerMatches = new HashMap<>();
     }
 
     public void clearLocalCompilers() {
-        setLocalCompilerSettings(new HashMap<>());
+        localCompilerSettings = new HashMap<>();
+        compilerMatches = new HashMap<>();
     }
 
     public void copyFrom(@NotNull SettingsState other) {
@@ -121,17 +142,22 @@ public class SettingsState {
             remoteCompilers.add(info);
         }
         remoteCompilerDefines = new HashMap<>();
-        for (Map.Entry<String, String> otherEntry : remoteCompilerDefines.entrySet()) {
+        for (Map.Entry<String, String> otherEntry : other.remoteCompilerDefines.entrySet()) {
             remoteCompilerDefines.put(otherEntry.getKey(), otherEntry.getValue());
         }
         localCompilerSettings = new HashMap<>();
-        for (Map.Entry<String, LocalCompilerSettings> otherEntry : localCompilerSettings.entrySet()) {
+        for (Map.Entry<String, LocalCompilerSettings> otherEntry : other.localCompilerSettings.entrySet()) {
             LocalCompilerSettings settings = new LocalCompilerSettings();
             settings.copyFrom(otherEntry.getValue());
             localCompilerSettings.put(otherEntry.getKey(), settings);
         }
         filters = new Filters();
         filters.copyFrom(other.filters);
+        allowMinorVersionMismatch = other.allowMinorVersionMismatch;
+        compilerMatches = new HashMap<>();
+        for (Map.Entry<String, List<String>> otherEntry : other.compilerMatches.entrySet()) {
+            compilerMatches.put(otherEntry.getKey(), new ArrayList<>(otherEntry.getValue()));
+        }
     }
 
     @Override
@@ -143,6 +169,8 @@ public class SettingsState {
              + remoteCompilerDefines.hashCode()
              + localCompilerSettings.hashCode()
              + filters.hashCode()
+             + (allowMinorVersionMismatch ? 1 : 0)
+             + compilerMatches.hashCode()
         ;
     }
 
@@ -159,6 +187,8 @@ public class SettingsState {
             && remoteCompilerDefines.equals(other.remoteCompilerDefines)
             && localCompilerSettings.equals(other.localCompilerSettings)
             && filters.equals(other.filters)
+            && allowMinorVersionMismatch == other.allowMinorVersionMismatch
+            && compilerMatches.equals(other.compilerMatches)
         ;
     }
 

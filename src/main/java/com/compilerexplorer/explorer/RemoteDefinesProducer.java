@@ -4,6 +4,8 @@ import com.compilerexplorer.common.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
     @NotNull
     private final Project project;
@@ -19,8 +21,21 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
     public void setSourceRemoteMatched(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
 
+        List<String> matches = sourceRemoteMatched_.getRemoteCompilerIds();
+        state.getCompilerMatches().put(sourceRemoteMatched_.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath(), matches);
+
+        if (matches.isEmpty()) {
+            String localName = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getName();
+            String localVersion = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getVersion();
+            String localTarget = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getTarget();
+            String language = sourceRemoteMatched_.getSourceCompilerSettings().getSourceSettings().getLanguage().getDisplayName();
+            preprocessableSourceConsumer.clearPreprocessableSource("Cannot find matching remote compiler for local " + localTarget + " " + localName + " " + localVersion + " " + language + " compiler");
+            return;
+        }
+
+        String match = matches.get(0);
         {
-            String existingDefines = state.getRemoteCompilerDefines().get(sourceRemoteMatched_.getRemoteCompilerId());
+            String existingDefines = state.getRemoteCompilerDefines().get(match);
             if (existingDefines != null) {
                 preprocessableSourceConsumer.setPreprocessableSource(new PreprocessableSource(sourceRemoteMatched_, existingDefines));
                 return;
@@ -35,7 +50,7 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
             @Override
             public void setCompiledText(@NotNull CompiledText compiledText) {
                 String newDefines = getDefines(compiledText);
-                state.getRemoteCompilerDefines().put(sourceRemoteMatched_.getRemoteCompilerId(), newDefines);
+                state.getRemoteCompilerDefines().put(match, newDefines);
                 preprocessableSourceConsumer.setPreprocessableSource(new PreprocessableSource(sourceRemoteMatched_, newDefines));
             }
             @Override

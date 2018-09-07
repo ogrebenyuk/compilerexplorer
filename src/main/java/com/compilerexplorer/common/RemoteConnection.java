@@ -139,7 +139,7 @@ public class RemoteConnection {
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerId();
+                String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerIds().get(0);
                 String url = state.getUrl() + "/api/compiler/" + remoteCompilerId + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();

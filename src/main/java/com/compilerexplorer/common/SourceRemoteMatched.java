@@ -2,15 +2,17 @@ package com.compilerexplorer.common;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class SourceRemoteMatched {
     @NotNull
     private final SourceCompilerSettings sourceCompilerSettings;
     @NotNull
-    private final String remoteCompilerId;
+    private final List<String> remoteCompilerIds;
 
-    public SourceRemoteMatched(@NotNull SourceCompilerSettings sourceCompilerSettings_, @NotNull String remoteCompilerId_) {
+    public SourceRemoteMatched(@NotNull SourceCompilerSettings sourceCompilerSettings_, @NotNull List<String> remoteCompilerIds_) {
         sourceCompilerSettings = sourceCompilerSettings_;
-        remoteCompilerId = remoteCompilerId_;
+        remoteCompilerIds = remoteCompilerIds_;
     }
 
     @NotNull
@@ -19,7 +21,7 @@ public class SourceRemoteMatched {
     }
 
     @NotNull
-    public String getRemoteCompilerId() {
-        return remoteCompilerId;
+    public List<String> getRemoteCompilerIds() {
+        return remoteCompilerIds;
     }
 }

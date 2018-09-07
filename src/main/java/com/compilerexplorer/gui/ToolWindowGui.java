@@ -1,6 +1,7 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.*;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
@@ -55,7 +56,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
 
         projectSettingsList.addItemListener(event -> {
             if (sourceSettingsConsumer != null && !suppressUpdates && event.getStateChange() == ItemEvent.SELECTED) {
-                sourceSettingsConsumer.setSourceSetting(projectSettingsList.getItemAt(projectSettingsList.getSelectedIndex()));
+                ApplicationManager.getApplication().invokeLater(() -> sourceSettingsConsumer.setSourceSetting(projectSettingsList.getItemAt(projectSettingsList.getSelectedIndex())));
             }
         });
     }
