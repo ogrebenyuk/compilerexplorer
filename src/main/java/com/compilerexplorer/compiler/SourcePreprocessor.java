@@ -42,7 +42,7 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer {
         }
 
         String name = source.getPresentableName();
-        String sourceText = preprocessableSource.getDefines() + document.getText();
+        String sourceText = preprocessableSource.getDefines().getDefines() + document.getText();
         File compiler = preprocessableSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
         if (currentProgressIndicator != null) {

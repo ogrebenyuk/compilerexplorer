@@ -1,6 +1,6 @@
 package com.compilerexplorer.settings;
 
-import com.compilerexplorer.common.SettingsState;
+import com.compilerexplorer.common.state.SettingsState;
 import com.compilerexplorer.common.RemoteConnection;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;

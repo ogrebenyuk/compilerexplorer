@@ -1,14 +1,15 @@
 package com.compilerexplorer.common;
 
+import com.compilerexplorer.common.state.LocalCompilerSettings;
 import org.jetbrains.annotations.NotNull;
 
 public class SourceCompilerSettings {
     @NotNull
     private final SourceSettings sourceSettings;
     @NotNull
-    private final SettingsState.LocalCompilerSettings localCompilerSettings;
+    private final LocalCompilerSettings localCompilerSettings;
 
-    public SourceCompilerSettings(@NotNull SourceSettings sourceSettings_, @NotNull SettingsState.LocalCompilerSettings localCompilerSettings_) {
+    public SourceCompilerSettings(@NotNull SourceSettings sourceSettings_, @NotNull LocalCompilerSettings localCompilerSettings_) {
         sourceSettings = sourceSettings_;
         localCompilerSettings = localCompilerSettings_;
     }
@@ -19,7 +20,7 @@ public class SourceCompilerSettings {
     }
 
     @NotNull
-    public SettingsState.LocalCompilerSettings getLocalCompilerSettings() {
+    public LocalCompilerSettings getLocalCompilerSettings() {
         return localCompilerSettings;
     }
 }

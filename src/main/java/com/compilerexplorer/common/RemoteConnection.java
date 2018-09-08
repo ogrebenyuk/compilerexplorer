@@ -1,5 +1,9 @@
 package com.compilerexplorer.common;
 
+import com.compilerexplorer.common.state.Filters;
+import com.compilerexplorer.common.state.RemoteCompilerId;
+import com.compilerexplorer.common.state.RemoteCompilerInfo;
+import com.compilerexplorer.common.state.SettingsState;
 import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -41,8 +45,7 @@ public class RemoteConnection {
     }
 
     private static void connect(@NotNull Project project, @NotNull SettingsState state, boolean publish) {
-        SettingsState tmpState = new SettingsState();
-        tmpState.copyFrom(state);
+        SettingsState tmpState = new SettingsState(state);
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: connecting to " + state.getUrl()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -70,14 +73,9 @@ public class RemoteConnection {
 
                     JsonArray array = new JsonParser().parse(output).getAsJsonArray();
                     Gson gson = new Gson();
-                    List<SettingsState.RemoteCompilerInfo> compilers = new ArrayList<>();
+                    List<RemoteCompilerInfo> compilers = new ArrayList<>();
                     for (JsonElement elem : array) {
-                        CompilerId compilerId = gson.fromJson(elem, CompilerId.class);
-                        SettingsState.RemoteCompilerInfo info = new SettingsState.RemoteCompilerInfo();
-                        info.setId(compilerId.id);
-                        info.setName(compilerId.name);
-                        info.setLanguage(compilerId.lang);
-                        compilers.add(info);
+                        compilers.add(gson.fromJson(elem, RemoteCompilerInfo.class));
                     }
                     tmpState.setRemoteCompilers(compilers);
                     tmpState.setConnected(true);
@@ -108,7 +106,7 @@ public class RemoteConnection {
 
     private static class Options {
         String userArguments;
-        SettingsState.Filters filters;
+        Filters filters;
     }
 
     private static class Request {
@@ -139,8 +137,8 @@ public class RemoteConnection {
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerIds().get(0);
-                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId + "/compile";
+                RemoteCompilerId remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerId();
+                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId.getId() + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();
 

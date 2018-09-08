@@ -1,6 +1,9 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.state.LocalCompilerPath;
+import com.compilerexplorer.common.state.LocalCompilerSettings;
+import com.compilerexplorer.common.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -36,7 +39,7 @@ public class CompilerSettingsProducer implements SourceSettingsConsumer {
     public void setSourceSetting(@NotNull SourceSettings sourceSettings) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
         {
-            SettingsState.LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(sourceSettings.getCompiler().getAbsolutePath());
+            LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()));
             if (existingSettings != null) {
                 sourceCompilerSettingsConsumer.setSourceCompilerSetting(new SourceCompilerSettings(sourceSettings, existingSettings));
                 return;
@@ -67,12 +70,9 @@ public class CompilerSettingsProducer implements SourceSettingsConsumer {
                         String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);
                         String compilerTarget = parseCompilerTarget(versionText);
                         if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
-                            SettingsState.LocalCompilerSettings newSettings = new SettingsState.LocalCompilerSettings();
-                            newSettings.setName(sourceSettings.getCompilerKind().toString().toLowerCase());
-                            newSettings.setVersion(compilerVersion);
-                            newSettings.setTarget(compilerTarget);
+                            LocalCompilerSettings newSettings = new LocalCompilerSettings(sourceSettings.getCompilerKind().toString().toLowerCase(), compilerVersion, compilerTarget);
                             ApplicationManager.getApplication().invokeLater(() -> {
-                                state.getLocalCompilerSettings().put(sourceSettings.getCompiler().getAbsolutePath(), newSettings);
+                                state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()), newSettings);
                                 sourceCompilerSettingsConsumer.setSourceCompilerSetting(new SourceCompilerSettings(sourceSettings, newSettings));
                             });
                         } else {

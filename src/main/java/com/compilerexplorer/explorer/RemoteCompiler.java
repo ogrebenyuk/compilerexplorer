@@ -1,6 +1,7 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.state.SettingsState;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 

@@ -1,5 +1,6 @@
 package com.compilerexplorer.common;
 
+import com.compilerexplorer.common.state.SettingsState;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;

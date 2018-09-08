@@ -1,5 +1,6 @@
 package com.compilerexplorer.common;
 
+import com.compilerexplorer.common.state.RemoteCompilerId;
 import org.jetbrains.annotations.NotNull;
 
 public class CompiledText {
@@ -7,12 +8,12 @@ public class CompiledText {
     private PreprocessedSource preprocessedSource;
 
     @NotNull
-    private String compilerId;
+    private RemoteCompilerId compilerId;
 
     @NotNull
     private String compiledText;
 
-    public CompiledText(@NotNull PreprocessedSource preprocessedSource_, @NotNull String compilerId_, @NotNull String compiledText_) {
+    public CompiledText(@NotNull PreprocessedSource preprocessedSource_, @NotNull RemoteCompilerId compilerId_, @NotNull String compiledText_) {
         preprocessedSource = preprocessedSource_;
         compiledText = compiledText_;
         compilerId = compilerId_;
@@ -24,7 +25,7 @@ public class CompiledText {
     }
 
     @NotNull
-    public String getCompilerId() {
+    public RemoteCompilerId getCompilerId() {
         return compilerId;
     }
 
