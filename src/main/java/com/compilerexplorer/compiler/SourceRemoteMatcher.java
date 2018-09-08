@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, StateConsumer, RemoteConnectionConsumer {
+public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, StateConsumer {
     @NotNull
     private final Project project;
     @NotNull
@@ -24,7 +24,10 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     private SourceCompilerSettings sourceCompilerSettings;
     @Nullable
     private String reason;
+    private boolean connected = SettingsState.DEFAULT_CONNECTED;
     private boolean allowMinorVersionMismatch = SettingsState.DEFAULT_ALLOW_MINOR_VERSION_MISMATCH;
+    @Nullable
+    private List<RemoteCompilerInfo> remoteCompilers;
 
     public SourceRemoteMatcher(@NotNull Project project_, @NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
         project = project_;
@@ -48,17 +51,18 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     @Override
     public void stateChanged() {
         SettingsState state = SettingsProvider.getInstance(project).getState();
+        boolean newConnected = state.getConnected();
+        List<RemoteCompilerInfo> newRemoteCompilers = state.getRemoteCompilers();
         boolean newAllowMinorVersionMismatch = state.getAllowMinorVersionMismatch();
-        boolean changed = newAllowMinorVersionMismatch != allowMinorVersionMismatch;
+        boolean changed = connected != newConnected
+                || !newRemoteCompilers.equals(remoteCompilers)
+                || newAllowMinorVersionMismatch != allowMinorVersionMismatch;
         if (changed) {
+            connected = newConnected;
+            remoteCompilers = newRemoteCompilers;
             allowMinorVersionMismatch = newAllowMinorVersionMismatch;
             refresh();
         }
-    }
-
-    @Override
-    public void connected() {
-        refresh();
     }
 
     private void refresh() {
@@ -68,11 +72,6 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
         }
 
         SettingsState state = SettingsProvider.getInstance(project).getState();
-        if (!state.getConnected()) {
-            sourceRemoteMatchedConsumer.clearSourceRemoteMatched("Not connected" + (state.getLastConnectionStatus().isEmpty() ? "" : "\n" + state.getLastConnectionStatus()));
-            return;
-        }
-
         if (sourceCompilerSettings == null) {
             sourceRemoteMatchedConsumer.clearSourceRemoteMatched("No source");
             return;
@@ -86,15 +85,20 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
             }
         }
 
+        if (!connected) {
+            sourceRemoteMatchedConsumer.clearSourceRemoteMatched("Not connected" + (state.getLastConnectionStatus().isEmpty() ? "" : "\n" + state.getLastConnectionStatus()));
+            return;
+        }
+
         String localName = sourceCompilerSettings.getLocalCompilerSettings().getName();
         String localVersion = sourceCompilerSettings.getLocalCompilerSettings().getVersion();
         String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
         String language = sourceCompilerSettings.getSourceSettings().getLanguage().getDisplayName();
-        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language, allowMinorVersionMismatch);
+        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(remoteCompilers, localName, localVersion, localTarget, language, allowMinorVersionMismatch);
         if (remoteCompilerMatches.isEmpty()) {
             String modifiedLocalVersion = stripLastVersionPart(localVersion);
             if (!modifiedLocalVersion.isEmpty()) {
-                remoteCompilerMatches.addAll(findRemoteCompilerMatches(state.getRemoteCompilers(), localName, modifiedLocalVersion, localTarget, language, allowMinorVersionMismatch));
+                remoteCompilerMatches.addAll(findRemoteCompilerMatches(remoteCompilers, localName, modifiedLocalVersion, localTarget, language, allowMinorVersionMismatch));
             }
         }
         remoteCompilerMatches = remoteCompilerMatches.stream().distinct().collect(Collectors.toList());

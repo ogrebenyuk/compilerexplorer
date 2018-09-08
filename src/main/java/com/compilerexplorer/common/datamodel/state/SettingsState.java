@@ -11,6 +11,7 @@ import java.util.*;
 public class SettingsState {
     @NotNull
     public static final String DEFAULT_URL = "http://localhost:10240";
+    public static final boolean DEFAULT_CONNECTED = false;
     public static final boolean DEFAULT_ALLOW_MINOR_VERSION_MISMATCH = true;
     public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     public static final boolean DEFAULT_USE_REMOTE_DEFINES = false;
@@ -22,7 +23,7 @@ public class SettingsState {
     @Property
     private String url = DEFAULT_URL;
     @Property
-    private boolean connected = false;
+    private boolean connected = DEFAULT_CONNECTED;
     @NotNull
     @Property
     private String lastConnectionStatus = "";

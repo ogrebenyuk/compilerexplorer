@@ -85,20 +85,12 @@ public class RemoteConnection {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     state.copyFrom(tmpState);
                     if (publish) {
-                        publishConnection(project);
+                        SettingsProvider.publishStateChangedLater(project);
                     }
                 });
             }
         };
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, new BackgroundableProcessIndicator(task));
-    }
-
-    static void publishConnectionLater(@NotNull Project project) {
-        ApplicationManager.getApplication().invokeLater(() -> publishConnection(project));
-    }
-
-    private static void publishConnection(@NotNull Project project) {
-        project.getMessageBus().syncPublisher(RemoteConnectionConsumer.TOPIC).connected();
     }
 
     private static class Options {

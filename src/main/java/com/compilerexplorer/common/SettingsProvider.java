@@ -45,7 +45,7 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
     public void loadState(@NotNull SettingsState state_) {
         state = createStateIfNeeded();
         state.copyFrom(state_);
-        publishStateChangedLater();
+        publishStateChangedLater(project);
     }
 
     @NotNull
@@ -56,7 +56,7 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
         return state;
     }
 
-    private void publishStateChangedLater() {
-        ApplicationManager.getApplication().invokeLater(() -> project.getMessageBus().syncPublisher(StateConsumer.TOPIC).stateChanged());
+    static void publishStateChangedLater(@NotNull Project project_) {
+        ApplicationManager.getApplication().invokeLater(() -> project_.getMessageBus().syncPublisher(StateConsumer.TOPIC).stateChanged());
     }
 }
