@@ -86,7 +86,7 @@ public class CompilerSettingsProducer implements SourceSettingsConsumer {
                         ApplicationManager.getApplication().invokeLater(() -> sourceCompilerSettingsConsumer.clearSourceCompilerSetting("Cannot run compiler:\n" + String.join(" ", versionCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText));
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    // empty
+                    ApplicationManager.getApplication().invokeLater(() -> sourceCompilerSettingsConsumer.clearSourceCompilerSetting("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nCanceled"));
                 } catch (Exception exception) {
                     ApplicationManager.getApplication().invokeLater(() -> sourceCompilerSettingsConsumer.clearSourceCompilerSetting("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nException: " + exception.getMessage()));
                 }

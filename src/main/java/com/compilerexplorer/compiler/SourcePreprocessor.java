@@ -33,7 +33,7 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     @Nullable
     private String reason;
     private boolean preprocessLocally = SettingsState.DEFAULT_PREPROCESS_LOCALLY;
-    private boolean useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMODE_DEFINES;
+    private boolean useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMOTE_DEFINES;
 
     public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer preprocessedSourceConsumer_) {
         project = project_;
@@ -42,16 +42,20 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
 
     @Override
     public void setPreprocessableSource(@NotNull PreprocessableSource preprocessableSource_) {
-        preprocessableSource = preprocessableSource_;
-        reason = null;
-        refresh();
+        if (preprocessableSource == null || !preprocessableSource.equals(preprocessableSource_)) {
+            preprocessableSource = preprocessableSource_;
+            reason = null;
+            refresh();
+        }
     }
 
     @Override
     public void clearPreprocessableSource(@NotNull String reason_) {
-        preprocessableSource = null;
-        reason = reason_;
-        refresh();
+        if (reason == null || !reason.equals(reason_)) {
+            preprocessableSource = null;
+            reason = reason_;
+            refresh();
+        }
     }
 
     @Override
@@ -70,6 +74,11 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     private void refresh() {
         if (reason != null) {
             preprocessedSourceConsumer.clearPreprocessedSource(reason);
+            return;
+        }
+
+        if (preprocessableSource == null) {
+            preprocessedSourceConsumer.clearPreprocessedSource("No preprocessable source");
             return;
         }
 
@@ -107,7 +116,7 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr()));
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    // empty
+                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Canceled preprocessing " + name));
                 } catch (Exception exception) {
                     ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot preprocess " + name + ":\n" + String.join(" ", preprocessorCommandLine) + "\nException: " + exception.getMessage()));
                 }

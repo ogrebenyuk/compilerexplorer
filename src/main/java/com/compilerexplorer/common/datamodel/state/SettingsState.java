@@ -11,8 +11,9 @@ import java.util.*;
 public class SettingsState {
     @NotNull
     public static final String DEFAULT_URL = "http://localhost:10240";
+    public static final boolean DEFAULT_ALLOW_MINOR_VERSION_MISMATCH = true;
     public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
-    public static final boolean DEFAULT_USE_REMODE_DEFINES = false;
+    public static final boolean DEFAULT_USE_REMOTE_DEFINES = false;
 
     @NotNull
     private static final SettingsState EMPTY = new SettingsState();
@@ -38,14 +39,14 @@ public class SettingsState {
     @Property
     private Filters filters = new Filters();
     @Property
-    private boolean allowMinorVersionMismatch = false;
+    private boolean allowMinorVersionMismatch = DEFAULT_ALLOW_MINOR_VERSION_MISMATCH;
     @NotNull
     @Property
     private Map<LocalCompilerPath, CompilerMatches> compilerMatches = new HashMap<>();
     @Property
     private boolean preprocessLocally = DEFAULT_PREPROCESS_LOCALLY;
     @Property
-    private boolean useRemoteDefines = DEFAULT_USE_REMODE_DEFINES;
+    private boolean useRemoteDefines = DEFAULT_USE_REMOTE_DEFINES;
 
     public SettingsState() {
         // empty

@@ -1,12 +1,15 @@
 package com.compilerexplorer.compiler.common;
 
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
+import java.util.concurrent.TimeUnit;
 
 public class CompilerRunner {
+    private static final long WAIT_ITERATION_MILLIS = 100;
     @NotNull
     private final String stdout;
     @NotNull
@@ -15,13 +18,7 @@ public class CompilerRunner {
 
     public CompilerRunner(@NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(commandArray, null, workingDir);
-
         try {
-            OutputStream stdinStream = process.getOutputStream();
-            stdinStream.write(stdin.getBytes());
-            stdinStream.flush();
-            stdinStream.close();
-
             StringBuilder stdoutBuilder = new StringBuilder();
             StringBuilder stderrBuilder = new StringBuilder();
             StreamGobbler stdoutGobbler = new StreamGobbler(process.getInputStream(), stdoutBuilder, progressIndicator);
@@ -31,7 +28,15 @@ public class CompilerRunner {
             stdoutGobblerThread.start();
             stderrGobblerThread.start();
 
-            exitCode = process.waitFor();
+            OutputStream stdinStream = process.getOutputStream();
+            stdinStream.write(stdin.getBytes());
+            stdinStream.flush();
+            stdinStream.close();
+
+            while (!process.waitFor(WAIT_ITERATION_MILLIS, TimeUnit.MILLISECONDS)) {
+                progressIndicator.checkCanceled();
+            }
+            exitCode = process.exitValue();
             stdoutGobblerThread.join();
             stderrGobblerThread.join();
 

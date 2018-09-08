@@ -22,6 +22,8 @@ public class SettingsGui {
     private final JTextField urlField;
     @NotNull
     private final JCheckBox preprocessCheckbox;
+    @NotNull
+    private final JCheckBox minorMismatchCheckbox;
     private boolean ignoreUpdates;
 
     public SettingsGui(@NotNull Project project_) {
@@ -65,6 +67,11 @@ public class SettingsGui {
         preprocessCheckbox = new JCheckBox();
         preprocessCheckbox.setText("Preprocess locally");
         preprocessPanel.add(preprocessCheckbox, BorderLayout.WEST);
+        JPanel minorMismatchPanel = new JPanel(new BorderLayout());
+        content.add(minorMismatchPanel, VerticalLayout.TOP);
+        minorMismatchCheckbox = new JCheckBox();
+        minorMismatchCheckbox.setText("Allow minor compiler version mismatch");
+        minorMismatchPanel.add(minorMismatchCheckbox, BorderLayout.WEST);
         ignoreUpdates = false;
     }
 
@@ -72,6 +79,7 @@ public class SettingsGui {
         ignoreUpdates = true;
         state.copyFrom(state_);
         urlField.setText(state.getUrl());
+        minorMismatchCheckbox.setSelected(state.getAllowMinorVersionMismatch());
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
         ignoreUpdates = false;
     }
@@ -84,6 +92,7 @@ public class SettingsGui {
     @NotNull
     public SettingsState getState() {
         state.setUrl(urlField.getText());
+        state.setAllowMinorVersionMismatch(minorMismatchCheckbox.isSelected());
         state.setPreprocessLocally(preprocessCheckbox.isSelected());
         return state;
     }

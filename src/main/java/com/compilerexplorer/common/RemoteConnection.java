@@ -77,7 +77,7 @@ public class RemoteConnection {
                     tmpState.setRemoteCompilers(compilers);
                     tmpState.setConnected(true);
                 } catch (ProcessCanceledException canceledException) {
-                    // empty
+                    tmpState.setLastConnectionStatus("Canceled reading from " + url);
                 } catch (Exception e) {
                     tmpState.setLastConnectionStatus("Exception reading from " + url + ": " + e.getMessage());
                 }
@@ -180,7 +180,7 @@ public class RemoteConnection {
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err + "\n" + source));
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    // empty
+                    ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText("Canceled compiling " + name));
                 } catch (Exception e) {
                     ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText("Exception compiling " + name + ": " + e.getMessage()));
                 }

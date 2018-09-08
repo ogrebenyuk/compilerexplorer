@@ -6,6 +6,7 @@ import com.compilerexplorer.common.datamodel.SourceCompilerSettingsConsumer;
 import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.common.datamodel.SourceRemoteMatchedConsumer;
 import com.compilerexplorer.common.datamodel.state.*;
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,7 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     private SourceCompilerSettings sourceCompilerSettings;
     @Nullable
     private String reason;
+    private boolean allowMinorVersionMismatch = SettingsState.DEFAULT_ALLOW_MINOR_VERSION_MISMATCH;
 
     public SourceRemoteMatcher(@NotNull Project project_, @NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
         project = project_;
@@ -45,7 +47,13 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
 
     @Override
     public void stateChanged() {
-        refresh();
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        boolean newAllowMinorVersionMismatch = state.getAllowMinorVersionMismatch();
+        boolean changed = newAllowMinorVersionMismatch != allowMinorVersionMismatch;
+        if (changed) {
+            allowMinorVersionMismatch = newAllowMinorVersionMismatch;
+            refresh();
+        }
     }
 
     @Override
@@ -74,6 +82,7 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
             CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompiler().getAbsolutePath()));
             if (existingMatches != null) {
                 sourceRemoteMatchedConsumer.setSourceRemoteMatched(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
+                return;
             }
         }
 
@@ -81,11 +90,11 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
         String localVersion = sourceCompilerSettings.getLocalCompilerSettings().getVersion();
         String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
         String language = sourceCompilerSettings.getSourceSettings().getLanguage().getDisplayName();
-        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language, state.getAllowMinorVersionMismatch());
+        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language, allowMinorVersionMismatch);
         if (remoteCompilerMatches.isEmpty()) {
             String modifiedLocalVersion = stripLastVersionPart(localVersion);
             if (!modifiedLocalVersion.isEmpty()) {
-                remoteCompilerMatches.addAll(findRemoteCompilerMatches(state.getRemoteCompilers(), localName, modifiedLocalVersion, localTarget, language, state.getAllowMinorVersionMismatch()));
+                remoteCompilerMatches.addAll(findRemoteCompilerMatches(state.getRemoteCompilers(), localName, modifiedLocalVersion, localTarget, language, allowMinorVersionMismatch));
             }
         }
         remoteCompilerMatches = remoteCompilerMatches.stream().distinct().collect(Collectors.toList());
@@ -119,7 +128,8 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
         return null;
     }
 
-    private static boolean versionMatches(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch) {
+    @VisibleForTesting
+    public static boolean versionMatches(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch) {
         String localVersionRegex = "^.* " + (tryMinorMismatch ? (regexize(stripLastVersionPart(localVersion)) + "\\.[0-9]+") : regexize(localVersion)) + "( .*)?$";
         return remoteName.matches(localVersionRegex);
     }
