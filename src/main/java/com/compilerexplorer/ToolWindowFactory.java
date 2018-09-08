@@ -8,20 +8,24 @@ import com.compilerexplorer.compiler.SourcePreprocessor;
 import com.compilerexplorer.explorer.RemoteDefinesProducer;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
+
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        addContentToToolWindow(toolWindow, createContent(project));
+        toolWindow.setIcon(IconLoader.getIcon("/icons/toolWindow.png"));
+        addContentToToolWindow(toolWindow, createComponent(project));
     }
 
     @NotNull
-    private static JComponent createContent(@NotNull Project project) {
+    private static JComponent createComponent(@NotNull Project project) {
         ToolWindowGui form = new ToolWindowGui(project);
         ProjectListener projectListener = new ProjectListener(project, form);
         RemoteCompiler explorer = new RemoteCompiler(project, form);
@@ -38,7 +42,8 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         return form.getContent();
     }
 
-    private static void addContentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent content) {
-        toolWindow.getContentManager().addContent(ContentFactory.SERVICE.getInstance().createContent(content, "", false));
+    private static void addContentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent component) {
+        Content content = ContentFactory.SERVICE.getInstance().createContent(component, "", false);
+        toolWindow.getContentManager().addContent(content);
     }
 }
