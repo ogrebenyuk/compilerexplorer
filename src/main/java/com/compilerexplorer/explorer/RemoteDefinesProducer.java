@@ -1,11 +1,10 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.state.*;
+import com.compilerexplorer.common.datamodel.*;
+import com.compilerexplorer.common.datamodel.state.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
     @NotNull
@@ -25,12 +24,17 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
         CompilerMatches matches = sourceRemoteMatched_.getRemoteCompilerMatches();
         state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched_.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), matches);
 
-        if (matches.getChosenMatch().getCompilerMatchKind() != CompilerMatchKind.NO_MATCH) {
+        if (matches.getChosenMatch().getCompilerMatchKind() == CompilerMatchKind.NO_MATCH) {
             String localName = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getName();
             String localVersion = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getVersion();
             String localTarget = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getTarget();
             String language = sourceRemoteMatched_.getSourceCompilerSettings().getSourceSettings().getLanguage().getDisplayName();
             preprocessableSourceConsumer.clearPreprocessableSource("Cannot find matching remote compiler for local " + localTarget + " " + localName + " " + localVersion + " " + language + " compiler");
+            return;
+        }
+
+        if (!state.getUseRemoteDefines()) {
+            preprocessableSourceConsumer.setPreprocessableSource(new PreprocessableSource(sourceRemoteMatched_, new Defines()));
             return;
         }
 

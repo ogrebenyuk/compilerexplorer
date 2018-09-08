@@ -1,4 +1,4 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;

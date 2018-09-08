@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.state;
+package com.compilerexplorer.common.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
@@ -6,12 +6,14 @@ import org.jetbrains.annotations.NotNull;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
     @NotNull
-    private static final String DEFAULT_URL = "http://localhost:10240";
+    public static final String DEFAULT_URL = "http://localhost:10240";
+    public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
+    public static final boolean DEFAULT_USE_REMODE_DEFINES = false;
+
     @NotNull
     private static final SettingsState EMPTY = new SettingsState();
 
@@ -41,9 +43,9 @@ public class SettingsState {
     @Property
     private Map<LocalCompilerPath, CompilerMatches> compilerMatches = new HashMap<>();
     @Property
-    private boolean preprocessLocally = true;
+    private boolean preprocessLocally = DEFAULT_PREPROCESS_LOCALLY;
     @Property
-    private boolean useRemoteDefines = false;
+    private boolean useRemoteDefines = DEFAULT_USE_REMODE_DEFINES;
 
     public SettingsState() {
         // empty

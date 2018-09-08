@@ -1,6 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.datamodel.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;

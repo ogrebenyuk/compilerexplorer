@@ -1,7 +1,11 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.state.SettingsState;
+import com.compilerexplorer.common.datamodel.CompiledTextConsumer;
+import com.compilerexplorer.common.datamodel.PreprocessedSource;
+import com.compilerexplorer.common.datamodel.PreprocessedSourceConsumer;
+import com.compilerexplorer.common.datamodel.SourceSettings;
+import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 

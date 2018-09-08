@@ -1,5 +1,6 @@
 package com.compilerexplorer;
 
+import com.compilerexplorer.common.datamodel.state.StateListener;
 import com.compilerexplorer.compiler.SourceRemoteMatcher;
 import com.compilerexplorer.compiler.CompilerSettingsProducer;
 import com.compilerexplorer.explorer.RemoteCompiler;
@@ -26,9 +27,11 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         ProjectListener projectListener = new ProjectListener(project, form);
         RemoteCompiler explorer = new RemoteCompiler(project, form);
         SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
+        new StateListener(project, preprocessor);
         RemoteDefinesProducer remoteDefinesProducer = new RemoteDefinesProducer(project, preprocessor);
         SourceRemoteMatcher sourceRemoteMatcher = new SourceRemoteMatcher(project, remoteDefinesProducer);
         new RemoteConnectionListener(project, sourceRemoteMatcher);
+        new StateListener(project, sourceRemoteMatcher);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, sourceRemoteMatcher);
 
         form.setSourceSettingsConsumer(compilerSettingsProducer);

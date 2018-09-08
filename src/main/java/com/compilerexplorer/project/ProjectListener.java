@@ -1,6 +1,6 @@
 package com.compilerexplorer.project;
 
-import com.compilerexplorer.common.ProjectSettingsConsumer;
+import com.compilerexplorer.common.datamodel.ProjectSettingsConsumer;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
 import com.compilerexplorer.project.idea.IdeaProjectListener;

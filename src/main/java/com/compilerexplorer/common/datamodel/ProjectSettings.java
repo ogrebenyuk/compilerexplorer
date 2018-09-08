@@ -1,4 +1,4 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
 import org.jetbrains.annotations.NotNull;
 

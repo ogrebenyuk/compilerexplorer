@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.state;
+package com.compilerexplorer.common.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;

@@ -1,6 +1,6 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
-import com.compilerexplorer.common.state.Defines;
+import com.compilerexplorer.common.datamodel.state.Defines;
 import org.jetbrains.annotations.NotNull;
 
 public class PreprocessableSource {

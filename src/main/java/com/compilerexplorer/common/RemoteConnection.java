@@ -1,9 +1,12 @@
 package com.compilerexplorer.common;
 
-import com.compilerexplorer.common.state.Filters;
-import com.compilerexplorer.common.state.RemoteCompilerId;
-import com.compilerexplorer.common.state.RemoteCompilerInfo;
-import com.compilerexplorer.common.state.SettingsState;
+import com.compilerexplorer.common.datamodel.CompiledText;
+import com.compilerexplorer.common.datamodel.CompiledTextConsumer;
+import com.compilerexplorer.common.datamodel.PreprocessedSource;
+import com.compilerexplorer.common.datamodel.state.Filters;
+import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
+import com.compilerexplorer.common.datamodel.state.RemoteCompilerInfo;
+import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;

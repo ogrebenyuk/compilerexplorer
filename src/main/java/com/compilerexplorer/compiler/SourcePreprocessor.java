@@ -1,7 +1,9 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.state.SettingsState;
+import com.compilerexplorer.common.datamodel.*;
+import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.common.datamodel.state.StateConsumer;
 import com.compilerexplorer.compiler.common.CompilerRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -19,13 +21,19 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.stream.Stream;
 
-public class SourcePreprocessor implements PreprocessableSourceConsumer {
+public class SourcePreprocessor implements PreprocessableSourceConsumer, StateConsumer {
     @NotNull
     private final Project project;
     @NotNull
     private final PreprocessedSourceConsumer preprocessedSourceConsumer;
     @Nullable
     private BackgroundableProcessIndicator currentProgressIndicator;
+    @Nullable
+    private PreprocessableSource preprocessableSource;
+    @Nullable
+    private String reason;
+    private boolean preprocessLocally = SettingsState.DEFAULT_PREPROCESS_LOCALLY;
+    private boolean useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMODE_DEFINES;
 
     public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer preprocessedSourceConsumer_) {
         project = project_;
@@ -33,7 +41,38 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer {
     }
 
     @Override
-    public void setPreprocessableSource(@NotNull PreprocessableSource preprocessableSource) {
+    public void setPreprocessableSource(@NotNull PreprocessableSource preprocessableSource_) {
+        preprocessableSource = preprocessableSource_;
+        reason = null;
+        refresh();
+    }
+
+    @Override
+    public void clearPreprocessableSource(@NotNull String reason_) {
+        preprocessableSource = null;
+        reason = reason_;
+        refresh();
+    }
+
+    @Override
+    public void stateChanged() {
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        boolean newPreprocessLocally = state.getPreprocessLocally();
+        boolean newUseRemoteDefines = state.getPreprocessLocally() && state.getUseRemoteDefines();
+        boolean changed = newPreprocessLocally != preprocessLocally || newUseRemoteDefines != useRemoteDefines;
+        if (changed) {
+            preprocessLocally = newPreprocessLocally;
+            useRemoteDefines = newUseRemoteDefines;
+            refresh();
+        }
+    }
+
+    private void refresh() {
+        if (reason != null) {
+            preprocessedSourceConsumer.clearPreprocessedSource(reason);
+            return;
+        }
+
         SourceSettings sourceSettings = preprocessableSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
         VirtualFile source = sourceSettings.getSource();
         Document document = FileDocumentManager.getInstance().getDocument(source);
@@ -42,9 +81,8 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer {
             return;
         }
 
-        SettingsState state = SettingsProvider.getInstance(project).getState();
-        String sourceText = (state.getPreprocessLocally() && state.getUseRemoteDefines() ? preprocessableSource.getDefines().getDefines() : "") + document.getText();
-        if (!state.getPreprocessLocally()) {
+        String sourceText = useRemoteDefines ? preprocessableSource.getDefines().getDefines() + document.getText() : document.getText();
+        if (!preprocessLocally) {
             preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(preprocessableSource, sourceText));
             return;
         }
@@ -77,11 +115,6 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer {
         };
         currentProgressIndicator = new BackgroundableProcessIndicator(task);
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, currentProgressIndicator);
-    }
-
-    @Override
-    public void clearPreprocessableSource(@NotNull String reason) {
-        preprocessedSourceConsumer.clearPreprocessedSource(reason);
     }
 
     @NotNull

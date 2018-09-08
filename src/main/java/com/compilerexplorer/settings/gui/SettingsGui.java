@@ -1,8 +1,9 @@
-package com.compilerexplorer.settings;
+package com.compilerexplorer.settings.gui;
 
-import com.compilerexplorer.common.state.SettingsState;
+import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.compilerexplorer.common.RemoteConnection;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -10,7 +11,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 
-class SettingsGui {
+public class SettingsGui {
     @NotNull
     private final Project project;
     @NotNull
@@ -18,22 +19,24 @@ class SettingsGui {
     @NotNull
     private final JPanel content;
     @NotNull
-    private final JTextField url;
+    private final JTextField urlField;
+    @NotNull
+    private final JCheckBox preprocessCheckbox;
     private boolean ignoreUpdates;
 
-    SettingsGui(@NotNull Project project_) {
+    public SettingsGui(@NotNull Project project_) {
         ignoreUpdates = true;
         project = project_;
         state = new SettingsState();
-        content = new JPanel(new BorderLayout());
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        content.add(mainPanel, BorderLayout.NORTH);
+        content = new JPanel(new VerticalLayout(0));
+        JPanel urlPanel = new JPanel(new BorderLayout());
+        content.add(urlPanel, VerticalLayout.TOP);
         JLabel label = new JLabel();
         label.setVisible(true);
         label.setText("URL: ");
-        mainPanel.add(label, BorderLayout.WEST);
-        url = new JTextField();
-        url.getDocument().addDocumentListener(new DocumentListener() {
+        urlPanel.add(label, BorderLayout.WEST);
+        urlField = new JTextField();
+        urlField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void changedUpdate(DocumentEvent e) {
                 // empty
@@ -48,33 +51,40 @@ class SettingsGui {
             }
             private void update() {
                 if (!ignoreUpdates) {
-                    state.setUrl(url.getText());
                     state.clearConnection();
                 }
             }
         });
-        mainPanel.add(url, BorderLayout.CENTER);
+        urlPanel.add(urlField, BorderLayout.CENTER);
         JButton connectButton = new JButton();
         connectButton.setText("Connect");
         connectButton.addActionListener(e -> RemoteConnection.tryConnect(project, state));
-        mainPanel.add(connectButton, BorderLayout.EAST);
+        urlPanel.add(connectButton, BorderLayout.EAST);
+        JPanel preprocessPanel = new JPanel(new BorderLayout());
+        content.add(preprocessPanel, VerticalLayout.TOP);
+        preprocessCheckbox = new JCheckBox();
+        preprocessCheckbox.setText("Preprocess locally");
+        preprocessPanel.add(preprocessCheckbox, BorderLayout.WEST);
         ignoreUpdates = false;
     }
 
-    void loadState(@NotNull SettingsState state_) {
+    public void loadState(@NotNull SettingsState state_) {
         ignoreUpdates = true;
         state.copyFrom(state_);
-        url.setText(state.getUrl());
+        urlField.setText(state.getUrl());
+        preprocessCheckbox.setSelected(state.getPreprocessLocally());
         ignoreUpdates = false;
     }
 
     @NotNull
-    JComponent getContent() {
+    public JComponent getContent() {
         return content;
     }
 
     @NotNull
-    SettingsState getState() {
+    public SettingsState getState() {
+        state.setUrl(urlField.getText());
+        state.setPreprocessLocally(preprocessCheckbox.isSelected());
         return state;
     }
 }

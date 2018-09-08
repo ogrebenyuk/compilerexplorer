@@ -1,6 +1,6 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
-import com.compilerexplorer.common.state.LocalCompilerSettings;
+import com.compilerexplorer.common.datamodel.state.LocalCompilerSettings;
 import org.jetbrains.annotations.NotNull;
 
 public class SourceCompilerSettings {

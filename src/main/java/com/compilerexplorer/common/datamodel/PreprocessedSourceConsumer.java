@@ -1,5 +1,6 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
+import com.compilerexplorer.common.datamodel.PreprocessedSource;
 import org.jetbrains.annotations.NotNull;
 
 public interface PreprocessedSourceConsumer {

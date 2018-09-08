@@ -1,7 +1,11 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.state.*;
+import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.common.datamodel.SourceCompilerSettingsConsumer;
+import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.common.datamodel.SourceRemoteMatchedConsumer;
+import com.compilerexplorer.common.datamodel.state.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -10,12 +14,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, RemoteConnectionConsumer {
+public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, StateConsumer, RemoteConnectionConsumer {
     @NotNull
     private final Project project;
     @NotNull
     private final SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer;
+    @Nullable
     private SourceCompilerSettings sourceCompilerSettings;
+    @Nullable
     private String reason;
 
     public SourceRemoteMatcher(@NotNull Project project_, @NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
@@ -34,6 +40,11 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Remo
     public void clearSourceCompilerSetting(@NotNull String reason_) {
         sourceCompilerSettings = null;
         reason = reason_;
+        refresh();
+    }
+
+    @Override
+    public void stateChanged() {
         refresh();
     }
 
@@ -84,26 +95,26 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Remo
 
     @NotNull
     private static List<CompilerMatch> findRemoteCompilerMatches(@NotNull List<RemoteCompilerInfo> remoteCompilers,
-                                                          @NotNull String localName,
-                                                          @NotNull String localVersion,
-                                                          @NotNull String localTarget,
-                                                          @NotNull String language,
-                                                                   boolean allowMinorVersionMismatch) {
+                                                                 @NotNull String localName,
+                                                                 @NotNull String localVersion,
+                                                                 @NotNull String localTarget,
+                                                                 @NotNull String language,
+                                                                 boolean allowMinorVersionMismatch) {
         return remoteCompilers.stream()
                 .filter(s -> s.getLanguage().toLowerCase().equals(language.toLowerCase()))
                 .filter(s -> s.getName().replaceAll("-", "_").contains(localTarget.replaceAll("-", "_")))
                 .filter(s -> s.getName().contains(localName))
-                .map(s -> findCompilerVersionMatch(s, localVersion, allowMinorVersionMismatch))
+                .map(s -> findCompilerVersionMatch(s.getName(), s.getId(), localVersion, allowMinorVersionMismatch))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     @Nullable
-    private static CompilerMatch findCompilerVersionMatch(@NotNull RemoteCompilerInfo remoteCompilerInfo, @NotNull String localVersion, boolean allowMinorVersionMismatch) {
-        if (versionMatches(remoteCompilerInfo.getName(), localVersion, false)) {
-            return new CompilerMatch(new RemoteCompilerId(remoteCompilerInfo.getId()), CompilerMatchKind.EXACT_MATCH);
-        } else if (allowMinorVersionMismatch && versionMatches(remoteCompilerInfo.getName(), localVersion, true)) {
-            return new CompilerMatch(new RemoteCompilerId(remoteCompilerInfo.getId()), CompilerMatchKind.MINOR_MISMATCH);
+    private static CompilerMatch findCompilerVersionMatch(@NotNull String remoteCompilerName, @NotNull String remoteCompilerId, @NotNull String localVersion, boolean allowMinorVersionMismatch) {
+        if (versionMatches(remoteCompilerName, localVersion, false)) {
+            return new CompilerMatch(new RemoteCompilerId(remoteCompilerId), CompilerMatchKind.EXACT_MATCH);
+        } else if (allowMinorVersionMismatch && versionMatches(remoteCompilerName, localVersion, true)) {
+            return new CompilerMatch(new RemoteCompilerId(remoteCompilerId), CompilerMatchKind.MINOR_MISMATCH);
         }
         return null;
     }

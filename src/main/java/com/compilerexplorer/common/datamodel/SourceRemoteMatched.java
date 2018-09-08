@@ -1,10 +1,7 @@
-package com.compilerexplorer.common;
+package com.compilerexplorer.common.datamodel;
 
-import com.compilerexplorer.common.state.CompilerMatches;
-import com.compilerexplorer.common.state.RemoteCompilerId;
+import com.compilerexplorer.common.datamodel.state.CompilerMatches;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public class SourceRemoteMatched {
     @NotNull

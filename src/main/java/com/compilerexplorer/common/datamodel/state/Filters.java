@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.state;
+package com.compilerexplorer.common.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;

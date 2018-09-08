@@ -1,8 +1,8 @@
 package com.compilerexplorer.project.clion.oc;
 
-import com.compilerexplorer.common.ProjectSettings;
-import com.compilerexplorer.common.ProjectSettingsConsumer;
-import com.compilerexplorer.common.SourceSettings;
+import com.compilerexplorer.common.datamodel.ProjectSettings;
+import com.compilerexplorer.common.datamodel.ProjectSettingsConsumer;
+import com.compilerexplorer.common.datamodel.SourceSettings;
 import com.compilerexplorer.project.common.ProjectSettingsProducer;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.lang.OCLanguageKind;

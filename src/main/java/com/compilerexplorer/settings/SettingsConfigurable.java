@@ -1,6 +1,7 @@
 package com.compilerexplorer.settings;
 
 import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.settings.gui.SettingsGui;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.NotNull;
 
