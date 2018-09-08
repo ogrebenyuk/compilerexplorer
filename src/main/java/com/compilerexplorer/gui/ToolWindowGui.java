@@ -72,7 +72,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
             }
             @NotNull
             private String getText(@NotNull CompilerMatch value) {
-                return value.getRemoteCompilerInfo().getName() + (value.getCompilerMatchKind() != CompilerMatchKind.NO_MATCH ? " (" + value.getCompilerMatchKind() + ")" : "");
+                return value.getRemoteCompilerInfo().getName() + (value.getCompilerMatchKind() != CompilerMatchKind.NO_MATCH ? " (" + CompilerMatchKind.asString(value.getCompilerMatchKind()) + ")" : "");
             }
         });
         matchesComboBox.addItemListener(event -> {
@@ -163,7 +163,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         if (newSelection == null) {
             matchesComboBox.removeAllItems();
             showError("No compiler selected");
-        } else if (oldSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId())) {
+        } else {
             selectCompilerMatch(newSelection);
         }
         suppressUpdates = false;
