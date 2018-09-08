@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
 public class SettingsState {
     @NotNull
     private static final String DEFAULT_URL = "http://localhost:10240";
+    @NotNull
+    private static final SettingsState EMPTY = new SettingsState();
 
     @NotNull
     @Property
@@ -38,6 +40,10 @@ public class SettingsState {
     @NotNull
     @Property
     private Map<LocalCompilerPath, CompilerMatches> compilerMatches = new HashMap<>();
+    @Property
+    private boolean preprocessLocally = true;
+    @Property
+    private boolean useRemoteDefines = false;
 
     public SettingsState() {
         // empty
@@ -138,21 +144,37 @@ public class SettingsState {
         }
     }
 
+    public boolean getPreprocessLocally() {
+        return preprocessLocally;
+    }
+
+    public void setPreprocessLocally(boolean preprocessLocally_) {
+        preprocessLocally = preprocessLocally_;
+    }
+
+    public boolean getUseRemoteDefines() {
+        return useRemoteDefines;
+    }
+
+    public void setUseRemoteDefines(boolean useRemoteDefines_) {
+        useRemoteDefines = useRemoteDefines_;
+    }
+
     public boolean isConnectionCleared() {
         return !getConnected() && getLastConnectionStatus().isEmpty();
     }
 
     public void clearConnection() {
-        setConnected(false);
-        setLastConnectionStatus("");
-        setRemoteCompilers(new ArrayList<>());
-        setRemoteCompilerDefines(new HashMap<>());
-        setCompilerMatches(new HashMap<>());
+        setConnected(EMPTY.getConnected());
+        setLastConnectionStatus(EMPTY.getLastConnectionStatus());
+        setRemoteCompilers(EMPTY.getRemoteCompilers());
+        setRemoteCompilerDefines(EMPTY.getRemoteCompilerDefines());
+        setCompilerMatches(EMPTY.getCompilerMatches());
     }
 
     public void clearLocalCompilers() {
-        setLocalCompilerSettings(new HashMap<>());
-        setCompilerMatches(new HashMap<>());
+        setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
+        setCompilerMatches(EMPTY.getCompilerMatches());
     }
 
     public void copyFrom(@NotNull SettingsState other) {
@@ -165,20 +187,24 @@ public class SettingsState {
         setFilters(other.getFilters());
         setAllowMinorVersionMismatch(other.getAllowMinorVersionMismatch());
         setCompilerMatches(other.getCompilerMatches());
+        setPreprocessLocally(other.getPreprocessLocally());
+        setUseRemoteDefines(other.getUseRemoteDefines());
     }
 
     @Override
     public int hashCode() {
         return getUrl().hashCode()
-             + (getConnected() ? 1 : 0)
-             + getLastConnectionStatus().hashCode()
-             + getRemoteCompilers().hashCode()
-             + getRemoteCompilerDefines().hashCode()
-             + getLocalCompilerSettings().hashCode()
-             + getFilters().hashCode()
-             + (getAllowMinorVersionMismatch() ? 1 : 0)
-             + getCompilerMatches().hashCode()
-        ;
+                + (getConnected() ? 1 : 0)
+                + getLastConnectionStatus().hashCode()
+                + getRemoteCompilers().hashCode()
+                + getRemoteCompilerDefines().hashCode()
+                + getLocalCompilerSettings().hashCode()
+                + getFilters().hashCode()
+                + (getAllowMinorVersionMismatch() ? 1 : 0)
+                + getCompilerMatches().hashCode()
+                + (getPreprocessLocally() ? 1 : 0)
+                + (getUseRemoteDefines() ? 1 : 0)
+                ;
     }
 
     @Override
@@ -188,14 +214,16 @@ public class SettingsState {
         }
         SettingsState other = (SettingsState)obj;
         return getUrl().equals(other.getUrl())
-            && getConnected() == other.getConnected()
-            && getLastConnectionStatus().equals(other.getLastConnectionStatus())
-            && getRemoteCompilers().equals(other.getRemoteCompilers())
-            && getRemoteCompilerDefines().equals(other.getRemoteCompilerDefines())
-            && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
-            && getFilters().equals(other.getFilters())
-            && getAllowMinorVersionMismatch() == other.getAllowMinorVersionMismatch()
-            && getCompilerMatches().equals(other.getCompilerMatches())
-        ;
+                && getConnected() == other.getConnected()
+                && getLastConnectionStatus().equals(other.getLastConnectionStatus())
+                && getRemoteCompilers().equals(other.getRemoteCompilers())
+                && getRemoteCompilerDefines().equals(other.getRemoteCompilerDefines())
+                && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
+                && getFilters().equals(other.getFilters())
+                && getAllowMinorVersionMismatch() == other.getAllowMinorVersionMismatch()
+                && getCompilerMatches().equals(other.getCompilerMatches())
+                && getPreprocessLocally() == other.getPreprocessLocally()
+                && getUseRemoteDefines() == other.getUseRemoteDefines()
+                ;
     }
 }

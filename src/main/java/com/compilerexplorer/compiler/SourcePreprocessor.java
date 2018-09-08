@@ -1,6 +1,7 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -41,8 +42,14 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer {
             return;
         }
 
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        String sourceText = (state.getPreprocessLocally() && state.getUseRemoteDefines() ? preprocessableSource.getDefines().getDefines() : "") + document.getText();
+        if (!state.getPreprocessLocally()) {
+            preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(preprocessableSource, sourceText));
+            return;
+        }
+
         String name = source.getPresentableName();
-        String sourceText = preprocessableSource.getDefines().getDefines() + document.getText();
         File compiler = preprocessableSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
         if (currentProgressIndicator != null) {

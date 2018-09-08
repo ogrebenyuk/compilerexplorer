@@ -38,12 +38,6 @@ public class RemoteConnection {
         connect(project, state, false);
     }
 
-    private static class CompilerId {
-        String id;
-        String name;
-        String lang;
-    }
-
     private static void connect(@NotNull Project project, @NotNull SettingsState state, boolean publish) {
         SettingsState tmpState = new SettingsState(state);
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: connecting to " + state.getUrl()) {
@@ -147,7 +141,7 @@ public class RemoteConnection {
 
                     Gson gson = new Gson();
 
-                    String source = /*preprocessedSource.getPreprocessableSource().getDefines() + */preprocessedSource.getPreprocessedText();
+                    String source = preprocessedSource.getPreprocessedText();
                     Request request = new Request();
                     request.source = source;
                     request.options = new Options();
