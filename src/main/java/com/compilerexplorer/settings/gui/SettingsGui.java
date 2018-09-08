@@ -59,7 +59,7 @@ public class SettingsGui {
         });
         urlPanel.add(urlField, BorderLayout.CENTER);
         JButton connectButton = new JButton();
-        connectButton.setText("Connect");
+        connectButton.setText("Test connection");
         connectButton.addActionListener(e -> RemoteConnection.tryConnect(project, state));
         urlPanel.add(connectButton, BorderLayout.EAST);
         JPanel preprocessPanel = new JPanel(new BorderLayout());
@@ -72,6 +72,7 @@ public class SettingsGui {
         minorMismatchCheckbox = new JCheckBox();
         minorMismatchCheckbox.setText("Allow minor compiler version mismatch");
         minorMismatchPanel.add(minorMismatchCheckbox, BorderLayout.WEST);
+        minorMismatchCheckbox.addActionListener(e -> state.clearCompilerMatches());
         ignoreUpdates = false;
     }
 

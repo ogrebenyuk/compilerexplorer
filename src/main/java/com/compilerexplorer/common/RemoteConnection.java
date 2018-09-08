@@ -126,8 +126,8 @@ public class RemoteConnection {
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                RemoteCompilerId remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerId();
-                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId.getId() + "/compile";
+                String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();
+                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -167,7 +167,7 @@ public class RemoteConnection {
                     String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
 
                     if (compiledResult.code == 0) {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, remoteCompilerId, asm)));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), asm)));
                     } else {
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err + "\n" + source));
                     }

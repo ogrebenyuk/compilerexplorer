@@ -38,9 +38,9 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
             return;
         }
 
-        RemoteCompilerId match = matches.getChosenMatch().getRemoteCompilerId();
+        RemoteCompilerId match = new RemoteCompilerId(matches.getChosenMatch().getRemoteCompilerInfo().getId());
         {
-            Defines existingDefines = state.getRemoteCompilerDefines().get(new RemoteCompilerId(match));
+            Defines existingDefines = state.getRemoteCompilerDefines().get(match);
             if (existingDefines != null) {
                 preprocessableSourceConsumer.setPreprocessableSource(new PreprocessableSource(sourceRemoteMatched_, existingDefines));
                 return;
@@ -54,7 +54,7 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
             @Override
             public void setCompiledText(@NotNull CompiledText compiledText) {
                 Defines newDefines = getDefines(compiledText);
-                state.getRemoteCompilerDefines().put(new RemoteCompilerId(match), newDefines);
+                state.getRemoteCompilerDefines().put(match, newDefines);
                 preprocessableSourceConsumer.setPreprocessableSource(new PreprocessableSource(sourceRemoteMatched_, newDefines));
             }
             @Override

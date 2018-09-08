@@ -10,7 +10,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 public class CompilerMatch {
     @NotNull
     @Property
-    private RemoteCompilerId remoteCompilerId = new RemoteCompilerId();
+    private RemoteCompilerInfo remoteCompilerInfo = new RemoteCompilerInfo();
     @NotNull
     @Property
     private CompilerMatchKind compilerMatchKind = CompilerMatchKind.NO_MATCH;
@@ -23,18 +23,18 @@ public class CompilerMatch {
         copyFrom(other);
     }
 
-    public CompilerMatch(@NotNull RemoteCompilerId remoteCompilerId_, @NotNull CompilerMatchKind matchKind_) {
-        setRemoteCompilerId(remoteCompilerId_);
+    public CompilerMatch(@NotNull RemoteCompilerInfo remoteCompilerInfo_, @NotNull CompilerMatchKind matchKind_) {
+        setRemoteCompilerInfo(remoteCompilerInfo_);
         setCompilerMatchKind(matchKind_);
     }
 
     @NotNull
-    public RemoteCompilerId getRemoteCompilerId() {
-        return remoteCompilerId;
+    public RemoteCompilerInfo getRemoteCompilerInfo() {
+        return remoteCompilerInfo;
     }
 
-    public void setRemoteCompilerId(@NotNull RemoteCompilerId remoteCompilerId_) {
-        remoteCompilerId = new RemoteCompilerId(remoteCompilerId_);
+    public void setRemoteCompilerInfo(@NotNull RemoteCompilerInfo remoteCompilerInfo_) {
+        remoteCompilerInfo = new RemoteCompilerInfo(remoteCompilerInfo_);
     }
 
     @NotNull
@@ -47,13 +47,13 @@ public class CompilerMatch {
     }
 
     public void copyFrom(@NotNull CompilerMatch other) {
-        setRemoteCompilerId(other.getRemoteCompilerId());
+        setRemoteCompilerInfo(other.getRemoteCompilerInfo());
         setCompilerMatchKind(other.getCompilerMatchKind());
     }
 
     @Override
     public int hashCode() {
-        return getRemoteCompilerId().hashCode()
+        return getRemoteCompilerInfo().hashCode()
                 + getCompilerMatchKind().hashCode()
                 ;
     }
@@ -64,7 +64,7 @@ public class CompilerMatch {
             return false;
         }
         CompilerMatch other = (CompilerMatch)obj;
-        return getRemoteCompilerId().equals(other.getRemoteCompilerId())
+        return getRemoteCompilerInfo().equals(other.getRemoteCompilerInfo())
                 && getCompilerMatchKind().equals(other.getCompilerMatchKind())
                 ;
     }

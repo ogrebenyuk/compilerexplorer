@@ -90,9 +90,7 @@ public class SettingsState {
 
     public void setRemoteCompilers(@NotNull List<RemoteCompilerInfo> remoteCompilers_) {
         remoteCompilers = new ArrayList<>();
-        for (RemoteCompilerInfo otherInfo : remoteCompilers_) {
-            remoteCompilers.add(new RemoteCompilerInfo(otherInfo));
-        }
+        remoteCompilers_.forEach(otherInfo -> remoteCompilers.add(new RemoteCompilerInfo(otherInfo)));
     }
 
     @NotNull
@@ -102,9 +100,7 @@ public class SettingsState {
 
     public void setRemoteCompilerDefines(@NotNull Map<RemoteCompilerId, Defines> remoteCompilerDefines_) {
         remoteCompilerDefines = new HashMap<>();
-        for (Map.Entry<RemoteCompilerId, Defines> otherEntry : remoteCompilerDefines_.entrySet()) {
-            remoteCompilerDefines.put(new RemoteCompilerId(otherEntry.getKey()), new Defines(otherEntry.getValue()));
-        }
+        remoteCompilerDefines_.forEach((key, value) -> remoteCompilerDefines.put(new RemoteCompilerId(key), new Defines(value)));
     }
 
     @NotNull
@@ -114,9 +110,7 @@ public class SettingsState {
 
     public void setLocalCompilerSettings(@NotNull Map<LocalCompilerPath, LocalCompilerSettings> localCompilers_) {
         localCompilerSettings = new HashMap<>();
-        for (Map.Entry<LocalCompilerPath, LocalCompilerSettings> otherEntry : localCompilers_.entrySet()) {
-            localCompilerSettings.put(new LocalCompilerPath(otherEntry.getKey()), new LocalCompilerSettings(otherEntry.getValue()));
-        }
+        localCompilers_.forEach((key, value) -> localCompilerSettings.put(new LocalCompilerPath(key), new LocalCompilerSettings(value)));
     }
 
     @NotNull
@@ -143,9 +137,7 @@ public class SettingsState {
 
     public void setCompilerMatches(@NotNull Map<LocalCompilerPath, CompilerMatches> compilerMatches_) {
         compilerMatches = new HashMap<>();
-        for (Map.Entry<LocalCompilerPath, CompilerMatches> otherEntry : compilerMatches_.entrySet()) {
-            compilerMatches.put(new LocalCompilerPath(otherEntry.getKey()), new CompilerMatches(otherEntry.getValue()));
-        }
+        compilerMatches_.forEach((key, value) -> compilerMatches.put(new LocalCompilerPath(key), new CompilerMatches(value)));
     }
 
     public boolean getPreprocessLocally() {
@@ -176,8 +168,11 @@ public class SettingsState {
         setCompilerMatches(EMPTY.getCompilerMatches());
     }
 
-    public void clearLocalCompilers() {
+    public void clearLocalCompilerSettings() {
         setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
+    }
+
+    public void clearCompilerMatches() {
         setCompilerMatches(EMPTY.getCompilerMatches());
     }
 

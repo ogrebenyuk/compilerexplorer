@@ -21,28 +21,34 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         toolWindow.setIcon(IconLoader.getIcon("/icons/toolWindow.png"));
-        addContentToToolWindow(toolWindow, createComponent(project));
+        addComponentToToolWindow(toolWindow, createComponent(project));
     }
 
     @NotNull
     private static JComponent createComponent(@NotNull Project project) {
         ToolWindowGui form = new ToolWindowGui(project);
+
         ProjectListener projectListener = new ProjectListener(project, form);
-        RemoteCompiler explorer = new RemoteCompiler(project, form);
-        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
-        new StateListener(project, preprocessor);
-        RemoteDefinesProducer remoteDefinesProducer = new RemoteDefinesProducer(project, preprocessor);
-        SourceRemoteMatcher sourceRemoteMatcher = new SourceRemoteMatcher(project, remoteDefinesProducer);
+
+        SourceRemoteMatcher sourceRemoteMatcher = new SourceRemoteMatcher(project, form);
         new StateListener(project, sourceRemoteMatcher);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, sourceRemoteMatcher);
 
         form.setSourceSettingsConsumer(compilerSettingsProducer);
+
+        RemoteCompiler explorer = new RemoteCompiler(project, form);
+        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
+        new StateListener(project, preprocessor);
+        RemoteDefinesProducer remoteDefinesProducer = new RemoteDefinesProducer(project, preprocessor);
+
+        form.setSourceRemoteMatchedConsumer(remoteDefinesProducer);
+
         projectListener.refresh();
 
         return form.getContent();
     }
 
-    private static void addContentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent component) {
+    private static void addComponentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent component) {
         Content content = ContentFactory.SERVICE.getInstance().createContent(component, "", false);
         toolWindow.getContentManager().addContent(content);
     }
