@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 public enum CompilerMatchKind {
     EXACT_MATCH,
     MINOR_MISMATCH,
-    FORCED_MATCH,
     NO_MATCH;
 
     @NotNull
@@ -13,7 +12,6 @@ public enum CompilerMatchKind {
         switch (kind) {
             case EXACT_MATCH: return "exact match";
             case MINOR_MISMATCH: return "minor version mismatch";
-            case FORCED_MATCH: return "forced";
         }
         return "";
     }

@@ -24,7 +24,7 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
         CompilerMatches matches = sourceRemoteMatched_.getRemoteCompilerMatches();
         state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched_.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), matches);
 
-        if (matches.getChosenMatch().getCompilerMatchKind() == CompilerMatchKind.NO_MATCH) {
+        if (matches.getChosenMatch().getRemoteCompilerInfo().getId().isEmpty()) {
             String localName = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getName();
             String localVersion = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getVersion();
             String localTarget = sourceRemoteMatched_.getSourceCompilerSettings().getLocalCompilerSettings().getTarget();
