@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,6 +139,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         recompileButton.addActionListener(e -> recompile());
         headPanel.add(recompileButton);
 
+        /*
         headPanel.add(createFilterToggleButton("11010", "Compile to binary and disassemble the output", Filters::getBinary, Filters::setBinary));
         headPanel.add(createFilterToggleButton("./a.out", "Execute the binary", Filters::getExecute, Filters::setExecute));
         headPanel.add(createFilterToggleButton(".LX0:", "Filter unused labels from the output", Filters::getLabels, Filters::setLabels));
@@ -146,6 +148,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         headPanel.add(createFilterToggleButton("\\s+", "Trim intra-line whitespace", Filters::getTrim, Filters::setTrim));
         headPanel.add(createFilterToggleButton("Intel", "Output disassembly in Intel syntax", Filters::getIntel, Filters::setIntel));
         headPanel.add(createFilterToggleButton("Demangle", "Demangle output", Filters::getDemangle, Filters::setDemangle));
+        */
 
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -175,23 +178,35 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         });
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        addToggleAction(actionGroup, "Autoscroll to Source", SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource);
-        addToggleAction(actionGroup, "Autoscroll from Source", SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource);
-        addToggleAction(actionGroup, "Autohighlight to Source", SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource);
-        addToggleAction(actionGroup, "Autohighlight from Source", SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource);
-        addToggleAction(actionGroup, "Autoupdate from Source", SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource);
+        addToggleAction(actionGroup, "Compile to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true);
+        addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true);
+        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true);
+        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true);
+        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true);
+        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true);
+        actionGroup.add(new Separator());
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
+        //addToggleAction(actionGroup, "Autohighlight to Source", this::getState, SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource, false);
+        //addToggleAction(actionGroup, "Autohighlight from Source", this::getState, SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource, false);
+        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
         toolWindow.setAdditionalGearActions(actionGroup);
     }
 
-    private void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Function<SettingsState, Boolean> getter, BiConsumer<SettingsState, Boolean> setter) {
+    private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean publishChange) {
         actionGroup.add(new ToggleAction(text) {
             @Override
             public boolean isSelected(AnActionEvent event) {
-                return getter.apply(getState());
+                return getter.apply(supplier.get());
             }
             @Override
             public void setSelected(AnActionEvent event, boolean selected) {
-                setter.accept(getState(), selected);
+                if (publishChange) {
+                    SettingsProvider.publishStateChangedLater(project);
+                }
+                setter.accept(supplier.get(), selected);
             }
         });
     }
@@ -369,6 +384,11 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     @NotNull
     private SettingsState getState() {
         return SettingsProvider.getInstance(project).getState();
+    }
+
+    @NotNull
+    private Filters getFilters() {
+        return getState().getFilters();
     }
 }
 
