@@ -28,12 +28,12 @@ public class SettingsGui {
         ignoreUpdates = true;
         project = project_;
         state = new SettingsState();
-        content = new JPanel(new VerticalLayout(0));
+        content = new JPanel(new VerticalLayout(2));
         JPanel urlPanel = new JPanel(new BorderLayout());
         content.add(urlPanel, VerticalLayout.TOP);
         JLabel label = new JLabel();
         label.setVisible(true);
-        label.setText("URL: ");
+        label.setText("Compiler Explorer URL: ");
         urlPanel.add(label, BorderLayout.WEST);
         urlField = new JTextField();
         urlField.getDocument().addDocumentListener(new DocumentListener() {
@@ -56,10 +56,12 @@ public class SettingsGui {
             }
         });
         urlPanel.add(urlField, BorderLayout.CENTER);
+        /*
         JButton connectButton = new JButton();
         connectButton.setText("Test connection");
         connectButton.addActionListener(e -> RemoteConnection.tryConnect(project, state));
         urlPanel.add(connectButton, BorderLayout.EAST);
+        */
         JPanel preprocessPanel = new JPanel(new BorderLayout());
         content.add(preprocessPanel, VerticalLayout.TOP);
         preprocessCheckbox = new JCheckBox();

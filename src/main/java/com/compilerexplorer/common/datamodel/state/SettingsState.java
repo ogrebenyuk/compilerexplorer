@@ -51,9 +51,9 @@ public class SettingsState {
     @Property
     private String additionalSwitches = DEFAULT_ADDITIONAL_SWITCHES;
     @Property
-    private boolean autoscrollFromSource = true;
+    private boolean autoscrollFromSource = false;
     @Property
-    private boolean autoscrollToSource = true;
+    private boolean autoscrollToSource = false;
     @Property
     private boolean autohighlightFromSource = true;
     @Property
@@ -225,8 +225,9 @@ public class SettingsState {
         setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
     }
 
-    public void clearCompilerMatches() {
-        setCompilerMatches(EMPTY.getCompilerMatches());
+    public void clear() {
+        clearConnection();
+        clearLocalCompilerSettings();
     }
 
     public void copyFrom(@NotNull SettingsState other) {

@@ -24,13 +24,14 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     private SourceCompilerSettings sourceCompilerSettings;
     @Nullable
     private String reason;
-    private boolean connected = SettingsState.DEFAULT_CONNECTED;
+    private boolean connected;
     @Nullable
     private List<RemoteCompilerInfo> remoteCompilers;
 
     public SourceRemoteMatcher(@NotNull Project project_, @NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
         project = project_;
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
+        reset();
     }
 
     @Override
@@ -54,6 +55,14 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     @Override
     public void stateChanged() {
         stateChanged(false);
+    }
+
+    @Override
+    public void reset() {
+        sourceCompilerSettings = null;
+        reason = null;
+        connected = SettingsState.DEFAULT_CONNECTED;
+        remoteCompilers = null;
     }
 
     private void stateChanged(boolean force) {

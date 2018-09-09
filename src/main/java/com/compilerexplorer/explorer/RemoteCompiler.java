@@ -24,13 +24,14 @@ public class RemoteCompiler implements PreprocessedSourceConsumer, StateConsumer
     @Nullable
     private String reason;
     @NotNull
-    private Filters filters = new Filters();
+    private Filters filters;
     @NotNull
-    private String additionalSwitches = SettingsState.DEFAULT_ADDITIONAL_SWITCHES;
+    private String additionalSwitches;
 
     public RemoteCompiler(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
         project = project_;
         compiledTextConsumer = compiledTextConsumer_;
+        reset();
     }
 
     @Override
@@ -55,6 +56,14 @@ public class RemoteCompiler implements PreprocessedSourceConsumer, StateConsumer
     @Override
     public void stateChanged() {
         stateChanged(false);
+    }
+
+    @Override
+    public void reset() {
+        preprocessedSource = null;
+        reason = null;
+        filters = new Filters();
+        additionalSwitches = SettingsState.DEFAULT_ADDITIONAL_SWITCHES;
     }
 
     private void stateChanged(boolean force) {

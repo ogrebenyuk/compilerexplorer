@@ -32,12 +32,13 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     private PreprocessableSource preprocessableSource;
     @Nullable
     private String reason;
-    private boolean preprocessLocally = SettingsState.DEFAULT_PREPROCESS_LOCALLY;
-    private boolean useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMOTE_DEFINES;
+    private boolean preprocessLocally;
+    private boolean useRemoteDefines;
 
     public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer preprocessedSourceConsumer_) {
         project = project_;
         preprocessedSourceConsumer = preprocessedSourceConsumer_;
+        reset();
     }
 
     @Override
@@ -61,6 +62,14 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     @Override
     public void stateChanged() {
         stateChanged(false);
+    }
+
+    @Override
+    public void reset() {
+        preprocessableSource = null;
+        reason = null;
+        preprocessLocally = SettingsState.DEFAULT_PREPROCESS_LOCALLY;
+        useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMOTE_DEFINES;
     }
 
     @Override

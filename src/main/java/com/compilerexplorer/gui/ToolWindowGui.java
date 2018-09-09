@@ -1,6 +1,7 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.RecompileConsumer;
+import com.compilerexplorer.common.RefreshConsumer;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
@@ -14,7 +15,6 @@ import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.IconLoader;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
@@ -37,9 +37,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer, SourceRemoteMatchedConsumer {
+public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer, SourceRemoteMatchedConsumer, RefreshConsumer {
     private static final long UPDATE_DELAY_MILLIS = 1000;
 
     @NotNull
@@ -63,6 +62,8 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     private Timer updateTimer = new Timer();
     @Nullable
     private RecompileConsumer recompileConsumer;
+    @Nullable
+    private RefreshConsumer refreshConsumer;
     private boolean suppressUpdates = false;
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
@@ -179,6 +180,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         });
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
+
         addToggleAction(actionGroup, "Compile to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true);
         addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true);
         addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true);
@@ -188,16 +190,28 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true);
         addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true);
         actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
-        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
+        //addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
+        //addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
         //addToggleAction(actionGroup, "Autohighlight to Source", this::getState, SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource, false);
         //addToggleAction(actionGroup, "Autohighlight from Source", this::getState, SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource, false);
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
 
-        actionGroup.add(new AnAction("Settings...") {
+
+        actionGroup.add(new AnAction("Compiler Explorer Settings...", null, IconLoader.findIcon("/general/settings.png")) {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, "compilerexplorer");
+            }
+        });
+
+
+        actionGroup.add(new AnAction("Reset Cache and Reload", "", IconLoader.findIcon("/actions/refresh.png")) {
+            @Override
+            public void actionPerformed(AnActionEvent event) {
+                getState().clear();
+                project.getMessageBus().syncPublisher(StateConsumer.TOPIC).reset();
+                reset();
+                refresh();
             }
         });
 
@@ -307,6 +321,10 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         recompileConsumer = recompileConsumer_;
     }
 
+    public void setRefreshConsumer(@NotNull RefreshConsumer refreshConsumer_) {
+        refreshConsumer = refreshConsumer_;
+    }
+
     @NotNull
     public JComponent getContent() {
         return content;
@@ -398,6 +416,20 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     @NotNull
     private Filters getFilters() {
         return getState().getFilters();
+    }
+
+    @Override
+    public void refresh() {
+        if (refreshConsumer != null) {
+            refreshConsumer.refresh();
+        }
+    }
+
+    private void reset() {
+        projectSettingsComboBox.removeAllItems();
+        matchesComboBox.removeAllItems();
+        sourceRemoteMatched = null;
+        showError("");
     }
 }
 

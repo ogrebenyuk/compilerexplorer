@@ -1,5 +1,6 @@
 package com.compilerexplorer.project;
 
+import com.compilerexplorer.common.RefreshConsumer;
 import com.compilerexplorer.common.datamodel.ProjectSettingsConsumer;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
@@ -7,7 +8,7 @@ import com.compilerexplorer.project.idea.IdeaProjectListener;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectListener {
+public class ProjectListener implements RefreshConsumer {
     @NotNull
     private final OCProjectSettingsProducer ocProjectSettingsProducer;
 
@@ -17,6 +18,7 @@ public class ProjectListener {
         new OCProjectListener(project, ocProjectSettingsProducer);
     }
 
+    @Override
     public void refresh() {
         ocProjectSettingsProducer.projectChanged();
     }

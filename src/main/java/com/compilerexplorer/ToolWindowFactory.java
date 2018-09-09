@@ -45,8 +45,9 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
         form.setSourceRemoteMatchedConsumer(remoteDefinesProducer);
         form.setRecompileConsumer(preprocessor);
+        form.setRefreshConsumer(projectListener);
 
-        projectListener.refresh();
+        form.refresh();
 
         return form.getContent();
     }
