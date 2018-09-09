@@ -7,6 +7,7 @@ import com.compilerexplorer.common.datamodel.state.Filters;
 import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
 import com.compilerexplorer.common.datamodel.state.RemoteCompilerInfo;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.google.common.net.UrlEscapers;
 import com.google.gson.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -127,7 +128,7 @@ public class RemoteConnection {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();
-                String endpoint = url + "/api/compiler/" + remoteCompilerId + "/compile";
+                String endpoint = url + "/api/compiler/" + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();
 
