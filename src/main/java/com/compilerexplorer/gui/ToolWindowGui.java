@@ -200,7 +200,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         actionGroup.add(new AnAction("Compiler Explorer Settings...", null, IconLoader.findIcon("/general/settings.png")) {
             @Override
             public void actionPerformed(AnActionEvent event) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, "compilerexplorer");
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, "Compiler Explorer");
             }
         });
 
