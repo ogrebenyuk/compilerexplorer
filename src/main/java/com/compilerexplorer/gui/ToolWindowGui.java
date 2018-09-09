@@ -10,6 +10,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.IconLoader;
@@ -192,6 +193,14 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         //addToggleAction(actionGroup, "Autohighlight to Source", this::getState, SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource, false);
         //addToggleAction(actionGroup, "Autohighlight from Source", this::getState, SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource, false);
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
+
+        actionGroup.add(new AnAction("Settings...") {
+            @Override
+            public void actionPerformed(AnActionEvent event) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(project, "compilerexplorer");
+            }
+        });
+
         toolWindow.setAdditionalGearActions(actionGroup);
     }
 
