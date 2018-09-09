@@ -37,6 +37,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         form.setSourceSettingsConsumer(compilerSettingsProducer);
 
         RemoteCompiler explorer = new RemoteCompiler(project, form);
+        new StateListener(project, explorer);
         SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
         new StateListener(project, preprocessor);
         RemoteDefinesProducer remoteDefinesProducer = new RemoteDefinesProducer(project, preprocessor);

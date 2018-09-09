@@ -36,20 +36,28 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
 
     @Override
     public void setSourceCompilerSetting(@NotNull SourceCompilerSettings sourceCompilerSettings_) {
-        sourceCompilerSettings = sourceCompilerSettings_;
-        reason = null;
-        refresh();
+        if (!sourceCompilerSettings_.equals(sourceCompilerSettings)) {
+            sourceCompilerSettings = sourceCompilerSettings_;
+            reason = null;
+            stateChanged(true);
+        }
     }
 
     @Override
     public void clearSourceCompilerSetting(@NotNull String reason_) {
-        sourceCompilerSettings = null;
-        reason = reason_;
-        refresh();
+        if (!reason_.equals(reason)) {
+            sourceCompilerSettings = null;
+            reason = reason_;
+            stateChanged(true);
+        }
     }
 
     @Override
     public void stateChanged() {
+        stateChanged(false);
+    }
+
+    private void stateChanged(boolean force) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
         boolean newConnected = state.getConnected();
         List<RemoteCompilerInfo> newRemoteCompilers = state.getRemoteCompilers();
@@ -57,7 +65,7 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
         boolean changed = connected != newConnected
                 || !newRemoteCompilers.equals(remoteCompilers)
                 || newAllowMinorVersionMismatch != allowMinorVersionMismatch;
-        if (changed) {
+        if (changed || force) {
             connected = newConnected;
             remoteCompilers = newRemoteCompilers;
             allowMinorVersionMismatch = newAllowMinorVersionMismatch;

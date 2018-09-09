@@ -1,32 +1,57 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.CompilerMatch;
 import com.compilerexplorer.common.datamodel.state.CompilerMatchKind;
 import com.compilerexplorer.common.datamodel.state.CompilerMatches;
+import com.compilerexplorer.common.datamodel.state.Filters;
+import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.wm.ToolWindowAnchor;
+import com.intellij.openapi.wm.impl.StaticAnchoredButton;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.ListCellRendererWrapper;
+import com.intellij.ui.components.JBRadioButton;
+import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.OnOffButton;
 import com.intellij.ui.components.panels.HorizontalLayout;
+import com.intellij.util.Producer;
+import com.intellij.util.ui.JBInsets;
+import org.apache.batik.util.gui.resource.JToolbarToggleButton;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicToggleButtonUI;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.Vector;
+import java.util.Timer;
+import java.util.function.BiConsumer;
+import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer, SourceRemoteMatchedConsumer {
+    private static final long STATE_UPDATE_DELAY_MILLIS = 1000;
+
+    @NotNull
+    private final Project project;
     @NotNull
     private final JPanel content;
     @NotNull
@@ -42,12 +67,19 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     private SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer;
     @Nullable
     private SourceRemoteMatched sourceRemoteMatched;
+    @NotNull
+    private Timer stateUpdateTimer = new Timer();
     private boolean suppressUpdates = false;
 
-    public ToolWindowGui(@NotNull Project project) {
+    public ToolWindowGui(@NotNull Project project_) {
+        project = project_;
         content = new JPanel(new BorderLayout());
-        JPanel headPanel = new JPanel(new HorizontalLayout(0));
+
+        JPanel headPanel = new JPanel();
+        headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
+
         projectSettingsComboBox = new ComboBox<>();
+        projectSettingsComboBox.setToolTipText("Source to be compiled");
         projectSettingsComboBox.setRenderer(new ListCellRendererWrapper<SourceSettings>() {
             @Override
             public void customize(@Nullable JList list, @Nullable SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -63,8 +95,10 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
                 ApplicationManager.getApplication().invokeLater(() -> selectSourceSettings(projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex())));
             }
         });
-        headPanel.add(projectSettingsComboBox, HorizontalLayout.LEFT);
+        headPanel.add(projectSettingsComboBox);
+
         matchesComboBox = new ComboBox<>();
+        matchesComboBox.setToolTipText("Remote compiler to use");
         matchesComboBox.setRenderer(new ListCellRendererWrapper<CompilerMatch>() {
             @Override
             public void customize(@Nullable JList list, @Nullable CompilerMatch value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -80,7 +114,39 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
                 ApplicationManager.getApplication().invokeLater(() -> selectCompilerMatch(matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex())));
             }
         });
-        headPanel.add(matchesComboBox, HorizontalLayout.LEFT);
+        headPanel.add(matchesComboBox);
+
+        JBTextField additionalSwitchesField = new JBTextField(SettingsProvider.getInstance(project).getState().getAdditionalSwitches());
+        additionalSwitchesField.setToolTipText("Additional compiler switches");
+        additionalSwitchesField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                // empty
+            }
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                update();
+            }
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                update();
+            }
+            private void update() {
+                SettingsProvider.getInstance(project).getState().setAdditionalSwitches(additionalSwitchesField.getText());
+                scheduleStateUpdate();
+            }
+        });
+        headPanel.add(additionalSwitchesField);
+
+        headPanel.add(createFilterToggleButton("11010", "Compile to binary and disassemble the output", Filters::getBinary, Filters::setBinary));
+        headPanel.add(createFilterToggleButton("./a.out", "Execute the binary", Filters::getExecute, Filters::setExecute));
+        headPanel.add(createFilterToggleButton(".LX0:", "Filter unused labels from the output", Filters::getLabels, Filters::setLabels));
+        headPanel.add(createFilterToggleButton(".text", "Filter all assembler directives from the output", Filters::getDirectives, Filters::setDirectives));
+        headPanel.add(createFilterToggleButton("//", "Remove all lines which are only comments from the output", Filters::getCommentOnly, Filters::setCommentOnly));
+        headPanel.add(createFilterToggleButton("\\s+", "Trim intra-line whitespace", Filters::getTrim, Filters::setTrim));
+        headPanel.add(createFilterToggleButton("Intel", "Output disassembly in Intel syntax", Filters::getIntel, Filters::setIntel));
+        headPanel.add(createFilterToggleButton("Demangle", "Demangle output", Filters::getDemangle, Filters::setDemangle));
+
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
@@ -95,6 +161,53 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         };
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
+    }
+
+    private void scheduleStateUpdate() {
+        stateUpdateTimer.cancel();
+        stateUpdateTimer = new Timer();
+        stateUpdateTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                SettingsProvider.publishStateChangedLater(project);
+            }
+        }, STATE_UPDATE_DELAY_MILLIS);
+    }
+
+    @NotNull
+    private JToggleButton createFilterToggleButton(@NotNull String text, @NotNull String description, Function<Filters, Boolean> getter, BiConsumer<Filters, Boolean> setter) {
+        JToggleButton button = new JToggleButton(text);
+        updateToggleButton(button, description, getter.apply(getFilters(false)));
+        fitButtonWidthToText(button);
+        button.setUI(new BasicToggleButtonUI());
+        button.setRolloverEnabled(true);
+        button.addItemListener(e -> {
+            boolean newSelected = e.getStateChange() == ItemEvent.SELECTED;
+            setter.accept(getFilters(true), newSelected);
+            updateToggleButton(button, description, newSelected);
+        });
+        return button;
+    }
+
+    private static void fitButtonWidthToText(@NotNull AbstractButton button) {
+        FontMetrics metrics = button.getFontMetrics(button.getFont());
+        button.setPreferredSize(new Dimension(metrics.stringWidth(button.getText()) + (2 * button.getBorder().getBorderInsets(button).left) + (2 * button.getBorder().getBorderInsets(button).right), metrics.getHeight()));
+        button.setBounds(new Rectangle(button.getLocation(), button.getPreferredSize()));
+    }
+
+    private static void updateToggleButton(JToggleButton button, @NotNull String description, boolean selected) {
+        button.setSelected(selected);
+        button.setBorderPainted(selected);
+        button.setToolTipText("[" + (selected ? "ON" : "OFF") + "] " + description);
+        button.setBorder(BorderFactory.createBevelBorder(selected ? BevelBorder.LOWERED : BevelBorder.RAISED));
+    }
+
+    @NotNull
+    private Filters getFilters(boolean publishChange) {
+        if (publishChange) {
+            SettingsProvider.publishStateChangedLater(project);
+        }
+        return SettingsProvider.getInstance(project).getState().getFilters();
     }
 
     private void selectSourceSettings(@NotNull SourceSettings sourceSettings) {

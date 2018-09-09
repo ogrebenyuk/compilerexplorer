@@ -5,17 +5,28 @@ import com.compilerexplorer.common.datamodel.CompiledTextConsumer;
 import com.compilerexplorer.common.datamodel.PreprocessedSource;
 import com.compilerexplorer.common.datamodel.PreprocessedSourceConsumer;
 import com.compilerexplorer.common.datamodel.SourceSettings;
+import com.compilerexplorer.common.datamodel.state.Filters;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.common.datamodel.state.StateConsumer;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.stream.Collectors;
 
-public class RemoteCompiler implements PreprocessedSourceConsumer {
+public class RemoteCompiler implements PreprocessedSourceConsumer, StateConsumer {
     @NotNull
     private final Project project;
     @NotNull
     private final CompiledTextConsumer compiledTextConsumer;
+    @Nullable
+    private PreprocessedSource preprocessedSource;
+    @Nullable
+    private String reason;
+    @NotNull
+    private Filters filters = new Filters();
+    @NotNull
+    private String additionalSwitches = SettingsState.DEFAULT_ADDITIONAL_SWITCHES;
 
     public RemoteCompiler(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
         project = project_;
@@ -23,21 +34,62 @@ public class RemoteCompiler implements PreprocessedSourceConsumer {
     }
 
     @Override
-    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
-        SourceSettings sourceSettings = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
-        RemoteConnection.compile(project, state, preprocessedSource, getCompilerOptions(sourceSettings, ""), compiledTextConsumer);
+    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource_) {
+        if (!preprocessedSource_.equals(preprocessedSource)) {
+            preprocessedSource = preprocessedSource_;
+            reason = null;
+            stateChanged(true);
+        }
     }
 
     @Override
-    public void clearPreprocessedSource(@NotNull String reason) {
+    public void clearPreprocessedSource(@NotNull String reason_) {
+        if (!reason_.equals(reason)) {
+            preprocessedSource = null;
+            reason = reason_;
+            stateChanged(true);
+        }
         compiledTextConsumer.clearCompiledText(reason);
     }
 
+    @Override
+    public void stateChanged() {
+        stateChanged(false);
+    }
+
+    private void stateChanged(boolean force) {
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        Filters newFilters = state.getFilters();
+        String newAdditionalSwitches = state.getAdditionalSwitches();
+        boolean changed = !newFilters.equals(filters)
+                || !newAdditionalSwitches.equals(additionalSwitches);
+        if (changed || force) {
+            filters = new Filters(newFilters);
+            additionalSwitches = newAdditionalSwitches;
+            refresh();
+        }
+    }
+
+    private void refresh() {
+        if (reason != null) {
+            compiledTextConsumer.clearCompiledText(reason);
+            return;
+        }
+
+        if (preprocessedSource == null) {
+            compiledTextConsumer.clearCompiledText("No preprocessed source");
+            return;
+        }
+
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SourceSettings sourceSettings = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
+        RemoteConnection.compile(project, state.getUrl(), filters, preprocessedSource, getCompilerOptions(sourceSettings, state.getUseRemoteDefines(), additionalSwitches), compiledTextConsumer);
+    }
+
     @NotNull
-    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
+    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, boolean useRemoteDefines, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-             //+ " -undef"
+             + (useRemoteDefines ? " -undef" : "")
              + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 

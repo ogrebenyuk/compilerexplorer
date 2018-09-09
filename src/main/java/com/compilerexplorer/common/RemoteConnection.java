@@ -120,18 +120,18 @@ public class RemoteConnection {
         List<CompiledChunk> asm;
     }
 
-    public static void compile(@NotNull Project project, @NotNull SettingsState state, @NotNull PreprocessedSource preprocessedSource, @NotNull String userArguments, @NotNull CompiledTextConsumer compiledTextConsumer) {
+    public static void compile(@NotNull Project project, @NotNull String url, @NotNull Filters filters, @NotNull PreprocessedSource preprocessedSource, @NotNull String userArguments, @NotNull CompiledTextConsumer compiledTextConsumer) {
         String name = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getSource().getName();
         compiledTextConsumer.clearCompiledText("Compiling " + name + " ...");
         Task.Backgroundable task = new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String remoteCompilerId = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();
-                String url = state.getUrl() + "/api/compiler/" + remoteCompilerId + "/compile";
+                String endpoint = url + "/api/compiler/" + remoteCompilerId + "/compile";
                 try {
                     CloseableHttpClient httpClient = HttpClients.createDefault();
 
-                    HttpPost postRequest = new HttpPost(url);
+                    HttpPost postRequest = new HttpPost(endpoint);
                     postRequest.addHeader("accept", "application/json");
 
                     Gson gson = new Gson();
@@ -141,7 +141,7 @@ public class RemoteConnection {
                     request.source = source;
                     request.options = new Options();
                     request.options.userArguments = userArguments;
-                    request.options.filters = state.getFilters();
+                    request.options.filters = filters;
 
                     postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
 
@@ -169,7 +169,7 @@ public class RemoteConnection {
                     if (compiledResult.code == 0) {
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.setCompiledText(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), asm)));
                     } else {
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err + "\n" + source));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText(err));
                     }
                 } catch (ProcessCanceledException canceledException) {
                     ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.clearCompiledText("Canceled compiling " + name));

@@ -56,7 +56,7 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
         return state;
     }
 
-    static void publishStateChangedLater(@NotNull Project project_) {
+    public static void publishStateChangedLater(@NotNull Project project_) {
         ApplicationManager.getApplication().invokeLater(() -> project_.getMessageBus().syncPublisher(StateConsumer.TOPIC).stateChanged());
     }
 }

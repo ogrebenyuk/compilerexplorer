@@ -57,11 +57,11 @@ public class SourceSettings {
     @Override
     public int hashCode() {
         return source.hashCode()
-               + language.hashCode()
-               + FileUtil.fileHashCode(compiler)
-               + compilerKind.hashCode()
+                + language.hashCode()
+                + FileUtil.fileHashCode(compiler)
+                + compilerKind.hashCode()
                 + switches.hashCode()
-        ;
+                ;
     }
 
     @Override
@@ -70,11 +70,11 @@ public class SourceSettings {
             return false;
         }
         SourceSettings other = (SourceSettings)obj;
-        return source.equals(other.source)
-               && language.equals(other.language)
-               && FileUtil.filesEqual(compiler, other.compiler)
-               && compilerKind.equals(other.compilerKind)
-               && String.join(" ", switches).equals(String.join(" ", other.switches))
-        ;
+        return source.getPath().equals(other.source.getPath())
+                && language.getDisplayName().equals(other.language.getDisplayName())
+                && FileUtil.filesEqual(compiler, other.compiler)
+                && compilerKind.toString().equals(other.compilerKind.toString())
+                && String.join(" ", switches).equals(String.join(" ", other.switches))
+                ;
     }
 }

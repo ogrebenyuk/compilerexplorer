@@ -62,7 +62,7 @@ public class RemoteDefinesProducer implements SourceRemoteMatchedConsumer {
                 preprocessableSourceConsumer.clearPreprocessableSource("Cannot get remote defines: " + reason);
             }
         };
-        RemoteConnection.compile(project, tmpState, tmpPreprocessedSource, getCompilerOptions(), tmpCompiledTextConsumer);
+        RemoteConnection.compile(project, tmpState.getUrl(), tmpState.getFilters(), tmpPreprocessedSource, getCompilerOptions(), tmpCompiledTextConsumer);
     }
 
     @Override

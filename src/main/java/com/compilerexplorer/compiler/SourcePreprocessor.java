@@ -42,29 +42,33 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
 
     @Override
     public void setPreprocessableSource(@NotNull PreprocessableSource preprocessableSource_) {
-        if (preprocessableSource == null || !preprocessableSource.equals(preprocessableSource_)) {
+        if (!preprocessableSource_.equals(preprocessableSource)) {
             preprocessableSource = preprocessableSource_;
             reason = null;
-            refresh();
+            stateChanged(true);
         }
     }
 
     @Override
     public void clearPreprocessableSource(@NotNull String reason_) {
-        if (reason == null || !reason.equals(reason_)) {
+        if (!reason_.equals(reason)) {
             preprocessableSource = null;
             reason = reason_;
-            refresh();
+            stateChanged(true);
         }
     }
 
     @Override
     public void stateChanged() {
+        stateChanged(false);
+    }
+
+    private void stateChanged(boolean force) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
         boolean newPreprocessLocally = state.getPreprocessLocally();
         boolean newUseRemoteDefines = state.getPreprocessLocally() && state.getUseRemoteDefines();
         boolean changed = newPreprocessLocally != preprocessLocally || newUseRemoteDefines != useRemoteDefines;
-        if (changed) {
+        if (changed || force) {
             preprocessLocally = newPreprocessLocally;
             useRemoteDefines = newUseRemoteDefines;
             refresh();

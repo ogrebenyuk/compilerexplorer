@@ -10,17 +10,29 @@ import javax.xml.bind.annotation.XmlAccessorType;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Filters {
     @Property
-    @SerializedName("intel")
-    private boolean intel = true;
+    @SerializedName("binary")
+    private boolean binary = false;
     @Property
-    @SerializedName("commentOnly")
-    private boolean commentOnly = true;
+    @SerializedName("execute")
+    private boolean execute = false;
+    @Property
+    @SerializedName("labels")
+    private boolean labels = true;
     @Property
     @SerializedName("directives")
     private boolean directives = true;
     @Property
-    @SerializedName("labels")
-    private boolean labels = true;
+    @SerializedName("commentOnly")
+    private boolean commentOnly = true;
+    @Property
+    @SerializedName("trim")
+    private boolean trim = false;
+    @Property
+    @SerializedName("intel")
+    private boolean intel = true;
+    @Property
+    @SerializedName("demangle")
+    private boolean demangle = false;
     @Property
     @SerializedName("optOutput")
     private boolean optOutput = false;
@@ -33,20 +45,28 @@ public class Filters {
         copyFrom(other);
     }
 
-    public boolean getIntel() {
-        return intel;
+    public boolean getBinary() {
+        return binary;
     }
 
-    public void setIntel(boolean intel_) {
-        intel = intel_;
+    public void setBinary(boolean binary_) {
+        binary = binary_;
     }
 
-    public boolean getCommentOnly() {
-        return commentOnly;
+    public boolean getExecute() {
+        return execute;
     }
 
-    public void setCommentOnly(boolean commentOnly_) {
-        commentOnly = commentOnly_;
+    public void setExecute(boolean execute_) {
+        execute = execute_;
+    }
+
+    public boolean getLabels() {
+        return labels;
+    }
+
+    public void setLabels(boolean labels_) {
+        labels = labels_;
     }
 
     public boolean getDirectives() {
@@ -57,12 +77,36 @@ public class Filters {
         directives = directives_;
     }
 
-    public boolean getLabels() {
-        return labels;
+    public boolean getCommentOnly() {
+        return commentOnly;
     }
 
-    public void setLabels(boolean labels_) {
-        labels = labels_;
+    public void setCommentOnly(boolean commentOnly_) {
+        commentOnly = commentOnly_;
+    }
+
+    public boolean getTrim() {
+        return trim;
+    }
+
+    public void setTrim(boolean trim_) {
+        trim = trim_;
+    }
+
+    public boolean getIntel() {
+        return intel;
+    }
+
+    public void setIntel(boolean intel_) {
+        intel = intel_;
+    }
+
+    public boolean getDemangle() {
+        return demangle;
+    }
+
+    public void setDemangle(boolean demangle_) {
+        demangle = demangle_;
     }
 
     public boolean getOptOutput() {
@@ -74,10 +118,14 @@ public class Filters {
     }
 
     public void copyFrom(@NotNull Filters other) {
-        setIntel(other.getIntel());
-        setCommentOnly(other.getCommentOnly());
-        setDirectives(other.getDirectives());
+        setBinary(other.getBinary());
+        setExecute(other.getExecute());
         setLabels(other.getLabels());
+        setDirectives(other.getDirectives());
+        setCommentOnly(other.getCommentOnly());
+        setTrim(other.getTrim());
+        setIntel(other.getIntel());
+        setDemangle(other.getDemangle());
         setOptOutput(other.getOptOutput());
     }
 
@@ -92,11 +140,15 @@ public class Filters {
             return false;
         }
         Filters other = (Filters)obj;
-        return getIntel() == other.getIntel()
-            && getCommentOnly() == other.getCommentOnly()
-            && getDirectives() == other.getDirectives()
-            && getLabels() == other.getLabels()
-            && getOptOutput() == other.getOptOutput()
-        ;
+        return getBinary() == other.getBinary()
+                && getExecute() == other.getExecute()
+                && getLabels() == other.getLabels()
+                && getDirectives() == other.getDirectives()
+                && getCommentOnly() == other.getCommentOnly()
+                && getTrim() == other.getTrim()
+                && getIntel() == other.getIntel()
+                && getDemangle() == other.getDemangle()
+                && getOptOutput() == other.getOptOutput()
+                ;
     }
 }

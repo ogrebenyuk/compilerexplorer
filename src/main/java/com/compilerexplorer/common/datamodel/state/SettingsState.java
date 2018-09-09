@@ -15,6 +15,8 @@ public class SettingsState {
     public static final boolean DEFAULT_ALLOW_MINOR_VERSION_MISMATCH = true;
     public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     public static final boolean DEFAULT_USE_REMOTE_DEFINES = false;
+    @NotNull
+    public static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
 
     @NotNull
     private static final SettingsState EMPTY = new SettingsState();
@@ -48,6 +50,9 @@ public class SettingsState {
     private boolean preprocessLocally = DEFAULT_PREPROCESS_LOCALLY;
     @Property
     private boolean useRemoteDefines = DEFAULT_USE_REMOTE_DEFINES;
+    @NotNull
+    @Property
+    private String additionalSwitches = DEFAULT_ADDITIONAL_SWITCHES;
 
     public SettingsState() {
         // empty
@@ -156,6 +161,15 @@ public class SettingsState {
         useRemoteDefines = useRemoteDefines_;
     }
 
+    @NotNull
+    public String getAdditionalSwitches() {
+        return additionalSwitches;
+    }
+
+    public void setAdditionalSwitches(@NotNull String additionalSwitches_) {
+        additionalSwitches = additionalSwitches_;
+    }
+
     public boolean isConnectionCleared() {
         return !getConnected() && getLastConnectionStatus().isEmpty();
     }
@@ -188,6 +202,7 @@ public class SettingsState {
         setCompilerMatches(other.getCompilerMatches());
         setPreprocessLocally(other.getPreprocessLocally());
         setUseRemoteDefines(other.getUseRemoteDefines());
+        setAdditionalSwitches(other.getAdditionalSwitches());
     }
 
     @Override
@@ -203,6 +218,7 @@ public class SettingsState {
                 + getCompilerMatches().hashCode()
                 + (getPreprocessLocally() ? 1 : 0)
                 + (getUseRemoteDefines() ? 1 : 0)
+                + getAdditionalSwitches().hashCode()
                 ;
     }
 
@@ -223,6 +239,7 @@ public class SettingsState {
                 && getCompilerMatches().equals(other.getCompilerMatches())
                 && getPreprocessLocally() == other.getPreprocessLocally()
                 && getUseRemoteDefines() == other.getUseRemoteDefines()
+                && getAdditionalSwitches().equals(other.getAdditionalSwitches())
                 ;
     }
 }
