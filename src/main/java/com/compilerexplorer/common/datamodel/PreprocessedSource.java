@@ -22,4 +22,22 @@ public class PreprocessedSource {
     public String getPreprocessedText() {
         return preprocessedText;
     }
+
+    @Override
+    public int hashCode() {
+        return getPreprocessableSource().hashCode()
+                + getPreprocessedText().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof PreprocessedSource)) {
+            return false;
+        }
+        PreprocessedSource other = (PreprocessedSource)obj;
+        return getPreprocessableSource().equals(other.getPreprocessableSource())
+                && getPreprocessedText().equals(other.getPreprocessedText())
+                ;
+    }
 }

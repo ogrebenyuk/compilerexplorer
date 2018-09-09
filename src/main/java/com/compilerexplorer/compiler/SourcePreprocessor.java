@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.util.stream.Stream;
 
-public class SourcePreprocessor implements PreprocessableSourceConsumer, StateConsumer {
+public class SourcePreprocessor implements PreprocessableSourceConsumer, StateConsumer, RecompileConsumer {
     @NotNull
     private final Project project;
     @NotNull
@@ -61,6 +61,11 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     @Override
     public void stateChanged() {
         stateChanged(false);
+    }
+
+    @Override
+    public void recompile() {
+        stateChanged(true);
     }
 
     private void stateChanged(boolean force) {

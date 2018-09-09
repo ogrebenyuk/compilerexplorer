@@ -23,4 +23,22 @@ public class PreprocessableSource {
     public Defines getDefines() {
         return defines;
     }
+
+    @Override
+    public int hashCode() {
+        return getSourceRemoteMatched().hashCode()
+                + getDefines().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof PreprocessableSource)) {
+            return false;
+        }
+        PreprocessableSource other = (PreprocessableSource)obj;
+        return getSourceRemoteMatched().equals(other.getSourceRemoteMatched())
+                && getDefines().equals(other.getDefines())
+                ;
+    }
 }

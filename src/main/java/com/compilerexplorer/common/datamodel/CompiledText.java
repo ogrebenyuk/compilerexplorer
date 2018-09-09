@@ -1,6 +1,7 @@
 package com.compilerexplorer.common.datamodel;
 
 import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
+import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class CompiledText {
@@ -32,5 +33,25 @@ public class CompiledText {
     @NotNull
     public String getCompiledText() {
         return compiledText;
+    }
+
+    @Override
+    public int hashCode() {
+        return getPreprocessedSource().hashCode()
+                + getCompilerId().hashCode()
+                + getCompiledText().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CompiledText)) {
+            return false;
+        }
+        CompiledText other = (CompiledText)obj;
+        return getPreprocessedSource().equals(other.getPreprocessedSource())
+                && getCompilerId().equals(other.getCompilerId())
+                && getCompiledText().equals(other.getCompiledText())
+                ;
     }
 }

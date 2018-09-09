@@ -23,4 +23,22 @@ public class SourceRemoteMatched {
     public CompilerMatches getRemoteCompilerMatches() {
         return remoteCompilerMatches;
     }
+
+    @Override
+    public int hashCode() {
+        return getSourceCompilerSettings().hashCode()
+                + getRemoteCompilerMatches().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SourceRemoteMatched)) {
+            return false;
+        }
+        SourceRemoteMatched other = (SourceRemoteMatched)obj;
+        return getSourceCompilerSettings().equals(other.getSourceCompilerSettings())
+                && getRemoteCompilerMatches().equals(other.getRemoteCompilerMatches())
+                ;
+    }
 }

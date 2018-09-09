@@ -53,6 +53,16 @@ public class SettingsState {
     @NotNull
     @Property
     private String additionalSwitches = DEFAULT_ADDITIONAL_SWITCHES;
+    @Property
+    private boolean autoscrollFromSource = true;
+    @Property
+    private boolean autoscrollToSource = true;
+    @Property
+    private boolean autohighlightFromSource = true;
+    @Property
+    private boolean autohighlightToSource = true;
+    @Property
+    private boolean autoupdateFromSource = true;
 
     public SettingsState() {
         // empty
@@ -170,6 +180,46 @@ public class SettingsState {
         additionalSwitches = additionalSwitches_;
     }
 
+    public boolean getAutoscrollFromSource() {
+        return autoscrollFromSource;
+    }
+
+    public void setAutoscrollFromSource(boolean autoscrollFromSource_) {
+        autoscrollFromSource = autoscrollFromSource_;
+    }
+
+    public boolean getAutoscrollToSource() {
+        return autoscrollToSource;
+    }
+
+    public void setAutoscrollToSource(boolean autoscrollToSource_) {
+        autoscrollToSource = autoscrollToSource_;
+    }
+
+    public boolean getAutohighlightFromSource() {
+        return autohighlightFromSource;
+    }
+
+    public void setAutohighlightFromSource(boolean autohighlightFromSource_) {
+        autohighlightFromSource = autohighlightFromSource_;
+    }
+
+    public boolean getAutohighlightToSource() {
+        return autohighlightToSource;
+    }
+
+    public void setAutohighlightToSource(boolean autohighlightToSource_) {
+        autohighlightToSource = autohighlightToSource_;
+    }
+
+    public boolean getAutoupdateFromSource() {
+        return autoupdateFromSource;
+    }
+
+    public void setAutoupdateFromSource(boolean autoupdateFromSource_) {
+        autoupdateFromSource = autoupdateFromSource_;
+    }
+
     public boolean isConnectionCleared() {
         return !getConnected() && getLastConnectionStatus().isEmpty();
     }
@@ -203,6 +253,11 @@ public class SettingsState {
         setPreprocessLocally(other.getPreprocessLocally());
         setUseRemoteDefines(other.getUseRemoteDefines());
         setAdditionalSwitches(other.getAdditionalSwitches());
+        setAutoscrollFromSource(other.getAutoscrollFromSource());
+        setAutoscrollToSource(other.getAutoscrollToSource());
+        setAutohighlightFromSource(other.getAutohighlightFromSource());
+        setAutohighlightFromSource(other.getAutohighlightFromSource());
+        setAutoupdateFromSource(other.getAutoupdateFromSource());
     }
 
     @Override
@@ -219,6 +274,11 @@ public class SettingsState {
                 + (getPreprocessLocally() ? 1 : 0)
                 + (getUseRemoteDefines() ? 1 : 0)
                 + getAdditionalSwitches().hashCode()
+                + (getAutoscrollFromSource() ? 1 : 0)
+                + (getAutoscrollToSource() ? 1 : 0)
+                + (getAutohighlightFromSource() ? 1 : 0)
+                + (getAutohighlightToSource() ? 1 : 0)
+                + (getAutoupdateFromSource() ? 1 : 0)
                 ;
     }
 
@@ -240,6 +300,11 @@ public class SettingsState {
                 && getPreprocessLocally() == other.getPreprocessLocally()
                 && getUseRemoteDefines() == other.getUseRemoteDefines()
                 && getAdditionalSwitches().equals(other.getAdditionalSwitches())
+                && getAutoscrollFromSource() == (other.getAutoscrollFromSource())
+                && getAutoscrollToSource() == (other.getAutoscrollToSource())
+                && getAutohighlightFromSource() == (other.getAutohighlightFromSource())
+                && getAutohighlightToSource() == (other.getAutohighlightToSource())
+                && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
                 ;
     }
 }

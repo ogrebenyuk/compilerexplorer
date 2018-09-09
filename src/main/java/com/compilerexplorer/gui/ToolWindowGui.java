@@ -1,30 +1,19 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.RecompileConsumer;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
-import com.compilerexplorer.common.datamodel.state.CompilerMatch;
-import com.compilerexplorer.common.datamodel.state.CompilerMatchKind;
-import com.compilerexplorer.common.datamodel.state.CompilerMatches;
-import com.compilerexplorer.common.datamodel.state.Filters;
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
+import com.compilerexplorer.common.datamodel.state.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.wm.ToolWindowAnchor;
-import com.intellij.openapi.wm.impl.StaticAnchoredButton;
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.ListCellRendererWrapper;
-import com.intellij.ui.components.JBRadioButton;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.ui.components.OnOffButton;
-import com.intellij.ui.components.panels.HorizontalLayout;
-import com.intellij.util.Producer;
-import com.intellij.util.ui.JBInsets;
-import org.apache.batik.util.gui.resource.JToolbarToggleButton;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +22,6 @@ import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicToggleButtonUI;
 import java.awt.*;
 import java.awt.event.ItemEvent;
@@ -41,14 +29,12 @@ import java.util.*;
 import java.util.List;
 import java.util.Timer;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer, SourceRemoteMatchedConsumer {
-    private static final long STATE_UPDATE_DELAY_MILLIS = 1000;
+    private static final long UPDATE_DELAY_MILLIS = 1000;
 
     @NotNull
     private final Project project;
@@ -68,7 +54,9 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     @Nullable
     private SourceRemoteMatched sourceRemoteMatched;
     @NotNull
-    private Timer stateUpdateTimer = new Timer();
+    private Timer updateTimer = new Timer();
+    @Nullable
+    private RecompileConsumer recompileConsumer;
     private boolean suppressUpdates = false;
 
     public ToolWindowGui(@NotNull Project project_) {
@@ -116,7 +104,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         });
         headPanel.add(matchesComboBox);
 
-        JBTextField additionalSwitchesField = new JBTextField(SettingsProvider.getInstance(project).getState().getAdditionalSwitches());
+        JBTextField additionalSwitchesField = new JBTextField(getState().getAdditionalSwitches());
         additionalSwitchesField.setToolTipText("Additional compiler switches");
         additionalSwitchesField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -132,11 +120,17 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
                 update();
             }
             private void update() {
-                SettingsProvider.getInstance(project).getState().setAdditionalSwitches(additionalSwitchesField.getText());
+                getState().setAdditionalSwitches(additionalSwitchesField.getText());
                 scheduleStateUpdate();
             }
         });
         headPanel.add(additionalSwitchesField);
+
+        JButton recompileButton = new JButton();
+        recompileButton.setIcon(IconLoader.findIcon("/actions/refresh.png"));
+        recompileButton.setToolTipText("Recompile current source");
+        recompileButton.addActionListener(e -> recompile());
+        headPanel.add(recompileButton);
 
         headPanel.add(createFilterToggleButton("11010", "Compile to binary and disassemble the output", Filters::getBinary, Filters::setBinary));
         headPanel.add(createFilterToggleButton("./a.out", "Execute the binary", Filters::getExecute, Filters::setExecute));
@@ -150,7 +144,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
-        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
+        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, false, false) {
             @Override
             protected EditorEx createEditor() {
                 EditorEx ed = super.createEditor();
@@ -161,17 +155,40 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         };
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
+
+        EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new com.intellij.openapi.editor.event.DocumentListener() {
+            @Override
+            public void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
+                if (!suppressUpdates && getState().getAutoupdateFromSource()) {
+                    scheduleRecompile();
+                }
+            }
+        });
     }
 
     private void scheduleStateUpdate() {
-        stateUpdateTimer.cancel();
-        stateUpdateTimer = new Timer();
-        stateUpdateTimer.schedule(new TimerTask() {
+        scheduleUpdate(() -> SettingsProvider.publishStateChangedLater(project));
+    }
+
+    private void scheduleRecompile() {
+        scheduleUpdate(this::recompile);
+    }
+
+    private void recompile() {
+        if (recompileConsumer != null) {
+            ApplicationManager.getApplication().invokeLater(() -> recompileConsumer.recompile());
+        }
+    }
+
+    private void scheduleUpdate(@NotNull Runnable runnable) {
+        updateTimer.cancel();
+        updateTimer = new Timer();
+        updateTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                SettingsProvider.publishStateChangedLater(project);
+                runnable.run();
             }
-        }, STATE_UPDATE_DELAY_MILLIS);
+        }, UPDATE_DELAY_MILLIS);
     }
 
     @NotNull
@@ -191,7 +208,8 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
 
     private static void fitButtonWidthToText(@NotNull AbstractButton button) {
         FontMetrics metrics = button.getFontMetrics(button.getFont());
-        button.setPreferredSize(new Dimension(metrics.stringWidth(button.getText()) + (2 * button.getBorder().getBorderInsets(button).left) + (2 * button.getBorder().getBorderInsets(button).right), metrics.getHeight()));
+        button.setPreferredSize(new Dimension(metrics.stringWidth(button.getText()) + 2 * button.getBorder().getBorderInsets(button).left + 2 * button.getBorder().getBorderInsets(button).right,
+                button.getHeight() + 2 * button.getBorder().getBorderInsets(button).top + 2 * button.getBorder().getBorderInsets(button).bottom));
         button.setBounds(new Rectangle(button.getLocation(), button.getPreferredSize()));
     }
 
@@ -207,7 +225,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         if (publishChange) {
             SettingsProvider.publishStateChangedLater(project);
         }
-        return SettingsProvider.getInstance(project).getState().getFilters();
+        return getState().getFilters();
     }
 
     private void selectSourceSettings(@NotNull SourceSettings sourceSettings) {
@@ -229,6 +247,10 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
 
     public void setSourceRemoteMatchedConsumer(@NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
+    }
+
+    public void setRecompileConsumer(@NotNull RecompileConsumer recompileConsumer_) {
+        recompileConsumer = recompileConsumer_;
     }
 
     @NotNull
@@ -289,9 +311,11 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
 
     @Override
     public void setCompiledText(@NotNull CompiledText compiledText) {
+        suppressUpdates = true;
         editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
         editor.setText(compiledText.getCompiledText());
         editor.setEnabled(true);
+        suppressUpdates = false;
     }
 
     @Override
@@ -300,14 +324,21 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     }
 
     private void showError(@NotNull String reason) {
+        suppressUpdates = true;
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
+        suppressUpdates = false;
     }
 
     @NotNull
     private static String filterOutTerminalEscapeSequences(@NotNull String terminalText) {
         return terminalText.replaceAll("\u001B\\[[;\\d]*.", "");
+    }
+
+    @NotNull
+    private SettingsState getState() {
+        return SettingsProvider.getInstance(project).getState();
     }
 }
 

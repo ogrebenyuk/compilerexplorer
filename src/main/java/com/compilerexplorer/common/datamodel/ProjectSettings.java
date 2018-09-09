@@ -16,4 +16,20 @@ public class ProjectSettings {
     public Vector<SourceSettings> getSettings() {
         return settings;
     }
+
+    @Override
+    public int hashCode() {
+        return getSettings().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ProjectSettings)) {
+            return false;
+        }
+        ProjectSettings other = (ProjectSettings)obj;
+        return getSettings().equals(other.getSettings())
+                ;
+    }
 }

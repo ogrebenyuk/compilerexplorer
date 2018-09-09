@@ -23,4 +23,22 @@ public class SourceCompilerSettings {
     public LocalCompilerSettings getLocalCompilerSettings() {
         return localCompilerSettings;
     }
+
+    @Override
+    public int hashCode() {
+        return getSourceSettings().hashCode()
+                + getLocalCompilerSettings().hashCode()
+                ;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SourceCompilerSettings)) {
+            return false;
+        }
+        SourceCompilerSettings other = (SourceCompilerSettings)obj;
+        return getSourceSettings().equals(other.getSourceSettings())
+                && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
+                ;
+    }
 }
