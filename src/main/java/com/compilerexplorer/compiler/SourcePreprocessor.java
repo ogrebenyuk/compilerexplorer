@@ -148,6 +148,6 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
                         "-c", "-")
-        ).toArray(String[]::new);
+        ).filter(s -> !s.isEmpty()).toArray(String[]::new);
     }
 }
