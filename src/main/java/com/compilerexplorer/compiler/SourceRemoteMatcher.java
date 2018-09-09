@@ -158,7 +158,7 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
     @NotNull
     private static String stripLastGCCVersionDigitIfNeeded(@NotNull String version) {
         String[] parts = version.split("\\.");
-        if (parts.length == 3 && parts[2].equals("0") && Long.valueOf(parts[0]) >= 5) {
+        if (parts.length == 3 && Long.valueOf(parts[0]) >= 5) {
             return version.replaceAll("^(.*)\\.[^.]*$", "$1");
         } else {
             return version;
