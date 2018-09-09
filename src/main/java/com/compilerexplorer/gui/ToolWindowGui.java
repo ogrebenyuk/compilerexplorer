@@ -312,17 +312,17 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     public void setSourceRemoteMatched(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
         suppressUpdates = true;
         sourceRemoteMatched = sourceRemoteMatched_;
+        CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
         List<CompilerMatch> matches = sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches();
         CompilerMatch oldSelection = matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex());
         CompilerMatch newSelection = matches.stream()
                 .filter(x -> oldSelection != null && x.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId()))
                 .findFirst()
-                .orElse(matches.size() != 0 ? matches.get(0) : null);
+                .orElse(!chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null));
         DefaultComboBoxModel<CompilerMatch> model = new DefaultComboBoxModel<>(
-                Stream.concat(
-                        Stream.of(newSelection),
-                        matches.stream().filter(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()))
-                ).filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
+                matches.stream()
+                        .map(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()) ? x : newSelection)
+                        .filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
         model.setSelectedItem(newSelection);
         matchesComboBox.setModel(model);
         if (newSelection == null) {

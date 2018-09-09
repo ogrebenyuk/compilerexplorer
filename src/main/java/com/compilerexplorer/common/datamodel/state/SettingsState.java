@@ -12,7 +12,6 @@ public class SettingsState {
     @NotNull
     public static final String DEFAULT_URL = "http://localhost:10240";
     public static final boolean DEFAULT_CONNECTED = false;
-    public static final boolean DEFAULT_ALLOW_MINOR_VERSION_MISMATCH = true;
     public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     public static final boolean DEFAULT_USE_REMOTE_DEFINES = false;
     @NotNull
@@ -41,8 +40,6 @@ public class SettingsState {
     @NotNull
     @Property
     private Filters filters = new Filters();
-    @Property
-    private boolean allowMinorVersionMismatch = DEFAULT_ALLOW_MINOR_VERSION_MISMATCH;
     @NotNull
     @Property
     private Map<LocalCompilerPath, CompilerMatches> compilerMatches = new HashMap<>();
@@ -135,14 +132,6 @@ public class SettingsState {
 
     public void setFilters(@NotNull Filters filters_) {
         filters = new Filters(filters_);
-    }
-
-    public boolean getAllowMinorVersionMismatch() {
-        return allowMinorVersionMismatch;
-    }
-
-    public void setAllowMinorVersionMismatch(boolean allowMinorVersionMismatch_) {
-        allowMinorVersionMismatch = allowMinorVersionMismatch_;
     }
 
     @NotNull
@@ -248,7 +237,6 @@ public class SettingsState {
         setRemoteCompilerDefines(other.getRemoteCompilerDefines());
         setLocalCompilerSettings(other.getLocalCompilerSettings());
         setFilters(other.getFilters());
-        setAllowMinorVersionMismatch(other.getAllowMinorVersionMismatch());
         setCompilerMatches(other.getCompilerMatches());
         setPreprocessLocally(other.getPreprocessLocally());
         setUseRemoteDefines(other.getUseRemoteDefines());
@@ -269,7 +257,6 @@ public class SettingsState {
                 + getRemoteCompilerDefines().hashCode()
                 + getLocalCompilerSettings().hashCode()
                 + getFilters().hashCode()
-                + (getAllowMinorVersionMismatch() ? 1 : 0)
                 + getCompilerMatches().hashCode()
                 + (getPreprocessLocally() ? 1 : 0)
                 + (getUseRemoteDefines() ? 1 : 0)
@@ -295,7 +282,6 @@ public class SettingsState {
                 && getRemoteCompilerDefines().equals(other.getRemoteCompilerDefines())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
                 && getFilters().equals(other.getFilters())
-                && getAllowMinorVersionMismatch() == other.getAllowMinorVersionMismatch()
                 && getCompilerMatches().equals(other.getCompilerMatches())
                 && getPreprocessLocally() == other.getPreprocessLocally()
                 && getUseRemoteDefines() == other.getUseRemoteDefines()

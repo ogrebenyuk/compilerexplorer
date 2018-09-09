@@ -62,7 +62,8 @@ public class RemoteCompiler implements PreprocessedSourceConsumer, StateConsumer
         Filters newFilters = state.getFilters();
         String newAdditionalSwitches = state.getAdditionalSwitches();
         boolean changed = !newFilters.equals(filters)
-                || !newAdditionalSwitches.equals(additionalSwitches);
+                || !newAdditionalSwitches.equals(additionalSwitches)
+                ;
         if (changed || force) {
             filters = new Filters(newFilters);
             additionalSwitches = newAdditionalSwitches;

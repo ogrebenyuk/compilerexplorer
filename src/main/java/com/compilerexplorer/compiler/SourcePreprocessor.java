@@ -72,7 +72,9 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
         SettingsState state = SettingsProvider.getInstance(project).getState();
         boolean newPreprocessLocally = state.getPreprocessLocally();
         boolean newUseRemoteDefines = state.getPreprocessLocally() && state.getUseRemoteDefines();
-        boolean changed = newPreprocessLocally != preprocessLocally || newUseRemoteDefines != useRemoteDefines;
+        boolean changed = newPreprocessLocally != preprocessLocally
+                || newUseRemoteDefines != useRemoteDefines
+                ;
         if (changed || force) {
             preprocessLocally = newPreprocessLocally;
             useRemoteDefines = newUseRemoteDefines;
