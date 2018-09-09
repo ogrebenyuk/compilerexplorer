@@ -5,6 +5,7 @@ import com.compilerexplorer.common.RefreshConsumer;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
@@ -197,21 +198,28 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
 
 
-        actionGroup.add(new AnAction("Compiler Explorer Settings...", null, IconLoader.findIcon("/general/settings.png")) {
+        actionGroup.add(new AnAction("Compiler Explorer Settings...", null, AllIcons.General.Settings) {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, "Compiler Explorer");
             }
+            @Override
+            public void update(AnActionEvent event) {
+                event.getPresentation().setIcon(getTemplatePresentation().getIcon());
+            }
         });
 
-
-        actionGroup.add(new AnAction("Reset Cache and Reload", "", IconLoader.findIcon("/actions/forceRefresh.png")) {
+        actionGroup.add(new AnAction("Reset Cache and Reload", "", AllIcons.Actions.ForceRefresh) {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 getState().clear();
                 project.getMessageBus().syncPublisher(StateConsumer.TOPIC).reset();
                 reset();
                 refresh();
+            }
+            @Override
+            public void update(AnActionEvent event) {
+                event.getPresentation().setIcon(getTemplatePresentation().getIcon());
             }
         });
 
