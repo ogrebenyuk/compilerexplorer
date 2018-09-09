@@ -11,6 +11,7 @@ import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
@@ -21,12 +22,12 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         toolWindow.setIcon(IconLoader.getIcon("/icons/toolWindow.png"));
-        addComponentToToolWindow(toolWindow, createComponent(project));
+        addComponentToToolWindow(toolWindow, createComponent(project, toolWindow));
     }
 
     @NotNull
-    private static JComponent createComponent(@NotNull Project project) {
-        ToolWindowGui form = new ToolWindowGui(project);
+    private static JComponent createComponent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        ToolWindowGui form = new ToolWindowGui(project, (ToolWindowEx)toolWindow);
 
         ProjectListener projectListener = new ProjectListener(project, form);
 

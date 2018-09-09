@@ -4,13 +4,17 @@ import com.compilerexplorer.common.RecompileConsumer;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.util.IconLoader;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.ui.components.JBTextField;
@@ -59,7 +63,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     private RecompileConsumer recompileConsumer;
     private boolean suppressUpdates = false;
 
-    public ToolWindowGui(@NotNull Project project_) {
+    public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
         content = new JPanel(new BorderLayout());
 
@@ -121,7 +125,9 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
             }
             private void update() {
                 getState().setAdditionalSwitches(additionalSwitchesField.getText());
-                scheduleStateUpdate();
+                if (getState().getAutoupdateFromSource()) {
+                    scheduleStateUpdate();
+                }
             }
         });
         headPanel.add(additionalSwitchesField);
@@ -159,9 +165,33 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new com.intellij.openapi.editor.event.DocumentListener() {
             @Override
             public void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
-                if (!suppressUpdates && getState().getAutoupdateFromSource()) {
+                if (!suppressUpdates && getState().getAutoupdateFromSource() && belongsToProject(event.getDocument())) {
                     scheduleRecompile();
                 }
+            }
+            private boolean belongsToProject(@NotNull Document document) {
+                return EditorFactory.getInstance().getEditors(document, project).length != 0;
+            }
+        });
+
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        addToggleAction(actionGroup, "Autoscroll to Source", SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource);
+        addToggleAction(actionGroup, "Autoscroll from Source", SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource);
+        addToggleAction(actionGroup, "Autohighlight to Source", SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource);
+        addToggleAction(actionGroup, "Autohighlight from Source", SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource);
+        addToggleAction(actionGroup, "Autoupdate from Source", SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource);
+        toolWindow.setAdditionalGearActions(actionGroup);
+    }
+
+    private void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Function<SettingsState, Boolean> getter, BiConsumer<SettingsState, Boolean> setter) {
+        actionGroup.add(new ToggleAction(text) {
+            @Override
+            public boolean isSelected(AnActionEvent event) {
+                return getter.apply(getState());
+            }
+            @Override
+            public void setSelected(AnActionEvent event, boolean selected) {
+                setter.accept(getState(), selected);
             }
         });
     }
