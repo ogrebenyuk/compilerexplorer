@@ -115,7 +115,7 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
         Task.Backgroundable task = new Task.Backgroundable(project, "Preprocessing " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings);
+                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, useRemoteDefines);
                 try {
                     CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
                     String preprocessedText = compilerRunner.getStdout();
@@ -136,14 +136,14 @@ public class SourcePreprocessor implements PreprocessableSourceConsumer, StateCo
     }
 
     @NotNull
-    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings) {
+    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, boolean useRemoteDefines) {
         return Stream.concat(
                 Stream.concat(
                         Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
                         sourceSettings.getSwitches().stream()),
                 Stream.of(
                         "-I" + project.getBasePath(),
-                        "-undef",
+                        (useRemoteDefines ? "-undef" : ""),
                         "-E",
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
