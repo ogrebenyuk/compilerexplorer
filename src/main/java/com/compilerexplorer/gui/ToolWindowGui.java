@@ -205,7 +205,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         });
 
 
-        actionGroup.add(new AnAction("Reset Cache and Reload", "", IconLoader.findIcon("/actions/refresh.png")) {
+        actionGroup.add(new AnAction("Reset Cache and Reload", "", IconLoader.findIcon("/actions/forceRefresh.png")) {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 getState().clear();
