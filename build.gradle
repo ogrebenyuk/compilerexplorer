@@ -7,11 +7,11 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.3-SNAPSHOT'
+version '1.4-SNAPSHOT'
 
 patchPluginXml {
     changeNotes """
-      First minimally working version
+      First fully working version
     """
 }
 
