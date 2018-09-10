@@ -197,7 +197,6 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         //addToggleAction(actionGroup, "Autohighlight from Source", this::getState, SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource, false);
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
 
-
         actionGroup.add(new AnAction("Compiler Explorer Settings...", null, AllIcons.General.Settings) {
             @Override
             public void actionPerformed(AnActionEvent event) {
