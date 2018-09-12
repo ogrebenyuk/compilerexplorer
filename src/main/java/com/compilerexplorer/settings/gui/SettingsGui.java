@@ -108,7 +108,7 @@ public class SettingsGui {
         ignoreUpdates = false;
     }
 
-    public void loadState(@NotNull SettingsState state_) {
+    public void copyFrom(@NotNull SettingsState state_) {
         ignoreUpdates = true;
         state.copyFrom(state_);
         populateGuiFromState();

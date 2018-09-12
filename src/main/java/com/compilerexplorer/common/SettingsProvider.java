@@ -46,6 +46,11 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
 
     @Override
     public void loadState(@NotNull SettingsState state_) {
+        state_.setEnabled(true);
+        copyFrom(state_);
+    }
+
+    public void copyFrom(@NotNull SettingsState state_) {
         boolean urlChanged = !state.getUrl().equals(state_.getUrl());
         boolean preprocessChanged = state.getPreprocessLocally() != state_.getPreprocessLocally();
         state.copyFrom(state_);

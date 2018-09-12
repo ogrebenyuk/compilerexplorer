@@ -94,6 +94,8 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         form.setRefreshSignalConsumer(refreshSignalConsumer);
         SettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
 
+        refresher.accept(RefreshSignal.RESET);
+
         new FormAncestorListener(form.getContent(), new Consumer<Boolean>() {
             private boolean lastEnabled = toolWindow.isVisible();
             @Override
@@ -109,8 +111,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 }
             }
         });
-
-        refresher.accept(RefreshSignal.RESET);
 
         return form.getContent();
     }

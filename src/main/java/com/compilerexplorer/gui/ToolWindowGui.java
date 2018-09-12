@@ -8,12 +8,20 @@ import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Caret;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.actionSystem.EditorActionManager;
+import com.intellij.openapi.editor.actionSystem.TypedAction;
+import com.intellij.openapi.editor.event.*;
 import com.intellij.openapi.editor.ex.EditorEx;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.ListCellRendererWrapper;
@@ -202,6 +210,51 @@ public class ToolWindowGui {
         });
 
         toolWindow.setAdditionalGearActions(actionGroup);
+
+
+        for (Editor ed : EditorFactory.getInstance().getAllEditors()) {
+            Document doc = ed.getDocument();
+            Project prj = ed.getProject();
+            List<Caret> cr = ed.getCaretModel().getAllCarets();
+            VirtualFile vfile = FileDocumentManager.getInstance().getFile(doc);
+            if (prj == project && vfile != null) {
+                System.out.println("existing editor: " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
+            }
+        }
+        EditorFactory.getInstance().addEditorFactoryListener(new EditorFactoryListener() {
+            @Override
+            public void editorCreated(@NotNull EditorFactoryEvent event) {
+                System.out.println("editorCreated");
+                event.getEditor().getSelectionModel().addSelectionListener(sel -> {
+                    System.out.println("selectionChanged " + sel);
+                });
+                event.getEditor().getCaretModel().addCaretListener(new CaretListener() {
+                    @Override
+                    public void caretPositionChanged(CaretEvent event) {
+                        Editor ed = event.getEditor();
+                        Document doc = ed.getDocument();
+                        Project prj = ed.getProject();
+                        List<Caret> cr = ed.getCaretModel().getAllCarets();
+                        VirtualFile vfile = FileDocumentManager.getInstance().getFile(doc);
+                        if (prj == project && vfile != null) {
+                            System.out.println("caretPositionChanged " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
+                        }
+                    }
+                    @Override
+                    public void caretAdded(CaretEvent event) {
+                        System.out.println("caretAdded " + event);
+                    }
+                    @Override
+                    public void caretRemoved(CaretEvent event) {
+                        System.out.println("caretRemoved " + event);
+                    }
+                });
+            }
+            @Override
+            public void editorReleased(@NotNull EditorFactoryEvent var1) {
+                System.out.println("editorReleased");
+            }
+        }, ApplicationManager.getApplication());
     }
 
     private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {

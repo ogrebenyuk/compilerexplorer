@@ -34,6 +34,7 @@ public class ProjectListener {
 
     public void refresh() {
         if (!SettingsProvider.getInstance(project).getState().getEnabled()) {
+            System.out.println("ProjectListener::refresh disabled");
             return;
         }
 

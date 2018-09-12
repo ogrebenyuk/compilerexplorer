@@ -1,6 +1,7 @@
 package com.compilerexplorer.common.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
+import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -19,7 +20,7 @@ public class SettingsState {
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
 
-    @Property
+    @Transient
     private boolean enabled = true;
     @NotNull
     @Property

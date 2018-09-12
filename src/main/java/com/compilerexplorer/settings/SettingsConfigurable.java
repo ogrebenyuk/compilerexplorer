@@ -26,8 +26,8 @@ public class SettingsConfigurable implements Configurable {
     public JComponent createComponent() {
         if (form == null) {
             form = new SettingsGui(provider.getProject());
-            reset();
         }
+        reset();
         return form.getContent();
     }
 
@@ -38,12 +38,12 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public void apply() {
-        provider.loadState(form.getState());
+        provider.copyFrom(form.getState());
     }
 
     @Override
     public void reset() {
-        form.loadState(provider.getState());
+        form.copyFrom(provider.getState());
     }
 
     @Override
