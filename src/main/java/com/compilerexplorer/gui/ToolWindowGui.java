@@ -134,7 +134,7 @@ public class ToolWindowGui {
         headPanel.add(additionalSwitchesField);
 
         JButton recompileButton = new JButton();
-        recompileButton.setIcon(IconLoader.findIcon("/actions/refresh.png"));
+        recompileButton.setIcon(AllIcons.Actions.Refresh);
         recompileButton.setToolTipText("Recompile current source");
         recompileButton.addActionListener(e -> {
             System.out.println("ToolWindowGui::recompileButton");
