@@ -48,6 +48,9 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public void disposeUIResources() {
+        if (form != null) {
+            form.reset();
+        }
         form = null;
     }
 

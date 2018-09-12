@@ -10,10 +10,14 @@ public class TaskRunner {
     private BackgroundableProcessIndicator currentProgressIndicator;
 
     public void runTask(Task.Backgroundable task) {
+        reset();
+        currentProgressIndicator = new BackgroundableProcessIndicator(task);
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, currentProgressIndicator);
+    }
+
+    public void reset() {
         if (currentProgressIndicator != null) {
             currentProgressIndicator.cancel();
         }
-        currentProgressIndicator = new BackgroundableProcessIndicator(task);
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, currentProgressIndicator);
     }
 }

@@ -34,6 +34,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     @NotNull
     private static JComponent createComponent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        SettingsState state = SettingsProvider.getInstance(project).getState();
         TaskRunner taskRunner = new TaskRunner();
 
         ToolWindowGui form = new ToolWindowGui(project, (ToolWindowEx)toolWindow);
@@ -41,7 +42,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
 
         SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(project, form.asSourceRemoteMatchedConsumer());
-        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, sourceRemoteMatchProducer, form.asErrorConsumer(), taskRunner);
+        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, state, sourceRemoteMatchProducer, form.asErrorConsumer(), taskRunner);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, remoteCompilersProducer, form.asErrorConsumer(), taskRunner);
 
         form.setSourceSettingsConsumer(compilerSettingsProducer);
@@ -86,7 +87,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         };
         Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
             System.out.println("refreshSignalConsumer");
-            RefreshSignal signal = upgradeSignalIfDisconnected(project, refreshSignal);
+            RefreshSignal signal = upgradeSignalIfDisconnected(project, state, refreshSignal);
             resetter.accept(signal);
             refresher.accept(signal);
         };
@@ -101,7 +102,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 if (enabled != lastEnabled) {
                     System.out.println("FormAncestorListener");
                     lastEnabled = enabled;
-                    SettingsProvider.getInstance(project).getState().setEnabled(enabled);
+                    state.setEnabled(enabled);
                     if (enabled) {
                         refresher.accept(RefreshSignal.RESET);
                     }
@@ -115,8 +116,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
     }
 
     @NotNull
-    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull Project project, @NotNull RefreshSignal signal) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull Project project, @NotNull SettingsState state, @NotNull RefreshSignal signal) {
         if (signal != RefreshSignal.RESET && !state.getConnected()) {
             return RefreshSignal.RECONNECT;
         }

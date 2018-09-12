@@ -1,6 +1,8 @@
 package com.compilerexplorer.settings.gui;
 
+import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
@@ -22,14 +24,16 @@ public class SettingsGui {
     @NotNull
     private final JCheckBox preprocessCheckbox;
     private boolean ignoreUpdates;
+    @NotNull
+    private final TaskRunner taskRunner;
 
     public SettingsGui(@NotNull Project project_) {
+        taskRunner = new TaskRunner();
         ignoreUpdates = true;
         project = project_;
         state = new SettingsState();
         content = new JPanel(new VerticalLayout(2));
         JPanel urlPanel = new JPanel(new BorderLayout());
-        content.add(urlPanel, VerticalLayout.TOP);
         JLabel label = new JLabel();
         label.setVisible(true);
         label.setText("Compiler Explorer URL: ");
@@ -55,19 +59,41 @@ public class SettingsGui {
             }
         });
         urlPanel.add(urlField, BorderLayout.CENTER);
-        /*
+
+        JLabel testResultLabel = new JLabel();
+
         JButton connectButton = new JButton();
         connectButton.setText("Test connection");
-        connectButton.addActionListener(e -> RemoteConnection.tryConnect(project, state));
+        connectButton.addActionListener(e -> {
+            SettingsState testState = new SettingsState(state);
+            testState.setEnabled(true);
+            testState.setConnected(false);
+            (new RemoteCompilersProducer<Boolean>(
+                    project,
+                    testState,
+                    unused -> testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers"),
+                    error  -> testResultLabel.setText("Error: " + error.getMessage()),
+                    taskRunner
+            )).accept(false);
+        });
         urlPanel.add(connectButton, BorderLayout.EAST);
-        */
+
+        content.add(urlPanel, VerticalLayout.TOP);
+
+        JPanel testResultPanel = new JPanel(new BorderLayout());
+        testResultLabel.setVisible(true);
+        testResultLabel.setText("");
+        testResultPanel.add(testResultLabel, BorderLayout.CENTER);
+
+        content.add(testResultPanel, VerticalLayout.TOP);
+
         JPanel preprocessPanel = new JPanel(new BorderLayout());
-        content.add(preprocessPanel, VerticalLayout.TOP);
         preprocessCheckbox = new JCheckBox();
         preprocessCheckbox.setText("Preprocess locally");
         preprocessPanel.add(preprocessCheckbox, BorderLayout.WEST);
-        JPanel minorMismatchPanel = new JPanel(new BorderLayout());
-        content.add(minorMismatchPanel, VerticalLayout.TOP);
+
+        content.add(preprocessPanel, VerticalLayout.TOP);
+
         ignoreUpdates = false;
     }
 
@@ -97,5 +123,9 @@ public class SettingsGui {
     private void populateStateFromGui() {
         state.setUrl(urlField.getText());
         state.setPreprocessLocally(preprocessCheckbox.isSelected());
+    }
+
+    public void reset() {
+        taskRunner.reset();
     }
 }

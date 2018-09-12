@@ -31,6 +31,8 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     @NotNull
     private final Project project;
     @NotNull
+    private final SettingsState state;
+    @NotNull
     private final Consumer<T> consumer;
     @NotNull
     private final Consumer<Error> errorConsumer;
@@ -40,10 +42,12 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     private T lastT;
 
     public RemoteCompilersProducer(@NotNull Project project_,
+                                   @NotNull SettingsState state_,
                                    @NotNull Consumer<T> consumer_,
                                    @NotNull Consumer<Error> errorConsumer_,
                                    @NotNull TaskRunner taskRunner_) {
         project = project_;
+        state = state_;
         consumer = consumer_;
         errorConsumer = errorConsumer_;
         taskRunner = taskRunner_;
@@ -52,7 +56,6 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     @Override
     public void accept(@NotNull T t) {
         lastT = t;
-        SettingsState state = SettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
@@ -115,7 +118,6 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
             System.out.println("RemoteCompilersProducer::asRefreshSignalConsumer");
-            SettingsState state = SettingsProvider.getInstance(project).getState();
             state.setConnected(SettingsState.EMPTY.getConnected());
             state.setRemoteCompilers(SettingsState.EMPTY.getRemoteCompilers());
         };
@@ -127,7 +129,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     }
 
     public void refresh() {
-        if (lastT != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
+        if (lastT != null && state.getEnabled()) {
             accept(lastT);
         }
     }
