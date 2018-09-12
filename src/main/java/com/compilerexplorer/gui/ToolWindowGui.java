@@ -70,7 +70,6 @@ public class ToolWindowGui {
         headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
 
         projectSettingsComboBox = new ComboBox<>();
-        projectSettingsComboBox.setToolTipText("Source to be compiled");
         projectSettingsComboBox.setRenderer(new ListCellRendererWrapper<SourceSettings>() {
             @Override
             public void customize(@Nullable JList list, @Nullable SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -89,7 +88,6 @@ public class ToolWindowGui {
         headPanel.add(projectSettingsComboBox);
 
         matchesComboBox = new ComboBox<>();
-        matchesComboBox.setToolTipText("Remote compiler to use");
         matchesComboBox.setRenderer(new ListCellRendererWrapper<CompilerMatch>() {
             @Override
             public void customize(@Nullable JList list, @Nullable CompilerMatch value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -382,7 +380,8 @@ public class ToolWindowGui {
             System.out.println("ToolWindowGui::asCompiledTextConsumer");
             suppressUpdates = true;
             editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
-            editor.setText(compiledText.getCompiledText());
+            String asm = compiledText.getCompiledResult().asm.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+            editor.setText(asm);
             editor.setEnabled(true);
             suppressUpdates = false;
         };

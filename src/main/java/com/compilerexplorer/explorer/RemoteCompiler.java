@@ -27,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -108,14 +107,13 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     indicator.checkCanceled();
 
                     JsonObject obj = new JsonParser().parse(output.toString()).getAsJsonObject();
-                    CompiledResult compiledResult = gson.fromJson(obj, CompiledResult.class);
+                    CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
 
-                    String asm = compiledResult.asm.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
                     String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
 
                     if (compiledResult.code == 0) {
                         System.out.println("RemoteCompiler::accept task finished");
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), asm)));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), compiledResult)));
                     } else {
                         errorLater(err);
                     }
@@ -147,23 +145,6 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     private static class Request {
         String source;
         Options options;
-    }
-
-    private static class SourceLocation {
-        String file;
-        int line;
-    }
-
-    private static class CompiledChunk {
-        String text;
-        SourceLocation source;
-    }
-
-    private static class CompiledResult {
-        int code;
-        List<CompiledChunk> stdout;
-        List<CompiledChunk> stderr;
-        List<CompiledChunk> asm;
     }
 
     public void refresh() {
