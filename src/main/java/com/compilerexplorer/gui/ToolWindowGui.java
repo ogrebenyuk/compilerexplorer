@@ -4,6 +4,7 @@ import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
+import com.compilerexplorer.gui.listeners.AllEditorsListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
@@ -211,50 +212,16 @@ public class ToolWindowGui {
 
         toolWindow.setAdditionalGearActions(actionGroup);
 
-
-        for (Editor ed : EditorFactory.getInstance().getAllEditors()) {
+        new AllEditorsListener(project, event -> {
+            Editor ed = event.getEditor();
             Document doc = ed.getDocument();
             Project prj = ed.getProject();
             List<Caret> cr = ed.getCaretModel().getAllCarets();
             VirtualFile vfile = FileDocumentManager.getInstance().getFile(doc);
             if (prj == project && vfile != null) {
-                System.out.println("existing editor: " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
+                System.out.println("caretPositionChanged " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
             }
-        }
-        EditorFactory.getInstance().addEditorFactoryListener(new EditorFactoryListener() {
-            @Override
-            public void editorCreated(@NotNull EditorFactoryEvent event) {
-                System.out.println("editorCreated");
-                event.getEditor().getSelectionModel().addSelectionListener(sel -> {
-                    System.out.println("selectionChanged " + sel);
-                });
-                event.getEditor().getCaretModel().addCaretListener(new CaretListener() {
-                    @Override
-                    public void caretPositionChanged(CaretEvent event) {
-                        Editor ed = event.getEditor();
-                        Document doc = ed.getDocument();
-                        Project prj = ed.getProject();
-                        List<Caret> cr = ed.getCaretModel().getAllCarets();
-                        VirtualFile vfile = FileDocumentManager.getInstance().getFile(doc);
-                        if (prj == project && vfile != null) {
-                            System.out.println("caretPositionChanged " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
-                        }
-                    }
-                    @Override
-                    public void caretAdded(CaretEvent event) {
-                        System.out.println("caretAdded " + event);
-                    }
-                    @Override
-                    public void caretRemoved(CaretEvent event) {
-                        System.out.println("caretRemoved " + event);
-                    }
-                });
-            }
-            @Override
-            public void editorReleased(@NotNull EditorFactoryEvent var1) {
-                System.out.println("editorReleased");
-            }
-        }, ApplicationManager.getApplication());
+        });
     }
 
     private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {

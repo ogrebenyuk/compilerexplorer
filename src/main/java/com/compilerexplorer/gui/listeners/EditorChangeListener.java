@@ -5,6 +5,7 @@ import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ public class EditorChangeListener {
     public EditorChangeListener(@NotNull Project project, @NotNull Consumer<Boolean> consumer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
-            public void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
+            public void documentChanged(DocumentEvent event) {
                 SettingsState state = SettingsProvider.getInstance(project).getState();
                 if (state.getEnabled() && state.getAutoupdateFromSource() && belongsToProject(event.getDocument())) {
                     consumer.accept(false);
