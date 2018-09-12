@@ -13,6 +13,8 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 
 public class SettingsGui {
+    private static final int GAP = 2;
+
     @NotNull
     private final Project project;
     @NotNull
@@ -32,8 +34,8 @@ public class SettingsGui {
         ignoreUpdates = true;
         project = project_;
         state = new SettingsState();
-        content = new JPanel(new VerticalLayout(2));
-        JPanel urlPanel = new JPanel(new BorderLayout());
+        content = new JPanel(new VerticalLayout(GAP));
+        JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
         JLabel label = new JLabel();
         label.setVisible(true);
         label.setText("Compiler Explorer URL: ");
@@ -65,7 +67,8 @@ public class SettingsGui {
         JButton connectButton = new JButton();
         connectButton.setText("Test connection");
         connectButton.addActionListener(e -> {
-            SettingsState testState = new SettingsState(state);
+            SettingsState testState = new SettingsState();
+            populateStateFromGui(testState);
             testState.setEnabled(true);
             testState.setConnected(false);
             (new RemoteCompilersProducer<Boolean>(
@@ -80,14 +83,14 @@ public class SettingsGui {
 
         content.add(urlPanel, VerticalLayout.TOP);
 
-        JPanel testResultPanel = new JPanel(new BorderLayout());
+        JPanel testResultPanel = new JPanel(new BorderLayout(GAP, GAP));
         testResultLabel.setVisible(true);
         testResultLabel.setText("");
         testResultPanel.add(testResultLabel, BorderLayout.CENTER);
 
         content.add(testResultPanel, VerticalLayout.TOP);
 
-        JPanel preprocessPanel = new JPanel(new BorderLayout());
+        JPanel preprocessPanel = new JPanel(new BorderLayout(GAP, GAP));
         preprocessCheckbox = new JCheckBox();
         preprocessCheckbox.setText("Preprocess locally");
         preprocessPanel.add(preprocessCheckbox, BorderLayout.WEST);
@@ -111,7 +114,7 @@ public class SettingsGui {
 
     @NotNull
     public SettingsState getState() {
-        populateStateFromGui();
+        populateStateFromGui(state);
         return state;
     }
 
@@ -120,9 +123,9 @@ public class SettingsGui {
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
     }
 
-    private void populateStateFromGui() {
-        state.setUrl(urlField.getText());
-        state.setPreprocessLocally(preprocessCheckbox.isSelected());
+    private void populateStateFromGui(@NotNull SettingsState state_) {
+        state_.setUrl(urlField.getText());
+        state_.setPreprocessLocally(preprocessCheckbox.isSelected());
     }
 
     public void reset() {
