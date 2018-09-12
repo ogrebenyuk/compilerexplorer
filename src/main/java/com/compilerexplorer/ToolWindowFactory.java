@@ -54,7 +54,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver);
 
         Consumer<RefreshSignal> resetter = refreshSignal -> {
-            System.out.println("resetter");
             switch(refreshSignal) {
                 case RESET:
                     compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
@@ -69,7 +68,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             }
         };
         Consumer<RefreshSignal> refresher = refreshSignal -> {
-            System.out.println("refresher");
             switch(refreshSignal) {
                 case RESET:
                     projectListener.refresh();
@@ -86,7 +84,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             }
         };
         Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
-            System.out.println("refreshSignalConsumer");
             RefreshSignal signal = upgradeSignalIfDisconnected(project, state, refreshSignal);
             resetter.accept(signal);
             refresher.accept(signal);
@@ -102,7 +99,6 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             public void accept(@NotNull Boolean unused) {
                 boolean enabled = toolWindow.isVisible();
                 if (enabled != lastEnabled) {
-                    System.out.println("FormAncestorListener");
                     lastEnabled = enabled;
                     state.setEnabled(enabled);
                     if (enabled) {

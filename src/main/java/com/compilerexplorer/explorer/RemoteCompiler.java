@@ -62,13 +62,11 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
             return;
         }
 
-        System.out.println("RemoteCompiler::accept");
         SourceSettings sourceSettings = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
         String url = state.getUrl();
         Filters filters = new Filters(state.getFilters());
         String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches());
         String name = sourceSettings.getSource().getName();
-        System.out.println("RemoteCompiler::accept starting task");
         taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -112,7 +110,6 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
 
                     if (compiledResult.code == 0) {
-                        System.out.println("RemoteCompiler::accept task finished");
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), compiledResult)));
                     } else {
                         errorLater(err);
@@ -127,7 +124,6 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     }
 
     private void errorLater(@NotNull String text) {
-        System.out.println("RemoteCompiler::errorLater");
         ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 
@@ -149,7 +145,6 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
 
     public void refresh() {
         if (lastPreprocessedSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
-            System.out.println("RemoteCompiler::refresh");
             accept(lastPreprocessedSource);
         }
     }

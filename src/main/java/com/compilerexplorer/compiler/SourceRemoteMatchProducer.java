@@ -34,7 +34,6 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
         {
             CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompiler().getAbsolutePath()));
             if (existingMatches != null) {
-                System.out.println("SourceRemoteMatchProducer::accept found existing matches");
                 sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
                 return;
             }
@@ -48,7 +47,6 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
         String language = sourceCompilerSettings.getSourceSettings().getLanguage().getDisplayName();
         List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language);
         CompilerMatches matches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
-        System.out.println("SourceRemoteMatchProducer::accept matched");
         sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, matches));
     }
 

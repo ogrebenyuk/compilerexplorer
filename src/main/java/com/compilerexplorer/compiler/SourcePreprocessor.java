@@ -52,7 +52,6 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             return;
         }
 
-        System.out.println("SourcePreprocessor::accept");
         SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
         VirtualFile source = sourceSettings.getSource();
         Document document = FileDocumentManager.getInstance().getDocument(source);
@@ -70,16 +69,14 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         String name = source.getPresentableName();
         File compiler = preprocessableSource.getSourceCompilerSettings().getSourceSettings().getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
-        System.out.println("SourcePreprocessor::accept starting task");
         taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches());
                 try {
-                    CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
+                    CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, "", indicator);
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
-                        System.out.println("SourcePreprocessor::accept task finished");
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));
                     } else {
                         errorLater("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr());
@@ -106,18 +103,16 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         "-E",
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
-                        "-c", "-")
+                        "-c", sourceSettings.getSource().getPath())
         ).toArray(String[]::new);
     }
 
     private void errorLater(@NotNull String text) {
-        System.out.println("SourcePreprocessor::errorLater");
         ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 
     public void refresh() {
         if (lastPreprocessableSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
-            System.out.println("SourcePreprocessor::refresh");
             accept(lastPreprocessableSource);
         }
     }

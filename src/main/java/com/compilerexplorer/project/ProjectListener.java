@@ -28,17 +28,14 @@ public class ProjectListener {
     }
 
     private void changed(Boolean unused) {
-        System.out.println("ProjectListener::changed");
         refresh();
     }
 
     public void refresh() {
         if (!SettingsProvider.getInstance(project).getState().getEnabled()) {
-            System.out.println("ProjectListener::refresh disabled");
             return;
         }
 
-        System.out.println("ProjectListener::refresh");
         projectSettingsConsumer.accept(ocProjectSettingsProducer.produce());
     }
 }

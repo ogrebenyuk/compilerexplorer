@@ -11,6 +11,11 @@ public class CompiledText {
         public String file;
         public int line;
 
+        public SourceLocation(@NotNull String file_, int line_) {
+            file = file_;
+            line = line_;
+        }
+
         @Override
         public int hashCode() {
             return file.hashCode()

@@ -6,27 +6,26 @@ import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
+import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Caret;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.actionSystem.EditorActionManager;
-import com.intellij.openapi.editor.actionSystem.TypedAction;
-import com.intellij.openapi.editor.event.*;
 import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.editor.ex.EditorMarkupModel;
+import com.intellij.openapi.editor.ex.MarkupModelEx;
+import com.intellij.openapi.editor.markup.*;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.ui.components.JBTextField;
+import javafx.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
 import org.jetbrains.annotations.Nullable;
@@ -48,6 +47,8 @@ import java.util.stream.Collectors;
 
 public class ToolWindowGui {
     private static final long UPDATE_DELAY_MILLIS = 1000;
+    @NotNull
+    private static final Color HIGHLIGHT_BACKGROUND_COLOR = JBColor.CYAN;
 
     @NotNull
     private final Project project;
@@ -70,6 +71,10 @@ public class ToolWindowGui {
     @NotNull
     private Timer updateTimer = new Timer();
     private boolean suppressUpdates = false;
+    @NotNull
+    private final Map<CompiledText.SourceLocation, List<Pair<Integer, Integer>>> locationsFromSourceMap = new HashMap<>();
+    @NotNull
+    private final TextAttributes highlightAttributes = new TextAttributes();
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
@@ -132,7 +137,6 @@ public class ToolWindowGui {
             private void update() {
                 getState().setAdditionalSwitches(additionalSwitchesField.getText());
                 if (getState().getAutoupdateFromSource()) {
-                    System.out.println("ToolWindowGui::additionalSwitchesField update");
                     schedulePreprocess();
                 }
             }
@@ -142,21 +146,19 @@ public class ToolWindowGui {
         JButton recompileButton = new JButton();
         recompileButton.setIcon(AllIcons.Actions.Refresh);
         recompileButton.setToolTipText("Recompile current source");
-        recompileButton.addActionListener(e -> {
-            System.out.println("ToolWindowGui::recompileButton");
-            preprocess();
-        });
+        recompileButton.addActionListener(e -> preprocess());
         headPanel.add(recompileButton);
 
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
         content.add(mainPanel, BorderLayout.CENTER);
-        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, false, false) {
+        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
             @Override
             protected EditorEx createEditor() {
                 EditorEx ed = super.createEditor();
                 ed.setHorizontalScrollbarVisible(true);
                 ed.setVerticalScrollbarVisible(true);
+                ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 return ed;
             }
         };
@@ -165,7 +167,6 @@ public class ToolWindowGui {
 
         new EditorChangeListener(project, unused -> {
             if (!suppressUpdates) {
-                System.out.println("ToolWindowGui::EditorChangeListener");
                 schedulePreprocess();
             }
         });
@@ -200,7 +201,6 @@ public class ToolWindowGui {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 if (refreshSignalConsumer != null) {
-                    System.out.println("ToolWindowGui::ForceRefresh");
                     refreshSignalConsumer.accept(RefreshSignal.RESET);
                 }
             }
@@ -212,16 +212,9 @@ public class ToolWindowGui {
 
         toolWindow.setAdditionalGearActions(actionGroup);
 
-        new AllEditorsListener(project, event -> {
-            Editor ed = event.getEditor();
-            Document doc = ed.getDocument();
-            Project prj = ed.getProject();
-            List<Caret> cr = ed.getCaretModel().getAllCarets();
-            VirtualFile vfile = FileDocumentManager.getInstance().getFile(doc);
-            if (prj == project && vfile != null) {
-                System.out.println("caretPositionChanged " + vfile.getPresentableName() + " " + cr.stream().map(c -> c.getLogicalPosition().toString()).collect(Collectors.joining("|")));
-            }
-        });
+        highlightAttributes.setBackgroundColor(HIGHLIGHT_BACKGROUND_COLOR);
+        CaretTracker caretTracker = new CaretTracker(this::highlightLocations);
+        new AllEditorsListener(project, caretTracker::update);
     }
 
     private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {
@@ -234,7 +227,6 @@ public class ToolWindowGui {
             public void setSelected(AnActionEvent event, boolean selected) {
                 setter.accept(supplier.get(), selected);
                 if (recompile && refreshSignalConsumer != null) {
-                    System.out.println("ToolWindowGui::addToggleAction");
                     refreshSignalConsumer.accept(RefreshSignal.COMPILE);
                 }
             }
@@ -242,13 +234,11 @@ public class ToolWindowGui {
     }
 
     private void schedulePreprocess() {
-        System.out.println("ToolWindowGui::schedulePreprocess");
         scheduleUpdate(this::preprocess);
     }
 
     private void preprocess() {
         if (refreshSignalConsumer != null) {
-            System.out.println("ToolWindowGui::preprocess");
             ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.PREPROCESS));
         }
     }
@@ -316,7 +306,6 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asResetSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("ToolWindowGui::asResetSignalConsumer");
             projectSettingsComboBox.removeAllItems();
             projectSettingsComboBox.setToolTipText("");
         };
@@ -325,7 +314,6 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asReconnectSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("ToolWindowGui::asReconnectSignalConsumer");
             matchesComboBox.removeAllItems();
             matchesComboBox.setToolTipText("");
         };
@@ -334,7 +322,6 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asRecompileSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("ToolWindowGui::asRecompileSignalConsumer");
             sourceRemoteMatched = null;
             showError("");
         };
@@ -343,7 +330,6 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<ProjectSettings> asProjectSettingsConsumer() {
         return projectSettings -> {
-            System.out.println("ToolWindowGui::asProjectSettingsConsumer");
             suppressUpdates = true;
             SourceSettings oldSelection = projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex());
             SourceSettings newSelection = projectSettings.getSettings().stream()
@@ -367,7 +353,6 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<SourceRemoteMatched> asSourceRemoteMatchedConsumer() {
         return sourceRemoteMatched_ -> {
-            System.out.println("ToolWindowGui::asSourceRemoteMatchedConsumer");
             suppressUpdates = true;
             sourceRemoteMatched = sourceRemoteMatched_;
             CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
@@ -397,11 +382,23 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<CompiledText> asCompiledTextConsumer() {
         return compiledText -> {
-            System.out.println("ToolWindowGui::asCompiledTextConsumer");
             suppressUpdates = true;
             editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
-            String asm = compiledText.getCompiledResult().asm.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
-            editor.setText(asm);
+            locationsFromSourceMap.clear();
+            StringBuilder asmBuilder = new StringBuilder();
+            int currentOffset = 0;
+            for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
+                if (chunk.text != null) {
+                    int nextOffset = currentOffset + chunk.text.length();
+                    asmBuilder.append(chunk.text);
+                    asmBuilder.append('\n');
+                    if (chunk.source != null && chunk.source.file != null) {
+                        locationsFromSourceMap.computeIfAbsent(chunk.source, unused -> new ArrayList<>()).add(new Pair<>(currentOffset, nextOffset));
+                    }
+                    currentOffset = nextOffset + 1;
+                }
+            }
+            editor.setText(asmBuilder.toString());
             editor.setEnabled(true);
             suppressUpdates = false;
         };
@@ -409,18 +406,12 @@ public class ToolWindowGui {
 
     @NotNull
     public Consumer<Error> asErrorConsumer() {
-        return error -> {
-            System.out.println("ToolWindowGui::asErrorConsumer");
-            suppressUpdates = true;
-            editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
-            editor.setText(filterOutTerminalEscapeSequences(error.getMessage()));
-            editor.setEnabled(false);
-            suppressUpdates = false;
-        };
+        return error -> showError(error.getMessage());
     }
 
     private void showError(@NotNull String reason) {
         suppressUpdates = true;
+        locationsFromSourceMap.clear();
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
@@ -441,5 +432,22 @@ public class ToolWindowGui {
     private Filters getFilters() {
         return getState().getFilters();
     }
-}
 
+    private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
+        Editor ed = editor.getEditor();
+        if (ed == null) {
+            return;
+        }
+        MarkupModelEx markupModel = (MarkupModelEx) ed.getMarkupModel();
+        markupModel.removeAllHighlighters();
+        locations.forEach(location -> {
+            List<Pair<Integer, Integer>> ranges = locationsFromSourceMap.get(location);
+            if (ranges != null) {
+                ranges.forEach(range -> {
+                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
+                    highlighter.setErrorStripeMarkColor(HIGHLIGHT_BACKGROUND_COLOR);
+                });
+            }
+        });
+    }
+}

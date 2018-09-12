@@ -62,12 +62,10 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
         }
 
         if (state.getConnected()) {
-            System.out.println("RemoteCompilersProducer::accept already connected");
             consumer.accept(t);
             return;
         }
 
-        System.out.println("RemoteCompilersProducer::accept starting task");
         String url = state.getUrl();
         taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: connecting to " + url) {
             @Override
@@ -100,7 +98,6 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                     }
                     indicator.checkCanceled();
                     ApplicationManager.getApplication().invokeLater(() -> {
-                        System.out.println("RemoteCompilersProducer::accept task finished");
                         state.setRemoteCompilers(compilers);
                         state.setConnected(true);
                         consumer.accept(t);
@@ -117,14 +114,12 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     @NotNull
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("RemoteCompilersProducer::asRefreshSignalConsumer");
             state.setConnected(SettingsState.EMPTY.getConnected());
             state.setRemoteCompilers(SettingsState.EMPTY.getRemoteCompilers());
         };
     }
 
     private void errorLater(@NotNull String text) {
-        System.out.println("RemoteCompilersProducer::errorLater");
         ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 

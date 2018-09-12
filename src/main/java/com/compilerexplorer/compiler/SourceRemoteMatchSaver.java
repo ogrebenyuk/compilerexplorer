@@ -29,7 +29,6 @@ public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
             return;
         }
 
-        System.out.println("SourceRemoteMatchSaver::accept");
         state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), sourceRemoteMatched.getRemoteCompilerMatches());
         sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
     }
@@ -37,7 +36,6 @@ public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
     @NotNull
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("SourceRemoteMatchSaver::asRefreshSignalConsumer");
             SettingsState state = SettingsProvider.getInstance(project).getState();
             state.setCompilerMatches(SettingsState.EMPTY.getCompilerMatches());
         };

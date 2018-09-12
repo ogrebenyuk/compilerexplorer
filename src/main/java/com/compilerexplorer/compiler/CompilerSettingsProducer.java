@@ -53,7 +53,6 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         {
             LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()));
             if (existingSettings != null) {
-                System.out.println("CompilerSettingsProducer::accept found existing settings");
                 sourceCompilerSettingsConsumer.accept(new SourceCompilerSettings(sourceSettings, existingSettings));
                 return;
             }
@@ -67,7 +66,6 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         File compiler = sourceSettings.getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
 
-        System.out.println("CompilerSettingsProducer::accept starting task");
         taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + sourceSettings.getSource().getPresentableName()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -81,7 +79,6 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
                         if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
                             LocalCompilerSettings newSettings = new LocalCompilerSettings(sourceSettings.getCompilerKind().toString().toLowerCase(), compilerVersion, compilerTarget);
                             ApplicationManager.getApplication().invokeLater(() -> {
-                                System.out.println("CompilerSettingsProducer::accept task finished");
                                 state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()), newSettings);
                                 sourceCompilerSettingsConsumer.accept(new SourceCompilerSettings(sourceSettings, newSettings));
                             });
@@ -103,7 +100,6 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
-            System.out.println("CompilerSettingsProducer::asRefreshSignalConsumer");
             SettingsState state = SettingsProvider.getInstance(project).getState();
             state.setLocalCompilerSettings(SettingsState.EMPTY.getLocalCompilerSettings());
         };
@@ -132,7 +128,6 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     }
 
     private void errorLater(@NotNull String text) {
-        System.out.println("CompilerSettingsProducer::errorLater");
         ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 }
