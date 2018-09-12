@@ -1,25 +1,35 @@
 package com.compilerexplorer.project;
 
-import com.compilerexplorer.common.RefreshConsumer;
-import com.compilerexplorer.common.datamodel.ProjectSettingsConsumer;
+import com.compilerexplorer.common.datamodel.ProjectSettings;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
 import com.compilerexplorer.project.idea.IdeaProjectListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
-public class ProjectListener implements RefreshConsumer {
-    @NotNull
-    private final OCProjectSettingsProducer ocProjectSettingsProducer;
+import java.util.function.Consumer;
 
-    public ProjectListener(@NotNull Project project, @NotNull ProjectSettingsConsumer projectSettingsConsumer) {
-        ocProjectSettingsProducer = new OCProjectSettingsProducer(project, projectSettingsConsumer);
-        new IdeaProjectListener(project, ocProjectSettingsProducer);
-        new OCProjectListener(project, ocProjectSettingsProducer);
+public class ProjectListener {
+    @NotNull
+    private final Consumer<ProjectSettings> projectSettingsConsumer;
+    @NotNull
+    private final Producer<ProjectSettings> ocProjectSettingsProducer;
+
+    public ProjectListener(@NotNull Project project, @NotNull Consumer<ProjectSettings> projectSettingsConsumer_) {
+        projectSettingsConsumer = projectSettingsConsumer_;
+        ocProjectSettingsProducer = new OCProjectSettingsProducer(project);
+        new IdeaProjectListener(project, this::changed);
+        new OCProjectListener(project, this::changed);
     }
 
-    @Override
+    private void changed(Boolean unused) {
+        System.out.println("ProjectListener::changed");
+        refresh();
+    }
+
     public void refresh() {
-        ocProjectSettingsProducer.projectChanged();
+        System.out.println("ProjectListener::refresh");
+        projectSettingsConsumer.accept(ocProjectSettingsProducer.produce());
     }
 }

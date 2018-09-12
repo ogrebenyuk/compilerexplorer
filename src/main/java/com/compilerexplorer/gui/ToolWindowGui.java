@@ -1,7 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.RecompileConsumer;
-import com.compilerexplorer.common.RefreshConsumer;
+import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
@@ -25,21 +24,21 @@ import com.jetbrains.cidr.lang.asm.AsmFileType;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.basic.BasicToggleButtonUI;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.lang.Error;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsumer, SourceRemoteMatchedConsumer, RefreshConsumer {
+public class ToolWindowGui {
     private static final long UPDATE_DELAY_MILLIS = 1000;
 
     @NotNull
@@ -52,19 +51,16 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     private final ComboBox<CompilerMatch> matchesComboBox;
     @NotNull
     private final EditorTextField editor;
-
     @Nullable
-    private SourceSettingsConsumer sourceSettingsConsumer;
+    private Consumer<SourceSettings> sourceSettingsConsumer;
     @Nullable
-    private SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer;
+    private Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
+    @Nullable
+    private Consumer<RefreshSignal> refreshSignalConsumer;
     @Nullable
     private SourceRemoteMatched sourceRemoteMatched;
     @NotNull
     private Timer updateTimer = new Timer();
-    @Nullable
-    private RecompileConsumer recompileConsumer;
-    @Nullable
-    private RefreshConsumer refreshConsumer;
     private boolean suppressUpdates = false;
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
@@ -130,7 +126,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
             private void update() {
                 getState().setAdditionalSwitches(additionalSwitchesField.getText());
                 if (getState().getAutoupdateFromSource()) {
-                    scheduleStateUpdate();
+                    schedulePreprocess();
                 }
             }
         });
@@ -139,19 +135,8 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         JButton recompileButton = new JButton();
         recompileButton.setIcon(IconLoader.findIcon("/actions/refresh.png"));
         recompileButton.setToolTipText("Recompile current source");
-        recompileButton.addActionListener(e -> recompile());
+        recompileButton.addActionListener(e -> preprocess());
         headPanel.add(recompileButton);
-
-        /*
-        headPanel.add(createFilterToggleButton("11010", "Compile to binary and disassemble the output", Filters::getBinary, Filters::setBinary));
-        headPanel.add(createFilterToggleButton("./a.out", "Execute the binary", Filters::getExecute, Filters::setExecute));
-        headPanel.add(createFilterToggleButton(".LX0:", "Filter unused labels from the output", Filters::getLabels, Filters::setLabels));
-        headPanel.add(createFilterToggleButton(".text", "Filter all assembler directives from the output", Filters::getDirectives, Filters::setDirectives));
-        headPanel.add(createFilterToggleButton("//", "Remove all lines which are only comments from the output", Filters::getCommentOnly, Filters::setCommentOnly));
-        headPanel.add(createFilterToggleButton("\\s+", "Trim intra-line whitespace", Filters::getTrim, Filters::setTrim));
-        headPanel.add(createFilterToggleButton("Intel", "Output disassembly in Intel syntax", Filters::getIntel, Filters::setIntel));
-        headPanel.add(createFilterToggleButton("Demangle", "Demangle output", Filters::getDemangle, Filters::setDemangle));
-        */
 
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -172,7 +157,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
             @Override
             public void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
                 if (!suppressUpdates && getState().getAutoupdateFromSource() && belongsToProject(event.getDocument())) {
-                    scheduleRecompile();
+                    schedulePreprocess();
                 }
             }
             private boolean belongsToProject(@NotNull Document document) {
@@ -191,10 +176,8 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true);
         addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true);
         actionGroup.add(new Separator());
-        //addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
-        //addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
-        //addToggleAction(actionGroup, "Autohighlight to Source", this::getState, SettingsState::getAutohighlightToSource, SettingsState::setAutohighlightToSource, false);
-        //addToggleAction(actionGroup, "Autohighlight from Source", this::getState, SettingsState::getAutohighlightFromSource, SettingsState::setAutohighlightFromSource, false);
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
 
         actionGroup.add(new AnAction("Compiler Explorer Settings...", null, AllIcons.General.Settings) {
@@ -211,10 +194,9 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         actionGroup.add(new AnAction("Reset Cache and Reload", "", AllIcons.Actions.ForceRefresh) {
             @Override
             public void actionPerformed(AnActionEvent event) {
-                getState().clear();
-                project.getMessageBus().syncPublisher(StateConsumer.TOPIC).reset();
-                reset();
-                refresh();
+                if (refreshSignalConsumer != null) {
+                    refreshSignalConsumer.accept(RefreshSignal.RESET);
+                }
             }
             @Override
             public void update(AnActionEvent event) {
@@ -225,7 +207,7 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         toolWindow.setAdditionalGearActions(actionGroup);
     }
 
-    private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean publishChange) {
+    private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {
         actionGroup.add(new ToggleAction(text) {
             @Override
             public boolean isSelected(AnActionEvent event) {
@@ -233,25 +215,21 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
             }
             @Override
             public void setSelected(AnActionEvent event, boolean selected) {
-                if (publishChange) {
-                    SettingsProvider.publishStateChangedLater(project);
-                }
                 setter.accept(supplier.get(), selected);
+                if (recompile && refreshSignalConsumer != null) {
+                    refreshSignalConsumer.accept(RefreshSignal.COMPILE);
+                }
             }
         });
     }
 
-    private void scheduleStateUpdate() {
-        scheduleUpdate(() -> SettingsProvider.publishStateChangedLater(project));
+    private void schedulePreprocess() {
+        scheduleUpdate(this::preprocess);
     }
 
-    private void scheduleRecompile() {
-        scheduleUpdate(this::recompile);
-    }
-
-    private void recompile() {
-        if (recompileConsumer != null) {
-            ApplicationManager.getApplication().invokeLater(() -> recompileConsumer.recompile());
+    private void preprocess() {
+        if (refreshSignalConsumer != null) {
+            ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.PREPROCESS));
         }
     }
 
@@ -266,70 +244,29 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         }, UPDATE_DELAY_MILLIS);
     }
 
-    @NotNull
-    private JToggleButton createFilterToggleButton(@NotNull String text, @NotNull String description, Function<Filters, Boolean> getter, BiConsumer<Filters, Boolean> setter) {
-        JToggleButton button = new JToggleButton(text);
-        updateToggleButton(button, description, getter.apply(getFilters(false)));
-        fitButtonWidthToText(button);
-        button.setUI(new BasicToggleButtonUI());
-        button.setRolloverEnabled(true);
-        button.addItemListener(e -> {
-            boolean newSelected = e.getStateChange() == ItemEvent.SELECTED;
-            setter.accept(getFilters(true), newSelected);
-            updateToggleButton(button, description, newSelected);
-        });
-        return button;
-    }
-
-    private static void fitButtonWidthToText(@NotNull AbstractButton button) {
-        FontMetrics metrics = button.getFontMetrics(button.getFont());
-        button.setPreferredSize(new Dimension(metrics.stringWidth(button.getText()) + 2 * button.getBorder().getBorderInsets(button).left + 2 * button.getBorder().getBorderInsets(button).right,
-                button.getHeight() + 2 * button.getBorder().getBorderInsets(button).top + 2 * button.getBorder().getBorderInsets(button).bottom));
-        button.setBounds(new Rectangle(button.getLocation(), button.getPreferredSize()));
-    }
-
-    private static void updateToggleButton(JToggleButton button, @NotNull String description, boolean selected) {
-        button.setSelected(selected);
-        button.setBorderPainted(selected);
-        button.setToolTipText("[" + (selected ? "ON" : "OFF") + "] " + description);
-        button.setBorder(BorderFactory.createBevelBorder(selected ? BevelBorder.LOWERED : BevelBorder.RAISED));
-    }
-
-    @NotNull
-    private Filters getFilters(boolean publishChange) {
-        if (publishChange) {
-            SettingsProvider.publishStateChangedLater(project);
-        }
-        return getState().getFilters();
-    }
-
     private void selectSourceSettings(@NotNull SourceSettings sourceSettings) {
         if (sourceSettingsConsumer != null) {
-            sourceSettingsConsumer.setSourceSetting(sourceSettings);
+            sourceSettingsConsumer.accept(sourceSettings);
         }
     }
 
     private void selectCompilerMatch(@NotNull CompilerMatch compilerMatch) {
         if (sourceRemoteMatchedConsumer != null && sourceRemoteMatched != null) {
-            sourceRemoteMatchedConsumer.setSourceRemoteMatched(new SourceRemoteMatched(sourceRemoteMatched.getSourceCompilerSettings(),
+            sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceRemoteMatched.getSourceCompilerSettings(),
                     new CompilerMatches(compilerMatch, sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches())));
         }
     }
 
-    public void setSourceSettingsConsumer(@NotNull SourceSettingsConsumer sourceSettingsConsumer_) {
+    public void setSourceSettingsConsumer(@NotNull Consumer<SourceSettings> sourceSettingsConsumer_) {
         sourceSettingsConsumer = sourceSettingsConsumer_;
     }
 
-    public void setSourceRemoteMatchedConsumer(@NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
+    public void setSourceRemoteMatchedConsumer(@NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
     }
 
-    public void setRecompileConsumer(@NotNull RecompileConsumer recompileConsumer_) {
-        recompileConsumer = recompileConsumer_;
-    }
-
-    public void setRefreshConsumer(@NotNull RefreshConsumer refreshConsumer_) {
-        refreshConsumer = refreshConsumer_;
+    public void setRefreshSignalConsumer(@NotNull Consumer<RefreshSignal> refreshSignalConsumer_) {
+        refreshSignalConsumer = refreshSignalConsumer_;
     }
 
     @NotNull
@@ -337,69 +274,105 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
         return content;
     }
 
-    @Override
-    public void setProjectSetting(@NotNull ProjectSettings projectSettings) {
-        suppressUpdates = true;
-        SourceSettings oldSelection = projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex());
-        SourceSettings newSelection = projectSettings.getSettings().stream()
-                .filter(x -> oldSelection != null && x.getSource().getPath().equals(oldSelection.getSource().getPath()))
-                .findFirst()
-                .orElse(projectSettings.getSettings().size() != 0 ? projectSettings.getSettings().firstElement() : null);
-        DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings());
-        model.setSelectedItem(newSelection);
-        projectSettingsComboBox.setModel(model);
-        if (newSelection == null) {
+    @NotNull
+    public Consumer<RefreshSignal> asResetSignalConsumer() {
+        return refreshSignal -> {
+            System.out.println("ToolWindowGui::asResetSignalConsumer");
             projectSettingsComboBox.removeAllItems();
-            showError("No source selected");
-        } else if (!newSelection.equals(oldSelection)) {
-            selectSourceSettings(newSelection);
-        }
-        suppressUpdates = false;
+        };
     }
 
-    @Override
-    public void setSourceRemoteMatched(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
-        suppressUpdates = true;
-        sourceRemoteMatched = sourceRemoteMatched_;
-        CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
-        List<CompilerMatch> matches = sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches();
-        CompilerMatch oldSelection = matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex());
-        CompilerMatch newSelection = matches.stream()
-                .filter(x -> oldSelection != null && x.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId()))
-                .findFirst()
-                .orElse(!chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null));
-        DefaultComboBoxModel<CompilerMatch> model = new DefaultComboBoxModel<>(
-                matches.stream()
-                        .map(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()) ? x : newSelection)
-                        .filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
-        model.setSelectedItem(newSelection);
-        matchesComboBox.setModel(model);
-        if (newSelection == null) {
+    @NotNull
+    public Consumer<RefreshSignal> asReconnectSignalConsumer() {
+        return refreshSignal -> {
+            System.out.println("ToolWindowGui::asReconnectSignalConsumer");
             matchesComboBox.removeAllItems();
-            showError("No compiler selected");
-        } else {
-            selectCompilerMatch(newSelection);
-        }
-        suppressUpdates = false;
+        };
     }
 
-    @Override
-    public void clearSourceRemoteMatched(@NotNull String reason) {
-        showError(reason);
+    @NotNull
+    public Consumer<RefreshSignal> asRecompileSignalConsumer() {
+        return refreshSignal -> {
+            System.out.println("ToolWindowGui::asRecompileSignalConsumer");
+            sourceRemoteMatched = null;
+            showError("");
+        };
     }
 
-    @Override
-    public void setCompiledText(@NotNull CompiledText compiledText) {
-        suppressUpdates = true;
-        editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
-        editor.setText(compiledText.getCompiledText());
-        editor.setEnabled(true);
-        suppressUpdates = false;
+    @NotNull
+    public Consumer<ProjectSettings> asProjectSettingsConsumer() {
+        return projectSettings -> {
+            System.out.println("ToolWindowGui::asProjectSettingsConsumer");
+            suppressUpdates = true;
+            SourceSettings oldSelection = projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex());
+            SourceSettings newSelection = projectSettings.getSettings().stream()
+                    .filter(x -> oldSelection != null && x.getSource().getPath().equals(oldSelection.getSource().getPath()))
+                    .findFirst()
+                    .orElse(projectSettings.getSettings().size() != 0 ? projectSettings.getSettings().firstElement() : null);
+            DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings());
+            model.setSelectedItem(newSelection);
+            projectSettingsComboBox.setModel(model);
+            if (newSelection == null) {
+                projectSettingsComboBox.removeAllItems();
+                showError("No source selected");
+            } else if (!newSelection.equals(oldSelection)) {
+                selectSourceSettings(newSelection);
+            }
+            suppressUpdates = false;
+        };
     }
 
-    @Override
-    public void clearCompiledText(@NotNull String reason) {
-        showError(reason);
+    @NotNull
+    public Consumer<SourceRemoteMatched> asSourceRemoteMatchedConsumer() {
+        return sourceRemoteMatched_ -> {
+            System.out.println("ToolWindowGui::asSourceRemoteMatchedConsumer");
+            suppressUpdates = true;
+            sourceRemoteMatched = sourceRemoteMatched_;
+            CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
+            List<CompilerMatch> matches = sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches();
+            CompilerMatch oldSelection = matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex());
+            CompilerMatch newSelection = matches.stream()
+                    .filter(x -> oldSelection != null && x.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId()))
+                    .findFirst()
+                    .orElse(!chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null));
+            DefaultComboBoxModel<CompilerMatch> model = new DefaultComboBoxModel<>(
+                    matches.stream()
+                            .map(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()) ? x : newSelection)
+                            .filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
+            model.setSelectedItem(newSelection);
+            matchesComboBox.setModel(model);
+            if (newSelection == null) {
+                matchesComboBox.removeAllItems();
+                showError("No compiler selected");
+            } else {
+                selectCompilerMatch(newSelection);
+            }
+            suppressUpdates = false;
+        };
+    }
+
+    @NotNull
+    public Consumer<CompiledText> asCompiledTextConsumer() {
+        return compiledText -> {
+            System.out.println("ToolWindowGui::asCompiledTextConsumer");
+            suppressUpdates = true;
+            editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
+            editor.setText(compiledText.getCompiledText());
+            editor.setEnabled(true);
+            suppressUpdates = false;
+        };
+    }
+
+    @NotNull
+    public Consumer<Error> asErrorConsumer() {
+        return error -> {
+            System.out.println("ToolWindowGui::asErrorConsumer");
+            suppressUpdates = true;
+            editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
+            editor.setText(filterOutTerminalEscapeSequences(error.getMessage()));
+            editor.setEnabled(false);
+            suppressUpdates = false;
+        };
     }
 
     private void showError(@NotNull String reason) {
@@ -423,20 +396,6 @@ public class ToolWindowGui implements ProjectSettingsConsumer, CompiledTextConsu
     @NotNull
     private Filters getFilters() {
         return getState().getFilters();
-    }
-
-    @Override
-    public void refresh() {
-        if (refreshConsumer != null) {
-            refreshConsumer.refresh();
-        }
-    }
-
-    private void reset() {
-        projectSettingsComboBox.removeAllItems();
-        matchesComboBox.removeAllItems();
-        sourceRemoteMatched = null;
-        showError("");
     }
 }
 

@@ -2,106 +2,37 @@ package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
-import com.compilerexplorer.common.datamodel.SourceCompilerSettingsConsumer;
 import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.common.datamodel.SourceRemoteMatchedConsumer;
 import com.compilerexplorer.common.datamodel.state.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, StateConsumer {
+public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSettings> {
     @NotNull
     private final Project project;
     @NotNull
-    private final SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer;
-    @Nullable
-    private SourceCompilerSettings sourceCompilerSettings;
-    @Nullable
-    private String reason;
-    private boolean connected;
-    @Nullable
-    private List<RemoteCompilerInfo> remoteCompilers;
+    private final Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
 
-    public SourceRemoteMatcher(@NotNull Project project_, @NotNull SourceRemoteMatchedConsumer sourceRemoteMatchedConsumer_) {
+    public SourceRemoteMatchProducer(@NotNull Project project_, @NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
         project = project_;
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
-        reset();
     }
 
     @Override
-    public void setSourceCompilerSetting(@NotNull SourceCompilerSettings sourceCompilerSettings_) {
-        if (!sourceCompilerSettings_.equals(sourceCompilerSettings)) {
-            sourceCompilerSettings = sourceCompilerSettings_;
-            reason = null;
-            stateChanged(true);
-        }
-    }
-
-    @Override
-    public void clearSourceCompilerSetting(@NotNull String reason_) {
-        if (!reason_.equals(reason)) {
-            sourceCompilerSettings = null;
-            reason = reason_;
-            stateChanged(true);
-        }
-    }
-
-    @Override
-    public void stateChanged() {
-        stateChanged(false);
-    }
-
-    @Override
-    public void reset() {
-        sourceCompilerSettings = null;
-        reason = null;
-        connected = SettingsState.DEFAULT_CONNECTED;
-        remoteCompilers = null;
-    }
-
-    private void stateChanged(boolean force) {
+    public void accept(@NotNull SourceCompilerSettings sourceCompilerSettings) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
-        boolean newConnected = state.getConnected();
-        List<RemoteCompilerInfo> newRemoteCompilers = state.getRemoteCompilers();
-        boolean changed = connected != newConnected
-                || !newRemoteCompilers.equals(remoteCompilers)
-                ;
-        if (changed || force) {
-            connected = newConnected;
-            remoteCompilers = newRemoteCompilers;
-            refresh();
-        }
-    }
-
-    private void refresh() {
-        if (reason != null) {
-            sourceRemoteMatchedConsumer.clearSourceRemoteMatched(reason);
-            return;
-        }
-
-        SettingsState state = SettingsProvider.getInstance(project).getState();
-        if (sourceCompilerSettings == null) {
-            sourceRemoteMatchedConsumer.clearSourceRemoteMatched("No source");
-            return;
-        }
-
         {
             CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompiler().getAbsolutePath()));
             if (existingMatches != null) {
-                sourceRemoteMatchedConsumer.setSourceRemoteMatched(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
+                System.out.println("SourceRemoteMatchProducer::accept found existing matches");
+                sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
                 return;
             }
-        }
-
-        if (!connected) {
-            sourceRemoteMatchedConsumer.clearSourceRemoteMatched("Not connected" + (state.getLastConnectionStatus().isEmpty() ? "" : "\n" + state.getLastConnectionStatus()));
-            return;
         }
 
         String localName = sourceCompilerSettings.getLocalCompilerSettings().getName();
@@ -110,9 +41,10 @@ public class SourceRemoteMatcher implements SourceCompilerSettingsConsumer, Stat
                 : sourceCompilerSettings.getLocalCompilerSettings().getVersion();
         String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
         String language = sourceCompilerSettings.getSourceSettings().getLanguage().getDisplayName();
-        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(remoteCompilers, localName, localVersion, localTarget, language);
+        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language);
         CompilerMatches matches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
-        sourceRemoteMatchedConsumer.setSourceRemoteMatched(new SourceRemoteMatched(sourceCompilerSettings, matches));
+        System.out.println("SourceRemoteMatchProducer::accept matched");
+        sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, matches));
     }
 
     @NotNull

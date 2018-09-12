@@ -4,18 +4,18 @@ import org.jetbrains.annotations.NotNull;
 
 public class PreprocessedSource {
     @NotNull
-    private final PreprocessableSource preprocessableSource;
+    private final SourceRemoteMatched sourceRemoteMatched;
     @NotNull
     private final String preprocessedText;
 
-    public PreprocessedSource(@NotNull PreprocessableSource preprocessableSource_, @NotNull String preprocessedText_) {
-        preprocessableSource = preprocessableSource_;
+    public PreprocessedSource(@NotNull SourceRemoteMatched sourceRemoteMatched_, @NotNull String preprocessedText_) {
+        sourceRemoteMatched = sourceRemoteMatched_;
         preprocessedText = preprocessedText_;
     }
 
     @NotNull
-    public PreprocessableSource getPreprocessableSource() {
-        return preprocessableSource;
+    public SourceRemoteMatched getSourceRemoteMatched() {
+        return sourceRemoteMatched;
     }
 
     @NotNull
@@ -25,7 +25,7 @@ public class PreprocessedSource {
 
     @Override
     public int hashCode() {
-        return getPreprocessableSource().hashCode()
+        return getSourceRemoteMatched().hashCode()
                 + getPreprocessedText().hashCode()
                 ;
     }
@@ -36,7 +36,7 @@ public class PreprocessedSource {
             return false;
         }
         PreprocessedSource other = (PreprocessedSource)obj;
-        return getPreprocessableSource().equals(other.getPreprocessableSource())
+        return getSourceRemoteMatched().equals(other.getSourceRemoteMatched())
                 && getPreprocessedText().equals(other.getPreprocessedText())
                 ;
     }

@@ -1,46 +1,32 @@
 package com.compilerexplorer.project.clion.oc;
 
-import com.compilerexplorer.project.common.ProjectSettingsProducer;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceModificationListener;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Consumer;
+
 public class OCProjectListener {
-    @NotNull
-    private final Project project;
-    @NotNull
-    private final ProjectSettingsProducer projectSettingsProducer;
-
-    public OCProjectListener(@NotNull Project project_, @NotNull ProjectSettingsProducer projectSettingsProducer_) {
-        project = project_;
-        projectSettingsProducer = projectSettingsProducer_;
-        subscribeToProjectChanges();
-    }
-
-    private void subscribeToProjectChanges() {
+    public OCProjectListener(@NotNull Project project, @NotNull Consumer<Boolean> changeConsumer) {
         project.getMessageBus().connect().subscribe(OCWorkspaceModificationListener.TOPIC, new OCWorkspaceModificationListener() {
             public void projectsChanged() {
-                changed();
+                changeConsumer.accept(false);
             }
             public void projectFilesChanged() {
-                changed();
+                changeConsumer.accept(false);
             }
             public void sourceFilesChanged() {
-                changed();
+                changeConsumer.accept(false);
             }
             public void buildSettingsChanged() {
-                changed();
+                changeConsumer.accept(false);
             }
             public void selectedResolveConfigurationChanged() {
-                changed();
+                changeConsumer.accept(false);
             }
             public void buildFinished() {
-                changed();
+                changeConsumer.accept(false);
             }
         });
-    }
-
-    private void changed() {
-        projectSettingsProducer.projectChanged();
     }
 }

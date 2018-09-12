@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class SourceRemoteMatcherTest {
+public class SourceRemoteMatchProducerTest {
     @Test
     public void testExactMatch() {
         verifyExactMatch("0", "0");
@@ -46,8 +46,8 @@ public class SourceRemoteMatcherTest {
     }
 
     private static void verifyMatch(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch, boolean expectedMatch) {
-        assertFalse(SourceRemoteMatcher.versionMatches(remoteName, localVersion, tryMinorMismatch));
-        assertEquals(SourceRemoteMatcher.versionMatches(" " + remoteName, localVersion, tryMinorMismatch), expectedMatch);
-        assertEquals(SourceRemoteMatcher.versionMatches(" " + remoteName + " ", localVersion, tryMinorMismatch), expectedMatch);
+        assertFalse(SourceRemoteMatchProducer.versionMatches(remoteName, localVersion, tryMinorMismatch));
+        assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName, localVersion, tryMinorMismatch), expectedMatch);
+        assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName + " ", localVersion, tryMinorMismatch), expectedMatch);
     }
 }

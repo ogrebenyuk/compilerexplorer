@@ -1,30 +1,29 @@
 package com.compilerexplorer;
 
-import com.compilerexplorer.common.datamodel.state.StateListener;
-import com.compilerexplorer.compiler.SourceRemoteMatcher;
+import com.compilerexplorer.common.RefreshSignal;
+import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.TaskRunner;
+import com.compilerexplorer.common.datamodel.ProjectSettings;
+import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.compiler.SourceRemoteMatchProducer;
 import com.compilerexplorer.compiler.CompilerSettingsProducer;
+import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
 import com.compilerexplorer.explorer.RemoteCompiler;
 import com.compilerexplorer.compiler.SourcePreprocessor;
-import com.compilerexplorer.explorer.RemoteDefinesProducer;
+import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.IconLoader;
-import com.intellij.openapi.wm.FocusWatcher;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.AncestorEvent;
-import javax.swing.event.AncestorListener;
-import java.awt.*;
-import java.awt.event.FocusEvent;
+import java.util.function.Consumer;
 
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
 
@@ -35,27 +34,60 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     @NotNull
     private static JComponent createComponent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+        TaskRunner taskRunner = new TaskRunner();
+
         ToolWindowGui form = new ToolWindowGui(project, (ToolWindowEx)toolWindow);
 
-        ProjectListener projectListener = new ProjectListener(project, form);
+        ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
 
-        SourceRemoteMatcher sourceRemoteMatcher = new SourceRemoteMatcher(project, form);
-        new StateListener(project, sourceRemoteMatcher);
-        CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, sourceRemoteMatcher);
+        SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(project, form.asSourceRemoteMatchedConsumer());
+        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, sourceRemoteMatchProducer, form.asErrorConsumer(), taskRunner);
+        CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, remoteCompilersProducer, form.asErrorConsumer(), taskRunner);
 
         form.setSourceSettingsConsumer(compilerSettingsProducer);
 
-        RemoteCompiler explorer = new RemoteCompiler(project, form);
-        new StateListener(project, explorer);
-        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer);
-        new StateListener(project, preprocessor);
-        RemoteDefinesProducer remoteDefinesProducer = new RemoteDefinesProducer(project, preprocessor);
+        RemoteCompiler explorer = new RemoteCompiler(project, form.asCompiledTextConsumer(), form.asErrorConsumer(), taskRunner);
+        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer, form.asErrorConsumer(), taskRunner);
+        SourceRemoteMatchSaver sourceRemoteMatchSaver = new SourceRemoteMatchSaver(project, preprocessor);
 
-        form.setSourceRemoteMatchedConsumer(remoteDefinesProducer);
-        form.setRecompileConsumer(preprocessor);
-        form.setRefreshConsumer(projectListener);
+        form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver);
 
-        form.refresh();
+        Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
+            SettingsState state = SettingsProvider.getInstance(project).getState();
+            if (refreshSignal != RefreshSignal.RESET && !state.getConnected()) {
+                refreshSignal = RefreshSignal.RECONNECT;
+            }
+            switch(refreshSignal) {
+                case RESET:
+                    compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
+                    form.asResetSignalConsumer().accept(refreshSignal);
+                case RECONNECT:
+                    remoteCompilersProducer.asRefreshSignalConsumer().accept(refreshSignal);
+                    sourceRemoteMatchSaver.asRefreshSignalConsumer().accept(refreshSignal);
+                    form.asReconnectSignalConsumer().accept(refreshSignal);
+                case PREPROCESS:
+                case COMPILE:
+                    form.asRecompileSignalConsumer().accept(refreshSignal);
+            }
+            switch(refreshSignal) {
+                case RESET:
+                    projectListener.refresh();
+                    break;
+                case RECONNECT:
+                    remoteCompilersProducer.refresh();
+                    break;
+                case PREPROCESS:
+                    preprocessor.refresh();
+                    break;
+                case COMPILE:
+                    explorer.refresh();
+                    break;
+            }
+        };
+        form.setRefreshSignalConsumer(refreshSignalConsumer);
+        SettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
+
+        refreshSignalConsumer.accept(RefreshSignal.RESET);
 
         /*
         form.getContent().addAncestorListener (new AncestorListener() {

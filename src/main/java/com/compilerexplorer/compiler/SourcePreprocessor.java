@@ -3,162 +3,117 @@ package com.compilerexplorer.compiler;
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
-import com.compilerexplorer.common.datamodel.state.StateConsumer;
 import com.compilerexplorer.compiler.common.CompilerRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
-import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.lang.Error;
+import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class SourcePreprocessor implements PreprocessableSourceConsumer, StateConsumer, RecompileConsumer {
+public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     @NotNull
     private final Project project;
     @NotNull
-    private final PreprocessedSourceConsumer preprocessedSourceConsumer;
+    private final Consumer<PreprocessedSource> preprocessedSourceConsumer;
+    @NotNull
+    private final Consumer<Error> errorConsumer;
+    @NotNull
+    private final TaskRunner taskRunner;
     @Nullable
-    private BackgroundableProcessIndicator currentProgressIndicator;
-    @Nullable
-    private PreprocessableSource preprocessableSource;
-    @Nullable
-    private String reason;
-    private boolean preprocessLocally;
-    private boolean useRemoteDefines;
+    private SourceRemoteMatched lastPreprocessableSource;
 
-    public SourcePreprocessor(@NotNull Project project_, @NotNull PreprocessedSourceConsumer preprocessedSourceConsumer_) {
+    public SourcePreprocessor(@NotNull Project project_,
+                              @NotNull Consumer<PreprocessedSource> preprocessedSourceConsumer_,
+                              @NotNull Consumer<Error> errorConsumer_,
+                              @NotNull TaskRunner taskRunner_) {
         project = project_;
         preprocessedSourceConsumer = preprocessedSourceConsumer_;
-        reset();
+        errorConsumer = errorConsumer_;
+        taskRunner = taskRunner_;
     }
 
     @Override
-    public void setPreprocessableSource(@NotNull PreprocessableSource preprocessableSource_) {
-        if (!preprocessableSource_.equals(preprocessableSource)) {
-            preprocessableSource = preprocessableSource_;
-            reason = null;
-            stateChanged(true);
-        }
-    }
-
-    @Override
-    public void clearPreprocessableSource(@NotNull String reason_) {
-        if (!reason_.equals(reason)) {
-            preprocessableSource = null;
-            reason = reason_;
-            stateChanged(true);
-        }
-    }
-
-    @Override
-    public void stateChanged() {
-        stateChanged(false);
-    }
-
-    @Override
-    public void reset() {
-        preprocessableSource = null;
-        reason = null;
-        preprocessLocally = SettingsState.DEFAULT_PREPROCESS_LOCALLY;
-        useRemoteDefines = SettingsState.DEFAULT_PREPROCESS_LOCALLY && SettingsState.DEFAULT_USE_REMOTE_DEFINES;
-    }
-
-    @Override
-    public void recompile() {
-        stateChanged(true);
-    }
-
-    private void stateChanged(boolean force) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
-        boolean newPreprocessLocally = state.getPreprocessLocally();
-        boolean newUseRemoteDefines = state.getPreprocessLocally() && state.getUseRemoteDefines();
-        boolean changed = newPreprocessLocally != preprocessLocally
-                || newUseRemoteDefines != useRemoteDefines
-                ;
-        if (changed || force) {
-            preprocessLocally = newPreprocessLocally;
-            useRemoteDefines = newUseRemoteDefines;
-            refresh();
-        }
-    }
-
-    private void refresh() {
-        if (reason != null) {
-            preprocessedSourceConsumer.clearPreprocessedSource(reason);
-            return;
-        }
-
-        if (preprocessableSource == null) {
-            preprocessedSourceConsumer.clearPreprocessedSource("No preprocessable source");
-            return;
-        }
-
-        SourceSettings sourceSettings = preprocessableSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
+    public void accept(@NotNull SourceRemoteMatched preprocessableSource) {
+        System.out.println("SourcePreprocessor::accept");
+        lastPreprocessableSource = preprocessableSource;
+        SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
         VirtualFile source = sourceSettings.getSource();
         Document document = FileDocumentManager.getInstance().getDocument(source);
         if (document == null) {
-            preprocessedSourceConsumer.clearPreprocessedSource("Cannot get document " + source.getPath());
+            errorLater("Cannot get document " + source.getPath());
             return;
         }
 
-        String sourceText = useRemoteDefines ? preprocessableSource.getDefines().getDefines() + document.getText() : document.getText();
-        if (!preprocessLocally) {
-            preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(preprocessableSource, sourceText));
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        String sourceText = document.getText();
+        if (!state.getPreprocessLocally()) {
+            preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
             return;
         }
 
         String name = source.getPresentableName();
-        File compiler = preprocessableSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getCompiler();
+        File compiler = preprocessableSource.getSourceCompilerSettings().getSourceSettings().getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
-        if (currentProgressIndicator != null) {
-            currentProgressIndicator.cancel();
-        }
-        preprocessedSourceConsumer.clearPreprocessedSource("Preprocessing " + name + "...");
-        Task.Backgroundable task = new Task.Backgroundable(project, "Preprocessing " + name) {
+        System.out.println("SourcePreprocessor::accept starting task");
+        taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, useRemoteDefines);
+                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches());
                 try {
                     CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
-                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.setPreprocessedSource(new PreprocessedSource(preprocessableSource, preprocessedText)));
+                        System.out.println("SourcePreprocessor::accept task finished");
+                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));
                     } else {
-                        ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr()));
+                        errorLater("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr());
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Canceled preprocessing " + name));
+                    errorLater("Canceled preprocessing " + name + ":\n" + String.join(" ", preprocessorCommandLine));
                 } catch (Exception exception) {
-                    ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.clearPreprocessedSource("Cannot preprocess " + name + ":\n" + String.join(" ", preprocessorCommandLine) + "\nException: " + exception.getMessage()));
+                    errorLater("Cannot preprocess " + name + ":\n" + String.join(" ", preprocessorCommandLine) + "\nException: " + exception.getMessage());
                 }
             }
-        };
-        currentProgressIndicator = new BackgroundableProcessIndicator(task);
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, currentProgressIndicator);
+        });
     }
 
     @NotNull
-    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, boolean useRemoteDefines) {
+    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return Stream.concat(
                 Stream.concat(
-                        Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
-                        sourceSettings.getSwitches().stream()),
+                        Stream.concat(
+                                Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
+                                sourceSettings.getSwitches().stream()),
+                        Arrays.stream(additionalSwitches.split(" "))),
                 Stream.of(
                         "-I" + project.getBasePath(),
-                        (useRemoteDefines ? "-undef" : ""),
                         "-E",
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
                         "-c", "-")
-        ).filter(s -> !s.isEmpty()).toArray(String[]::new);
+        ).toArray(String[]::new);
+    }
+
+    private void errorLater(@NotNull String text) {
+        System.out.println("SourcePreprocessor::errorLater");
+        ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
+    }
+
+    public void refresh() {
+        if (lastPreprocessableSource != null) {
+            System.out.println("SourcePreprocessor::refresh");
+            accept(lastPreprocessableSource);
+        }
     }
 }

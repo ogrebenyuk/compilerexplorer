@@ -1,200 +1,170 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.datamodel.CompiledTextConsumer;
+import com.compilerexplorer.common.datamodel.CompiledText;
 import com.compilerexplorer.common.datamodel.PreprocessedSource;
-import com.compilerexplorer.common.datamodel.PreprocessedSourceConsumer;
 import com.compilerexplorer.common.datamodel.SourceSettings;
 import com.compilerexplorer.common.datamodel.state.Filters;
+import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
-import com.compilerexplorer.common.datamodel.state.StateConsumer;
+import com.google.common.net.UrlEscapers;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class RemoteCompiler implements PreprocessedSourceConsumer, StateConsumer {
+public class RemoteCompiler implements Consumer<PreprocessedSource> {
     @NotNull
     private final Project project;
     @NotNull
-    private final CompiledTextConsumer compiledTextConsumer;
-    @Nullable
-    private PreprocessedSource preprocessedSource;
-    @Nullable
-    private String reason;
+    private final Consumer<CompiledText> compiledTextConsumer;
     @NotNull
-    private Filters filters;
+    private final Consumer<Error> errorConsumer;
     @NotNull
-    private String additionalSwitches;
+    private final TaskRunner taskRunner;
+    @Nullable
+    private PreprocessedSource lastPreprocessedSource;
 
-    public RemoteCompiler(@NotNull Project project_, @NotNull CompiledTextConsumer compiledTextConsumer_) {
+    public RemoteCompiler(@NotNull Project project_,
+                          @NotNull Consumer<CompiledText> compiledTextConsumer_,
+                          @NotNull Consumer<Error> errorConsumer_,
+                          @NotNull TaskRunner taskRunner_) {
         project = project_;
         compiledTextConsumer = compiledTextConsumer_;
-        reset();
+        errorConsumer = errorConsumer_;
+        taskRunner = taskRunner_;
     }
 
     @Override
-    public void setPreprocessedSource(@NotNull PreprocessedSource preprocessedSource_) {
-        if (!preprocessedSource_.equals(preprocessedSource)) {
-            preprocessedSource = preprocessedSource_;
-            reason = null;
-            stateChanged(true);
-        }
-    }
-
-    @Override
-    public void clearPreprocessedSource(@NotNull String reason_) {
-        if (!reason_.equals(reason)) {
-            preprocessedSource = null;
-            reason = reason_;
-            stateChanged(true);
-        }
-        compiledTextConsumer.clearCompiledText(reason);
-    }
-
-    @Override
-    public void stateChanged() {
-        stateChanged(false);
-    }
-
-    @Override
-    public void reset() {
-        preprocessedSource = null;
-        reason = null;
-        filters = new Filters();
-        additionalSwitches = SettingsState.DEFAULT_ADDITIONAL_SWITCHES;
-    }
-
-    private void stateChanged(boolean force) {
+    public void accept(@NotNull PreprocessedSource preprocessedSource) {
+        System.out.println("RemoteCompiler::accept");
+        lastPreprocessedSource = preprocessedSource;
         SettingsState state = SettingsProvider.getInstance(project).getState();
-        Filters newFilters = state.getFilters();
-        String newAdditionalSwitches = state.getAdditionalSwitches();
-        boolean changed = !newFilters.equals(filters)
-                || !newAdditionalSwitches.equals(additionalSwitches)
-                ;
-        if (changed || force) {
-            filters = new Filters(newFilters);
-            additionalSwitches = newAdditionalSwitches;
-            refresh();
-        }
+        SourceSettings sourceSettings = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
+        String url = state.getUrl();
+        Filters filters = new Filters(state.getFilters());
+        String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches());
+        String name = sourceSettings.getSource().getName();
+        System.out.println("RemoteCompiler::accept starting task");
+        taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
+            @Override
+            public void run(@NotNull ProgressIndicator indicator) {
+                String remoteCompilerId = preprocessedSource.getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();
+                String endpoint = url + "/api/compiler/" + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + "/compile";
+                try {
+                    CloseableHttpClient httpClient = HttpClients.createDefault();
+
+                    HttpPost postRequest = new HttpPost(endpoint);
+                    postRequest.addHeader("accept", "application/json");
+
+                    Gson gson = new Gson();
+
+                    String source = preprocessedSource.getPreprocessedText();
+                    Request request = new Request();
+                    request.source = source;
+                    request.options = new Options();
+                    request.options.userArguments = switches;
+                    request.options.filters = filters;
+
+                    postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
+
+                    HttpResponse response = httpClient.execute(postRequest);
+                    if (response.getStatusLine().getStatusCode() != 200) {
+                        httpClient.close();
+                        throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
+                    }
+                    BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                    StringBuilder output = new StringBuilder();
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        indicator.checkCanceled();
+                        output.append(line);
+                    }
+                    httpClient.close();
+                    indicator.checkCanceled();
+
+                    JsonObject obj = new JsonParser().parse(output.toString()).getAsJsonObject();
+                    CompiledResult compiledResult = gson.fromJson(obj, CompiledResult.class);
+
+                    String asm = compiledResult.asm.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+                    String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
+
+                    if (compiledResult.code == 0) {
+                        System.out.println("RemoteCompiler::accept task finished");
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), asm)));
+                    } else {
+                        errorLater(err);
+                    }
+                } catch (ProcessCanceledException canceledException) {
+                    errorLater("Canceled compiling " + name);
+                } catch (Exception e) {
+                    errorLater("Exception compiling " + name + ": " + e.getMessage());
+                }
+            }
+        });
     }
 
-    private void refresh() {
-        if (reason != null) {
-            compiledTextConsumer.clearCompiledText(reason);
-            return;
-        }
-
-        if (preprocessedSource == null) {
-            compiledTextConsumer.clearCompiledText("No preprocessed source");
-            return;
-        }
-
-        SettingsState state = SettingsProvider.getInstance(project).getState();
-        SourceSettings sourceSettings = preprocessedSource.getPreprocessableSource().getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
-        RemoteConnection.compile(project, state.getUrl(), filters, preprocessedSource, getCompilerOptions(sourceSettings, state.getUseRemoteDefines(), additionalSwitches), compiledTextConsumer);
+    private void errorLater(@NotNull String text) {
+        System.out.println("RemoteCompiler::errorLater");
+        ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 
     @NotNull
-    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, boolean useRemoteDefines, @NotNull String additionalSwitches) {
+    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-             + (useRemoteDefines ? " -undef" : "")
              + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 
-/*
-    public void refresh() {
-        String projectName = project.getName();
-        addText("Source roots for the " + projectName + " plugin:\n" + Arrays.stream(ProjectRootManager.getInstance(project).getContentSourceRoots()).map(VirtualFile::getUrl).collect(Collectors.joining("\n")));
-        addText("Roots for the " + projectName + " plugin:\n" + Arrays.stream(ProjectRootManager.getInstance(project).getContentRoots()).map(VirtualFile::getUrl).collect(Collectors.joining("\n")));
-        addText("getContentRootsFromAllModules for the " + projectName + " plugin:\n" + Arrays.stream(ProjectRootManager.getInstance(project).getContentRootsFromAllModules()).map(VirtualFile::getUrl).collect(Collectors.joining("\n")));
-
-        Sdk projectSdk = ProjectRootManager.getInstance(project).getProjectSdk();
-        if (projectSdk != null) {
-            addText("SDK: name " + projectSdk.getName() + ", version " + projectSdk.getVersionString() + ", home path " + projectSdk.getHomePath() + ", type " + projectSdk.getSdkType().getName());
-        } else {
-            addText("No SDK");
-        }
-        addText("SDK name: " + ProjectRootManager.getInstance(project).getProjectSdkName());
-
-        Module[] modules = ModuleManager.getInstance(project).getModules();
-        for (Module module : modules)
-        {
-            addText("module " + module.getName());
-        }
-
-        for(RunConfiguration conf : RunManager.getInstance(project).getAllConfigurationsList()) {
-            addText("RunConfiguration: name " + conf.getName());
-        }
-
-        for (RunnerAndConfigurationSettings se : RunManager.getInstance(project).getAllSettings()) {
-            addText("RunnerAndConfigurationSettings: name " + se.getName() + ", unique id " + se.getUniqueID() + ", folder name " + se.getFolderName() + ", settings " + se.getConfiguration().getName() + ", type display name " + se.getType().getDisplayName());
-        }
-
-        RunnerAndConfigurationSettings se = RunManager.getInstance(project).getSelectedConfiguration();
-        addText("selected RunnerAndConfigurationSettings: name " + se.getName() + ", unique id " + se.getUniqueID() + ", folder name " + se.getFolderName() + ", settings " + se.getConfiguration().getName() + ", type display name " + se.getType().getDisplayName());
-
-        OCWorkspace workspace = OCWorkspace.getInstance(project);
-        CMakeWorkspace cworkspace = CMakeWorkspace.getInstance(project);
-        addText("CMakeWorkspace getSourceFiles:\n" + cworkspace.getSourceFiles().stream().map(File::toString).collect(Collectors.joining("\n")));
-        for (OCResolveConfiguration settings : workspace.getConfigurations()) {
-            addText("OCResolveConfiguration: getDisplayName(true) " + settings.getDisplayName(true) +
-                    ", getDisplayName(false) " + settings.getDisplayName(false) +
-                    ", getUniqueId() " + settings.getUniqueId());
-            OCCompilerSettings compilerSettings = settings.getCompilerSettings();
-            addText("getSources():\n" + settings.getSources().stream().map(v -> {
-                    return v.getUrl()
-                            + ", lang " + settings.getDeclaredLanguageKind(v).getDisplayName()
-                            + "\ncompiler " + compilerSettings.getCompiler(settings.getDeclaredLanguageKind(v)).toString() + ", " + compilerSettings.getCompilerExecutable(settings.getDeclaredLanguageKind(v)).getAbsolutePath()
-                            + ", CompilerWorkingDir " + compilerSettings.getCompilerWorkingDir().getAbsolutePath()
-                            + "\nswitches " + compilerSettings.getCompilerSwitches(settings.getDeclaredLanguageKind(v), v).getList(CidrCompilerSwitches.Format.RAW).stream().collect(Collectors.joining(" "))
-                            + "\nkey " + compilerSettings.getCompilerKey(settings.getDeclaredLanguageKind(v), v).getValue()
-                            + "\ngetLibraryHeadersRoots:\n" + settings.getLibraryHeadersRoots(settings.getDeclaredLanguageKind(v), v).stream().map(HeadersSearchRoot::toString).collect(Collectors.joining("\n"))
-                            ;
-                    }
-            ).collect(Collectors.joining("\n")));
-
-            CPPToolchains toolchains = CPPToolchains.getInstance();
-            addText(toolchains.getToolchains().stream().map(t -> t.getName() + " " + t.getToolSetPath() + " " + t.getToolSetKind().getDisplayName() + " " + t.getToolSetOptions().stream().map(CPPToolSet.Option::getValue).collect(Collectors.joining(" "))).collect(Collectors.joining("\n")));
-
-            //addText("project component adapters:\n" + project.getPicoContainer().getComponentAdapters().stream().map(o -> o == null ? "" : o.toString()).collect(Collectors.joining("\n")));
-
-            CMakeConfiguration cconf = cworkspace.getCMakeConfigurationFor(settings);
-            addText("CMakeConfiguration: name " + cconf.getName()
-                    + ", profile name " + cconf.getProfileName()
-                    + ", build type " + cconf.getBuildType()
-                    + ", " + cconf.toString()
-                    + "\ntarget " + cconf.getTarget().toString()+ ", " + cconf.getTargetType()
-                    + "\nsources " + cconf.getSources().stream().map(f -> f.toString() + ", settings " + cconf.getFileSettings(f).toString() + ", " + cconf.getCombinedCompilerFlags(cconf.getFileSettings(f).getLanguageKind(), f)).collect(Collectors.joining(" "))
-                    + "\ngetBuildWorkingDir " + cconf.getBuildWorkingDir()
-                    + "\ngetConfigurationGenerationDir " + cconf.getConfigurationGenerationDir()
-                    + "\ngetProductFile " + cconf.getProductFile()
-            );
-
-            CMakeModel model = cworkspace.getModel();
-            addText("CMakeModel: " + model.getProjectName() + ", getHeaderAndResourceFiles " + model.getHeaderAndResourceFiles().stream().map(File::toString).collect(Collectors.joining(" ")));
-        }
-
-        ExecutionTargetManager targetManager = ExecutionTargetManager.getInstance(project);
-        addText("getActiveTarget: " + targetManager.getActiveTarget().getDisplayName() + ", " + targetManager.getActiveTarget().getId() + ", " + targetManager.getActiveTarget().toString());
-        RunManagerEx runManager = RunManagerEx.getInstanceEx(project);
-        RunnerAndConfigurationSettings selected = runManager.getSelectedConfiguration();
-        addText("getSelectedConfiguration: " + selected.getName() + ", " + selected.getType().getDisplayName() + ", " + selected.getType().getConfigurationTypeDescription()
-                + ", " + selected.getFolderName() + ", " + selected.getConfiguration().getPresentableType()
-        );
-        addText("getAllSettings:\n" + runManager.getAllSettings().stream().map(s ->
-            s.getName() + ", " + s.getType().getDisplayName() + ", " + s.getType().getConfigurationTypeDescription()
-                    + ", " + s.getFolderName() + ", " + s.getConfiguration().getPresentableType()
-                    + "; getTargetsFor: " + targetManager.getTargetsFor(s).stream().map(t -> targetManager.getActiveTarget().getDisplayName() + ", " + targetManager.getActiveTarget().getId() + ", " + targetManager.getActiveTarget().toString()).collect(Collectors.joining("|"))
-        ).collect(Collectors.joining("\n")));
-        addText("getAllConfigurationsList:\n" + runManager.getAllConfigurationsList().stream().map(s ->
-                s.getName() + ", " + s.getType().getDisplayName() + ", " + s.getType().getConfigurationTypeDescription()
-                + ", " + s.getPresentableType()
-        ).collect(Collectors.joining("\n")));
-
-        addText("getSelectedResolveConfiguration: " + OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(project).getDisplayName(false) + "\n");
-
+    private static class Options {
+        String userArguments;
+        Filters filters;
     }
-*/
+
+    private static class Request {
+        String source;
+        Options options;
+    }
+
+    private static class SourceLocation {
+        String file;
+        int line;
+    }
+
+    private static class CompiledChunk {
+        String text;
+        SourceLocation source;
+    }
+
+    private static class CompiledResult {
+        int code;
+        List<CompiledChunk> stdout;
+        List<CompiledChunk> stderr;
+        List<CompiledChunk> asm;
+    }
+
+    public void refresh() {
+        if (lastPreprocessedSource != null) {
+            System.out.println("RemoteCompiler::refresh");
+            accept(lastPreprocessedSource);
+        }
+    }
 }

@@ -1,7 +1,6 @@
 package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.datamodel.state.SettingsState;
-import com.compilerexplorer.common.RemoteConnection;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
@@ -51,7 +50,7 @@ public class SettingsGui {
             }
             private void update() {
                 if (!ignoreUpdates) {
-                    state.clearConnection();
+                    state.setConnected(false);
                 }
             }
         });
@@ -75,8 +74,7 @@ public class SettingsGui {
     public void loadState(@NotNull SettingsState state_) {
         ignoreUpdates = true;
         state.copyFrom(state_);
-        urlField.setText(state.getUrl());
-        preprocessCheckbox.setSelected(state.getPreprocessLocally());
+        populateGuiFromState();
         ignoreUpdates = false;
     }
 
@@ -87,8 +85,17 @@ public class SettingsGui {
 
     @NotNull
     public SettingsState getState() {
+        populateStateFromGui();
+        return state;
+    }
+
+    private void populateGuiFromState() {
+        urlField.setText(state.getUrl());
+        preprocessCheckbox.setSelected(state.getPreprocessLocally());
+    }
+
+    private void populateStateFromGui() {
         state.setUrl(urlField.getText());
         state.setPreprocessLocally(preprocessCheckbox.isSelected());
-        return state;
     }
 }

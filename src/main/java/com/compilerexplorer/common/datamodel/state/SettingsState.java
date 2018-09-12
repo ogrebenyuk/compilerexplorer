@@ -10,15 +10,14 @@ import java.util.*;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
     @NotNull
-    public static final String DEFAULT_URL = "http://localhost:10240";
-    public static final boolean DEFAULT_CONNECTED = false;
-    public static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
-    public static final boolean DEFAULT_USE_REMOTE_DEFINES = false;
+    private static final String DEFAULT_URL = "http://localhost:10240";
+    private static final boolean DEFAULT_CONNECTED = false;
+    private static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     @NotNull
-    public static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
+    private static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
 
     @NotNull
-    private static final SettingsState EMPTY = new SettingsState();
+    public static final SettingsState EMPTY = new SettingsState();
 
     @NotNull
     @Property
@@ -27,13 +26,7 @@ public class SettingsState {
     private boolean connected = DEFAULT_CONNECTED;
     @NotNull
     @Property
-    private String lastConnectionStatus = "";
-    @NotNull
-    @Property
     private List<RemoteCompilerInfo> remoteCompilers = new ArrayList<>();
-    @NotNull
-    @Property
-    private Map<RemoteCompilerId, Defines> remoteCompilerDefines = new HashMap<>();
     @NotNull
     @Property
     private Map<LocalCompilerPath, LocalCompilerSettings> localCompilerSettings = new HashMap<>();
@@ -45,8 +38,6 @@ public class SettingsState {
     private Map<LocalCompilerPath, CompilerMatches> compilerMatches = new HashMap<>();
     @Property
     private boolean preprocessLocally = DEFAULT_PREPROCESS_LOCALLY;
-    @Property
-    private boolean useRemoteDefines = DEFAULT_USE_REMOTE_DEFINES;
     @NotNull
     @Property
     private String additionalSwitches = DEFAULT_ADDITIONAL_SWITCHES;
@@ -54,10 +45,6 @@ public class SettingsState {
     private boolean autoscrollFromSource = false;
     @Property
     private boolean autoscrollToSource = false;
-    @Property
-    private boolean autohighlightFromSource = true;
-    @Property
-    private boolean autohighlightToSource = true;
     @Property
     private boolean autoupdateFromSource = true;
 
@@ -87,15 +74,6 @@ public class SettingsState {
     }
 
     @NotNull
-    public String getLastConnectionStatus() {
-        return lastConnectionStatus;
-    }
-
-    public void setLastConnectionStatus(@NotNull String lastConnectionStatus_) {
-        lastConnectionStatus = lastConnectionStatus_;
-    }
-
-    @NotNull
     public List<RemoteCompilerInfo> getRemoteCompilers() {
         return remoteCompilers;
     }
@@ -103,16 +81,6 @@ public class SettingsState {
     public void setRemoteCompilers(@NotNull List<RemoteCompilerInfo> remoteCompilers_) {
         remoteCompilers = new ArrayList<>();
         remoteCompilers_.forEach(otherInfo -> remoteCompilers.add(new RemoteCompilerInfo(otherInfo)));
-    }
-
-    @NotNull
-    public Map<RemoteCompilerId, Defines> getRemoteCompilerDefines() {
-        return remoteCompilerDefines;
-    }
-
-    public void setRemoteCompilerDefines(@NotNull Map<RemoteCompilerId, Defines> remoteCompilerDefines_) {
-        remoteCompilerDefines = new HashMap<>();
-        remoteCompilerDefines_.forEach((key, value) -> remoteCompilerDefines.put(new RemoteCompilerId(key), new Defines(value)));
     }
 
     @NotNull
@@ -152,14 +120,6 @@ public class SettingsState {
         preprocessLocally = preprocessLocally_;
     }
 
-    public boolean getUseRemoteDefines() {
-        return useRemoteDefines;
-    }
-
-    public void setUseRemoteDefines(boolean useRemoteDefines_) {
-        useRemoteDefines = useRemoteDefines_;
-    }
-
     @NotNull
     public String getAdditionalSwitches() {
         return additionalSwitches;
@@ -185,22 +145,6 @@ public class SettingsState {
         autoscrollToSource = autoscrollToSource_;
     }
 
-    public boolean getAutohighlightFromSource() {
-        return autohighlightFromSource;
-    }
-
-    public void setAutohighlightFromSource(boolean autohighlightFromSource_) {
-        autohighlightFromSource = autohighlightFromSource_;
-    }
-
-    public boolean getAutohighlightToSource() {
-        return autohighlightToSource;
-    }
-
-    public void setAutohighlightToSource(boolean autohighlightToSource_) {
-        autohighlightToSource = autohighlightToSource_;
-    }
-
     public boolean getAutoupdateFromSource() {
         return autoupdateFromSource;
     }
@@ -209,43 +153,17 @@ public class SettingsState {
         autoupdateFromSource = autoupdateFromSource_;
     }
 
-    public boolean isConnectionCleared() {
-        return !getConnected() && getLastConnectionStatus().isEmpty();
-    }
-
-    public void clearConnection() {
-        setConnected(EMPTY.getConnected());
-        setLastConnectionStatus(EMPTY.getLastConnectionStatus());
-        setRemoteCompilers(EMPTY.getRemoteCompilers());
-        setRemoteCompilerDefines(EMPTY.getRemoteCompilerDefines());
-        setCompilerMatches(EMPTY.getCompilerMatches());
-    }
-
-    public void clearLocalCompilerSettings() {
-        setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
-    }
-
-    public void clear() {
-        clearConnection();
-        clearLocalCompilerSettings();
-    }
-
     public void copyFrom(@NotNull SettingsState other) {
         setUrl(other.getUrl());
         setConnected(other.getConnected());
-        setLastConnectionStatus(other.getLastConnectionStatus());
         setRemoteCompilers(other.getRemoteCompilers());
-        setRemoteCompilerDefines(other.getRemoteCompilerDefines());
         setLocalCompilerSettings(other.getLocalCompilerSettings());
         setFilters(other.getFilters());
         setCompilerMatches(other.getCompilerMatches());
         setPreprocessLocally(other.getPreprocessLocally());
-        setUseRemoteDefines(other.getUseRemoteDefines());
         setAdditionalSwitches(other.getAdditionalSwitches());
         setAutoscrollFromSource(other.getAutoscrollFromSource());
         setAutoscrollToSource(other.getAutoscrollToSource());
-        setAutohighlightFromSource(other.getAutohighlightFromSource());
-        setAutohighlightFromSource(other.getAutohighlightFromSource());
         setAutoupdateFromSource(other.getAutoupdateFromSource());
     }
 
@@ -253,19 +171,14 @@ public class SettingsState {
     public int hashCode() {
         return getUrl().hashCode()
                 + (getConnected() ? 1 : 0)
-                + getLastConnectionStatus().hashCode()
                 + getRemoteCompilers().hashCode()
-                + getRemoteCompilerDefines().hashCode()
                 + getLocalCompilerSettings().hashCode()
                 + getFilters().hashCode()
                 + getCompilerMatches().hashCode()
                 + (getPreprocessLocally() ? 1 : 0)
-                + (getUseRemoteDefines() ? 1 : 0)
                 + getAdditionalSwitches().hashCode()
                 + (getAutoscrollFromSource() ? 1 : 0)
                 + (getAutoscrollToSource() ? 1 : 0)
-                + (getAutohighlightFromSource() ? 1 : 0)
-                + (getAutohighlightToSource() ? 1 : 0)
                 + (getAutoupdateFromSource() ? 1 : 0)
                 ;
     }
@@ -278,19 +191,14 @@ public class SettingsState {
         SettingsState other = (SettingsState)obj;
         return getUrl().equals(other.getUrl())
                 && getConnected() == other.getConnected()
-                && getLastConnectionStatus().equals(other.getLastConnectionStatus())
                 && getRemoteCompilers().equals(other.getRemoteCompilers())
-                && getRemoteCompilerDefines().equals(other.getRemoteCompilerDefines())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
                 && getFilters().equals(other.getFilters())
                 && getCompilerMatches().equals(other.getCompilerMatches())
                 && getPreprocessLocally() == other.getPreprocessLocally()
-                && getUseRemoteDefines() == other.getUseRemoteDefines()
                 && getAdditionalSwitches().equals(other.getAdditionalSwitches())
                 && getAutoscrollFromSource() == (other.getAutoscrollFromSource())
                 && getAutoscrollToSource() == (other.getAutoscrollToSource())
-                && getAutohighlightFromSource() == (other.getAutohighlightFromSource())
-                && getAutohighlightToSource() == (other.getAutohighlightToSource())
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
                 ;
     }

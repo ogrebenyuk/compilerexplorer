@@ -1,8 +1,6 @@
 package com.compilerexplorer.common;
 
 import com.compilerexplorer.common.datamodel.state.SettingsState;
-import com.compilerexplorer.common.datamodel.state.StateConsumer;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
@@ -11,12 +9,16 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Consumer;
+
 @State(name = "SettingsProvider", storages = @Storage(file = "compilerexplorer.settings.xml"))
 public class SettingsProvider implements PersistentStateComponent<SettingsState> {
     @NotNull
     private final Project project;
-    @Nullable
+    @NotNull
     private SettingsState state;
+    @Nullable
+    private Consumer<RefreshSignal> refreshSignalConsumer;
 
     public static SettingsProvider getInstance(@NotNull Project project) {
         return ServiceManager.getService(project, SettingsProvider.class);
@@ -24,6 +26,11 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
 
     public SettingsProvider(@NotNull Project project_) {
         project = project_;
+        state = new SettingsState();
+    }
+
+    public void setRefreshSignalConsumer(@NotNull Consumer<RefreshSignal> refreshSignalConsumer_) {
+        refreshSignalConsumer = refreshSignalConsumer_;
     }
 
     @NotNull
@@ -34,29 +41,20 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
     @Override
     @NotNull
     public SettingsState getState() {
-        state = createStateIfNeeded();
-        if (state.isConnectionCleared()) {
-            RemoteConnection.connect(project, state);
-        }
         return state;
     }
 
     @Override
     public void loadState(@NotNull SettingsState state_) {
-        state = createStateIfNeeded();
+        boolean urlChanged = !state.getUrl().equals(state_.getUrl());
+        boolean preprocessChanged = state.getPreprocessLocally() != state_.getPreprocessLocally();
         state.copyFrom(state_);
-        publishStateChangedLater(project);
-    }
-
-    @NotNull
-    private SettingsState createStateIfNeeded() {
-        if (state == null) {
-            state = new SettingsState();
+        if (refreshSignalConsumer != null) {
+            if (urlChanged) {
+                refreshSignalConsumer.accept(RefreshSignal.RECONNECT);
+            } else if (preprocessChanged) {
+                refreshSignalConsumer.accept(RefreshSignal.PREPROCESS);
+            }
         }
-        return state;
-    }
-
-    public static void publishStateChangedLater(@NotNull Project project_) {
-        ApplicationManager.getApplication().invokeLater(() -> project_.getMessageBus().syncPublisher(StateConsumer.TOPIC).stateChanged());
     }
 }
