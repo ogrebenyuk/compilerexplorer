@@ -15,4 +15,12 @@ public enum CompilerMatchKind {
         }
         return "";
     }
+
+    @NotNull
+    public static String asStringFull(@NotNull CompilerMatchKind kind) {
+        switch (kind) {
+            case NO_MATCH: return "no match";
+        }
+        return asString(kind);
+    }
 }

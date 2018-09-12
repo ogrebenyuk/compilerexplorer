@@ -11,6 +11,8 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class SettingsGui {
     private static final int GAP = 2;
@@ -74,8 +76,14 @@ public class SettingsGui {
             (new RemoteCompilersProducer<Boolean>(
                     project,
                     testState,
-                    unused -> testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers"),
-                    error  -> testResultLabel.setText("Error: " + error.getMessage()),
+                    unused -> {
+                        testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
+                        testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("\n")));
+                    },
+                    error  -> {
+                        testResultLabel.setText("Error: " + error.getMessage());
+                        testResultLabel.setToolTipText("");
+                    },
                     taskRunner
             )).accept(false);
         });

@@ -247,16 +247,35 @@ public class ToolWindowGui {
     }
 
     private void selectSourceSettings(@NotNull SourceSettings sourceSettings) {
+        projectSettingsComboBox.setToolTipText(getSourceTooltip(sourceSettings));
         if (sourceSettingsConsumer != null) {
             sourceSettingsConsumer.accept(sourceSettings);
         }
     }
 
+    @NotNull
+    private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
+        return "File: " + sourceSettings.getSource().getPath()
+                + "\nLanguage: " + sourceSettings.getLanguage().getDisplayName()
+                + "\nCompiler: " + sourceSettings.getCompiler().getAbsolutePath()
+                + "\nCompiler kind: " + sourceSettings.getCompilerKind()
+                + "\nCompiler options: " + String.join(" ", sourceSettings.getSwitches());
+    }
+
     private void selectCompilerMatch(@NotNull CompilerMatch compilerMatch) {
+        matchesComboBox.setToolTipText(getMatchTooltip(compilerMatch));
         if (sourceRemoteMatchedConsumer != null && sourceRemoteMatched != null) {
             sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceRemoteMatched.getSourceCompilerSettings(),
                     new CompilerMatches(compilerMatch, sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches())));
         }
+    }
+
+    @NotNull
+    private String getMatchTooltip(@NotNull CompilerMatch compilerMatch) {
+        return "Id: " + compilerMatch.getRemoteCompilerInfo().getId()
+                + "\nLanguage: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
+                + "\nName: " + compilerMatch.getRemoteCompilerInfo().getName()
+                + "\nMatch kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind());
     }
 
     public void setSourceSettingsConsumer(@NotNull Consumer<SourceSettings> sourceSettingsConsumer_) {
@@ -281,6 +300,7 @@ public class ToolWindowGui {
         return refreshSignal -> {
             System.out.println("ToolWindowGui::asResetSignalConsumer");
             projectSettingsComboBox.removeAllItems();
+            projectSettingsComboBox.setToolTipText("");
         };
     }
 
@@ -289,6 +309,7 @@ public class ToolWindowGui {
         return refreshSignal -> {
             System.out.println("ToolWindowGui::asReconnectSignalConsumer");
             matchesComboBox.removeAllItems();
+            matchesComboBox.setToolTipText("");
         };
     }
 
@@ -316,6 +337,7 @@ public class ToolWindowGui {
             projectSettingsComboBox.setModel(model);
             if (newSelection == null) {
                 projectSettingsComboBox.removeAllItems();
+                projectSettingsComboBox.setToolTipText("");
                 showError("No source selected");
             } else {
                 selectSourceSettings(newSelection);
@@ -345,6 +367,7 @@ public class ToolWindowGui {
             matchesComboBox.setModel(model);
             if (newSelection == null) {
                 matchesComboBox.removeAllItems();
+                matchesComboBox.setToolTipText("");
                 showError("No compiler selected");
             } else {
                 selectCompilerMatch(newSelection);
