@@ -23,8 +23,13 @@ public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
 
     @Override
     public void accept(@NotNull SourceRemoteMatched sourceRemoteMatched) {
-        System.out.println("SourceRemoteMatchSaver::accept");
         SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
+        System.out.println("SourceRemoteMatchSaver::accept");
         state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), sourceRemoteMatched.getRemoteCompilerMatches());
         sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
     }

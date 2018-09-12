@@ -45,8 +45,14 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
 
     @Override
     public void accept(@NotNull SourceRemoteMatched preprocessableSource) {
-        System.out.println("SourcePreprocessor::accept");
         lastPreprocessableSource = preprocessableSource;
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
+        System.out.println("SourcePreprocessor::accept");
         SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
         VirtualFile source = sourceSettings.getSource();
         Document document = FileDocumentManager.getInstance().getDocument(source);
@@ -55,7 +61,6 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             return;
         }
 
-        SettingsState state = SettingsProvider.getInstance(project).getState();
         String sourceText = document.getText();
         if (!state.getPreprocessLocally()) {
             preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
@@ -111,7 +116,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     }
 
     public void refresh() {
-        if (lastPreprocessableSource != null) {
+        if (lastPreprocessableSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
             System.out.println("SourcePreprocessor::refresh");
             accept(lastPreprocessableSource);
         }

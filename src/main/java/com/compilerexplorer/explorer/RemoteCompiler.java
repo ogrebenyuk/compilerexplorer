@@ -56,9 +56,14 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
 
     @Override
     public void accept(@NotNull PreprocessedSource preprocessedSource) {
-        System.out.println("RemoteCompiler::accept");
         lastPreprocessedSource = preprocessedSource;
         SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
+        System.out.println("RemoteCompiler::accept");
         SourceSettings sourceSettings = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
         String url = state.getUrl();
         Filters filters = new Filters(state.getFilters());
@@ -162,7 +167,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     }
 
     public void refresh() {
-        if (lastPreprocessedSource != null) {
+        if (lastPreprocessedSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
             System.out.println("RemoteCompiler::refresh");
             accept(lastPreprocessedSource);
         }

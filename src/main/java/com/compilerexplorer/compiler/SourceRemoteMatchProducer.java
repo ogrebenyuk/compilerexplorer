@@ -26,6 +26,11 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     @Override
     public void accept(@NotNull SourceCompilerSettings sourceCompilerSettings) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
         {
             CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompiler().getAbsolutePath()));
             if (existingMatches != null) {

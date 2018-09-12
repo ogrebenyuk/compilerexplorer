@@ -45,6 +45,11 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @Override
     public void accept(@NotNull SourceSettings sourceSettings) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
         {
             LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()));
             if (existingSettings != null) {

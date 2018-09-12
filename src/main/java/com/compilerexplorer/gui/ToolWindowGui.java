@@ -4,10 +4,10 @@ import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
+import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
@@ -126,6 +126,7 @@ public class ToolWindowGui {
             private void update() {
                 getState().setAdditionalSwitches(additionalSwitchesField.getText());
                 if (getState().getAutoupdateFromSource()) {
+                    System.out.println("ToolWindowGui::additionalSwitchesField update");
                     schedulePreprocess();
                 }
             }
@@ -135,7 +136,10 @@ public class ToolWindowGui {
         JButton recompileButton = new JButton();
         recompileButton.setIcon(IconLoader.findIcon("/actions/refresh.png"));
         recompileButton.setToolTipText("Recompile current source");
-        recompileButton.addActionListener(e -> preprocess());
+        recompileButton.addActionListener(e -> {
+            System.out.println("ToolWindowGui::recompileButton");
+            preprocess();
+        });
         headPanel.add(recompileButton);
 
         content.add(headPanel, BorderLayout.NORTH);
@@ -153,15 +157,10 @@ public class ToolWindowGui {
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
-        EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new com.intellij.openapi.editor.event.DocumentListener() {
-            @Override
-            public void documentChanged(com.intellij.openapi.editor.event.DocumentEvent event) {
-                if (!suppressUpdates && getState().getAutoupdateFromSource() && belongsToProject(event.getDocument())) {
-                    schedulePreprocess();
-                }
-            }
-            private boolean belongsToProject(@NotNull Document document) {
-                return EditorFactory.getInstance().getEditors(document, project).length != 0;
+        new EditorChangeListener(project, unused -> {
+            if (!suppressUpdates) {
+                System.out.println("ToolWindowGui::EditorChangeListener");
+                schedulePreprocess();
             }
         });
 
@@ -195,6 +194,7 @@ public class ToolWindowGui {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 if (refreshSignalConsumer != null) {
+                    System.out.println("ToolWindowGui::ForceRefresh");
                     refreshSignalConsumer.accept(RefreshSignal.RESET);
                 }
             }
@@ -217,6 +217,7 @@ public class ToolWindowGui {
             public void setSelected(AnActionEvent event, boolean selected) {
                 setter.accept(supplier.get(), selected);
                 if (recompile && refreshSignalConsumer != null) {
+                    System.out.println("ToolWindowGui::addToggleAction");
                     refreshSignalConsumer.accept(RefreshSignal.COMPILE);
                 }
             }
@@ -224,11 +225,13 @@ public class ToolWindowGui {
     }
 
     private void schedulePreprocess() {
+        System.out.println("ToolWindowGui::schedulePreprocess");
         scheduleUpdate(this::preprocess);
     }
 
     private void preprocess() {
         if (refreshSignalConsumer != null) {
+            System.out.println("ToolWindowGui::preprocess");
             ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.PREPROCESS));
         }
     }
@@ -315,7 +318,7 @@ public class ToolWindowGui {
             if (newSelection == null) {
                 projectSettingsComboBox.removeAllItems();
                 showError("No source selected");
-            } else if (!newSelection.equals(oldSelection)) {
+            } else {
                 selectSourceSettings(newSelection);
             }
             suppressUpdates = false;

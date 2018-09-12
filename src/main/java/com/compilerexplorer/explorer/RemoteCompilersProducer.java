@@ -53,6 +53,11 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     public void accept(@NotNull T t) {
         lastT = t;
         SettingsState state = SettingsProvider.getInstance(project).getState();
+
+        if (!state.getEnabled()) {
+            return;
+        }
+
         if (state.getConnected()) {
             System.out.println("RemoteCompilersProducer::accept already connected");
             consumer.accept(t);
@@ -122,7 +127,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     }
 
     public void refresh() {
-        if (lastT != null) {
+        if (lastT != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
             accept(lastT);
         }
     }

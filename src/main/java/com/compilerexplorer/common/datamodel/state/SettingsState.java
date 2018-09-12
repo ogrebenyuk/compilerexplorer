@@ -19,6 +19,8 @@ public class SettingsState {
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
 
+    @Property
+    private boolean enabled = true;
     @NotNull
     @Property
     private String url = DEFAULT_URL;
@@ -54,6 +56,14 @@ public class SettingsState {
 
     public SettingsState(@NotNull SettingsState other) {
         copyFrom(other);
+    }
+
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled_) {
+        enabled = enabled_;
     }
 
     @NotNull
@@ -154,6 +164,7 @@ public class SettingsState {
     }
 
     public void copyFrom(@NotNull SettingsState other) {
+        setEnabled(other.getEnabled());
         setUrl(other.getUrl());
         setConnected(other.getConnected());
         setRemoteCompilers(other.getRemoteCompilers());
@@ -169,7 +180,8 @@ public class SettingsState {
 
     @Override
     public int hashCode() {
-        return getUrl().hashCode()
+        return (getEnabled() ? 1 : 0)
+                + getUrl().hashCode()
                 + (getConnected() ? 1 : 0)
                 + getRemoteCompilers().hashCode()
                 + getLocalCompilerSettings().hashCode()
@@ -189,7 +201,8 @@ public class SettingsState {
             return false;
         }
         SettingsState other = (SettingsState)obj;
-        return getUrl().equals(other.getUrl())
+        return getEnabled() == other.getEnabled()
+                && getUrl().equals(other.getUrl())
                 && getConnected() == other.getConnected()
                 && getRemoteCompilers().equals(other.getRemoteCompilers())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())

@@ -3,7 +3,6 @@ package com.compilerexplorer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.common.datamodel.ProjectSettings;
 import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.SourceRemoteMatchProducer;
@@ -12,6 +11,7 @@ import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
 import com.compilerexplorer.explorer.RemoteCompiler;
 import com.compilerexplorer.compiler.SourcePreprocessor;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
+import com.compilerexplorer.gui.FormAncestorListener;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.util.IconLoader;
@@ -52,11 +52,8 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
         form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver);
 
-        Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
-            SettingsState state = SettingsProvider.getInstance(project).getState();
-            if (refreshSignal != RefreshSignal.RESET && !state.getConnected()) {
-                refreshSignal = RefreshSignal.RECONNECT;
-            }
+        Consumer<RefreshSignal> resetter = refreshSignal -> {
+            System.out.println("resetter");
             switch(refreshSignal) {
                 case RESET:
                     compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
@@ -69,6 +66,9 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 case COMPILE:
                     form.asRecompileSignalConsumer().accept(refreshSignal);
             }
+        };
+        Consumer<RefreshSignal> refresher = refreshSignal -> {
+            System.out.println("refresher");
             switch(refreshSignal) {
                 case RESET:
                     projectListener.refresh();
@@ -84,25 +84,43 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                     break;
             }
         };
+        Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
+            System.out.println("refreshSignalConsumer");
+            RefreshSignal signal = upgradeSignalIfDisconnected(project, refreshSignal);
+            resetter.accept(signal);
+            refresher.accept(signal);
+        };
         form.setRefreshSignalConsumer(refreshSignalConsumer);
         SettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
 
-        refreshSignalConsumer.accept(RefreshSignal.RESET);
-
-        /*
-        form.getContent().addAncestorListener (new AncestorListener() {
+        new FormAncestorListener(form.getContent(), new Consumer<Boolean>() {
+            private boolean lastEnabled = toolWindow.isVisible();
             @Override
-            public void ancestorAdded(AncestorEvent event) {
-                System.out.println("ancestorAdded");
-            }
-            public void ancestorRemoved(AncestorEvent event) {
-                System.out.println("ancestorRemoved");
-            }
-            public void ancestorMoved(AncestorEvent event) {
+            public void accept(@NotNull Boolean unused) {
+                boolean enabled = toolWindow.isVisible();
+                if (enabled != lastEnabled) {
+                    System.out.println("FormAncestorListener");
+                    lastEnabled = enabled;
+                    SettingsProvider.getInstance(project).getState().setEnabled(enabled);
+                    if (enabled) {
+                        refresher.accept(RefreshSignal.RESET);
+                    }
+                }
             }
         });
-        */
+
+        refresher.accept(RefreshSignal.RESET);
+
         return form.getContent();
+    }
+
+    @NotNull
+    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull Project project, @NotNull RefreshSignal signal) {
+        SettingsState state = SettingsProvider.getInstance(project).getState();
+        if (signal != RefreshSignal.RESET && !state.getConnected()) {
+            return RefreshSignal.RECONNECT;
+        }
+        return signal;
     }
 
     private static void addComponentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent component) {
