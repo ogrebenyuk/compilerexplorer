@@ -10,8 +10,8 @@ import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
@@ -45,10 +45,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.intellij.openapi.editor.ScrollType.CENTER;
+
 public class ToolWindowGui {
     private static final long UPDATE_DELAY_MILLIS = 1000;
     @NotNull
-    private static final Color HIGHLIGHT_BACKGROUND_COLOR = JBColor.CYAN;
+    private static final Color HIGHLIGHT_COLOR = JBColor.CYAN;
 
     @NotNull
     private final Project project;
@@ -212,7 +214,7 @@ public class ToolWindowGui {
 
         toolWindow.setAdditionalGearActions(actionGroup);
 
-        highlightAttributes.setBackgroundColor(HIGHLIGHT_BACKGROUND_COLOR);
+        highlightAttributes.setBackgroundColor(HIGHLIGHT_COLOR);
         CaretTracker caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
     }
@@ -434,20 +436,46 @@ public class ToolWindowGui {
     }
 
     private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
-        Editor ed = editor.getEditor();
+        EditorEx ed = (EditorEx) editor.getEditor();
         if (ed == null) {
             return;
         }
-        MarkupModelEx markupModel = (MarkupModelEx) ed.getMarkupModel();
+
+        boolean scroll = getState().getAutoscrollFromSource();
+        int middleLine = -1;
+        int closestLine = -1;
+        int closestLineDistance = -1;
+        if (scroll) {
+            Rectangle visibleArea = ed.getScrollingModel().getVisibleArea();
+            Point middlePoint = new Point(visibleArea.x + (visibleArea.width / 2),visibleArea.y + (visibleArea.height / 2));
+            LogicalPosition middlePosition = ed.xyToLogicalPosition(middlePoint);
+            middleLine = middlePosition.line;
+        }
+
+        MarkupModelEx markupModel = ed.getMarkupModel();
         markupModel.removeAllHighlighters();
-        locations.forEach(location -> {
+        for (CompiledText.SourceLocation location : locations) {
             List<Pair<Integer, Integer>> ranges = locationsFromSourceMap.get(location);
             if (ranges != null) {
-                ranges.forEach(range -> {
+                for (Pair<Integer, Integer> range : ranges) {
                     RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
-                    highlighter.setErrorStripeMarkColor(HIGHLIGHT_BACKGROUND_COLOR);
-                });
+                    highlighter.setErrorStripeMarkColor(HIGHLIGHT_COLOR);
+
+                    if (scroll) {
+                        LogicalPosition position = ed.offsetToLogicalPosition(range.getKey());
+                        int line = position.line;
+                        int diff = Math.abs(line - middleLine);
+                        if ((closestLineDistance < 0) || (diff < closestLineDistance)) {
+                            closestLineDistance = diff;
+                            closestLine = line;
+                        }
+                    }
+                }
             }
-        });
+        }
+
+        if (scroll && (closestLine >= 0)) {
+            ed.getScrollingModel().scrollTo(new LogicalPosition(closestLine, 0), CENTER);
+        }
     }
 }
