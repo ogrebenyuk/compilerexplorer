@@ -6,11 +6,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
-class EditorCaretListener implements CaretListener {
+public class EditorCaretListener implements CaretListener {
     @NotNull
     private final Consumer<CaretEvent> caretEventConsumer;
 
-    EditorCaretListener(@NotNull Consumer<CaretEvent> caretEventConsumer_) {
+    public EditorCaretListener(@NotNull Consumer<CaretEvent> caretEventConsumer_) {
         caretEventConsumer = caretEventConsumer_;
     }
 

@@ -5,6 +5,7 @@ import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
+import com.compilerexplorer.gui.listeners.EditorCaretListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
@@ -12,14 +13,21 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
+import com.intellij.openapi.editor.LogicalPosition;
+import com.intellij.openapi.editor.ScrollType;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
 import com.intellij.openapi.editor.markup.*;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.JBColor;
@@ -73,6 +81,8 @@ public class ToolWindowGui {
     private boolean suppressUpdates = false;
     @NotNull
     private final Map<CompiledText.SourceLocation, List<Pair<Integer, Integer>>> locationsFromSourceMap = new HashMap<>();
+    @NotNull
+    private final SortedMap<Integer, Pair<Integer, CompiledText.SourceLocation>> locationsToSourceMap = new TreeMap<>();
     @NotNull
     private final TextAttributes highlightAttributes = new TextAttributes();
     @NotNull
@@ -163,6 +173,23 @@ public class ToolWindowGui {
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
                 ed.getSettings().setLineNumbersShown(true);
+                ed.getCaretModel().addCaretListener(new EditorCaretListener(event -> {
+                    if (!suppressUpdates && getState().getAutoscrollToSource()) {
+                        CompiledText.SourceLocation source = findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition()));
+                        if (source != null) {
+                            VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
+                            if (file != null) {
+                                FileEditorManager.getInstance(project).openFile(file, true);
+                                Arrays.stream(EditorFactory.getInstance().getAllEditors())
+                                        .filter(editor -> editor.getProject() == project && file.equals(FileDocumentManager.getInstance().getFile(editor.getDocument())))
+                                        .forEach(editor -> {
+                                            editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
+                                            editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
+                                        });
+                            }
+                        }
+                    }
+                }));
                 return ed;
             }
         };
@@ -410,6 +437,7 @@ public class ToolWindowGui {
             suppressUpdates = true;
 
             locationsFromSourceMap.clear();
+            locationsToSourceMap.clear();
             StringBuilder asmBuilder = new StringBuilder();
             int currentOffset = 0;
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
@@ -419,6 +447,7 @@ public class ToolWindowGui {
                     asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
                         locationsFromSourceMap.computeIfAbsent(chunk.source, unused -> new ArrayList<>()).add(new Pair<>(currentOffset, nextOffset));
+                        locationsToSourceMap.put(currentOffset, new Pair<>(nextOffset, chunk.source));
                     }
                     currentOffset = nextOffset + 1;
                 }
@@ -447,6 +476,7 @@ public class ToolWindowGui {
         ApplicationManager.getApplication().assertIsDispatchThread();
         suppressUpdates = true;
         locationsFromSourceMap.clear();
+        locationsToSourceMap.clear();
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
@@ -528,5 +558,17 @@ public class ToolWindowGui {
         if (!useAnimation) ed.getScrollingModel().disableAnimation();
         ed.getScrollingModel().scrollVertically(y);
         if (!useAnimation) ed.getScrollingModel().enableAnimation();
+    }
+
+    @Nullable
+    private CompiledText.SourceLocation findSourceLocationFromOffset(int offset) {
+        SortedMap<Integer, Pair<Integer, CompiledText.SourceLocation>> headMap = locationsToSourceMap.headMap(offset + 1);
+        if (!headMap.isEmpty()) {
+            Pair<Integer, CompiledText.SourceLocation> lastValue = headMap.get(headMap.lastKey());
+            if (lastValue.getKey() >= offset) {
+                return lastValue.getValue();
+            }
+        }
+        return null;
     }
 }

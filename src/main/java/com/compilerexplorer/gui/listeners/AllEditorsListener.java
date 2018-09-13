@@ -33,9 +33,9 @@ public class AllEditorsListener {
     }
 
     private void handleExistingEditors() {
-        Arrays.stream(EditorFactory.getInstance().getAllEditors()).
-                filter(editor -> editor.getProject() == project && findFile(editor) != null).
-                forEach(this::addListener);
+        Arrays.stream(EditorFactory.getInstance().getAllEditors())
+                .filter(editor -> editor.getProject() == project && findFile(editor) != null)
+                .forEach(this::addListener);
     }
 
     private void subscribeToNewEditors() {
