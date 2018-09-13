@@ -259,6 +259,7 @@ public class ToolWindowGui {
             public void update(AnActionEvent event) {
                 event.getPresentation().setHoveredIcon(AllIcons.General.LocateHover);
                 event.getPresentation().setIcon(AllIcons.General.Locate);
+                event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
             }
         });
     }
