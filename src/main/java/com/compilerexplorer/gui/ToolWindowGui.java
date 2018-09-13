@@ -21,7 +21,6 @@ import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
 import com.intellij.openapi.editor.markup.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -173,7 +172,7 @@ public class ToolWindowGui {
                 ed.setVerticalScrollbarVisible(true);
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
-                ed.getSettings().setLineNumbersShown(true);
+                //ed.getSettings().setLineNumbersShown(true);
                 ed.getCaretModel().addCaretListener(new EditorCaretListener(event -> {
                     if (!suppressUpdates && getState().getAutoscrollToSource()) {
                         CompiledText.SourceLocation source = findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition()));
@@ -532,7 +531,7 @@ public class ToolWindowGui {
                 for (Pair<Integer, Integer> range : ranges) {
                     if (highlight) {
                         RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
-                        highlighter.setErrorStripeMarkColor(HIGHLIGHT_COLOR);
+                        highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
                     }
                     if (scroll) {
                         int positionBegin = ed.offsetToXY(range.getKey()).y;
