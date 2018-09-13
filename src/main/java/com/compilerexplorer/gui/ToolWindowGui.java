@@ -193,18 +193,18 @@ public class ToolWindowGui {
         addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
 
-        actionGroup.add(new AnAction("Compiler Explorer Settings...", null, AllIcons.General.Settings) {
+        actionGroup.add(new AnAction("Compiler Explorer Settings...") {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, "Compiler Explorer");
             }
             @Override
             public void update(AnActionEvent event) {
-                event.getPresentation().setIcon(getTemplatePresentation().getIcon());
+                event.getPresentation().setIcon(AllIcons.General.Settings);
             }
         });
 
-        actionGroup.add(new AnAction("Reset Cache and Reload", "", AllIcons.Actions.ForceRefresh) {
+        actionGroup.add(new AnAction("Reset Cache and Reload") {
             @Override
             public void actionPerformed(AnActionEvent event) {
                 if (refreshSignalConsumer != null) {
@@ -213,7 +213,7 @@ public class ToolWindowGui {
             }
             @Override
             public void update(AnActionEvent event) {
-                event.getPresentation().setIcon(getTemplatePresentation().getIcon());
+                event.getPresentation().setIcon(AllIcons.Actions.ForceRefresh);
             }
         });
 
@@ -222,6 +222,18 @@ public class ToolWindowGui {
         highlightAttributes.setBackgroundColor(HIGHLIGHT_COLOR);
         caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
+
+        toolWindow.setTitleActions(new AnAction("Scroll from Source") {
+            @Override
+            public void actionPerformed(AnActionEvent event) {
+                highlightLocations(caretTracker.getLocations(), false, true);
+            }
+            @Override
+            public void update(AnActionEvent event) {
+                event.getPresentation().setHoveredIcon(AllIcons.General.LocateHover);
+                event.getPresentation().setIcon(AllIcons.General.Locate);
+            }
+        });
     }
 
     private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {
@@ -420,7 +432,7 @@ public class ToolWindowGui {
 
             if (editor.getEditor() != null) {
                 scrollToPosition(editor.getEditor(), oldScrollPosition);
-                caretTracker.refresh();
+                highlightLocations(caretTracker.getLocations(), true, false);
             }
             suppressUpdates = false;
         };
@@ -457,26 +469,33 @@ public class ToolWindowGui {
     }
 
     private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
+        highlightLocations(locations, true, false);
+    }
+
+    private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations, boolean highlight, boolean forceScroll) {
         ApplicationManager.getApplication().assertIsDispatchThread();
         EditorEx ed = (EditorEx) editor.getEditor();
         if (ed == null) {
             return;
         }
 
-        boolean scroll = getState().getAutoscrollFromSource();
+        boolean scroll = forceScroll || getState().getAutoscrollFromSource();
         int currentScrollPosition = scroll ? findCurrentScrollPosition(ed) : -1;
         int closestPosition = -1;
         int closestPositionDistance = -1;
 
         MarkupModelEx markupModel = ed.getMarkupModel();
-        markupModel.removeAllHighlighters();
+        if (highlight) {
+            markupModel.removeAllHighlighters();
+        }
         for (CompiledText.SourceLocation location : locations) {
             List<Pair<Integer, Integer>> ranges = locationsFromSourceMap.get(location);
             if (ranges != null) {
                 for (Pair<Integer, Integer> range : ranges) {
-                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
-                    highlighter.setErrorStripeMarkColor(HIGHLIGHT_COLOR);
-
+                    if (highlight) {
+                        RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
+                        highlighter.setErrorStripeMarkColor(HIGHLIGHT_COLOR);
+                    }
                     if (scroll) {
                         int positionBegin = ed.offsetToXY(range.getKey()).y;
                         int diffBegin = Math.abs(positionBegin - currentScrollPosition);

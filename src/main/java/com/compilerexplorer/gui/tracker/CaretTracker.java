@@ -6,6 +6,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -13,8 +14,8 @@ import java.util.stream.Collectors;
 public class CaretTracker {
     @NotNull
     private final Consumer<List<CompiledText.SourceLocation>> locationsConsumer;
-    @Nullable
-    private List<CompiledText.SourceLocation> locations;
+    @NotNull
+    private List<CompiledText.SourceLocation> locations = new ArrayList<>();
 
     public CaretTracker(@NotNull Consumer<List<CompiledText.SourceLocation>> locationsConsumer_) {
         locationsConsumer = locationsConsumer_;
@@ -24,7 +25,7 @@ public class CaretTracker {
         List<CompiledText.SourceLocation> newLocations = collectLocations(file, carets);
         if (!newLocations.equals(locations)) {
             locations = newLocations;
-            refresh();
+            locationsConsumer.accept(locations);
         }
     }
 
@@ -35,9 +36,8 @@ public class CaretTracker {
                 collect(Collectors.toList());
     }
 
-    public void refresh() {
-        if (locations != null) {
-            locationsConsumer.accept(locations);
-        }
+    @NotNull
+    public List<CompiledText.SourceLocation> getLocations() {
+        return locations;
     }
 }
