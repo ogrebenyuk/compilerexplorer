@@ -24,7 +24,7 @@ public class CaretTracker {
         List<CompiledText.SourceLocation> newLocations = collectLocations(file, carets);
         if (!newLocations.equals(locations)) {
             locations = newLocations;
-            locationsConsumer.accept(locations);
+            refresh();
         }
     }
 
@@ -33,5 +33,11 @@ public class CaretTracker {
         return carets.stream().
                 map(c -> new CompiledText.SourceLocation(file.getPath(), c.getLogicalPosition().line + 1)).
                 collect(Collectors.toList());
+    }
+
+    public void refresh() {
+        if (locations != null) {
+            locationsConsumer.accept(locations);
+        }
     }
 }

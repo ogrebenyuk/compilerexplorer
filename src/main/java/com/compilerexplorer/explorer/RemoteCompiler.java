@@ -107,11 +107,10 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     JsonObject obj = new JsonParser().parse(output.toString()).getAsJsonObject();
                     CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
 
-                    String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
-
                     if (compiledResult.code == 0) {
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), compiledResult)));
                     } else {
+                        String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
                         errorLater(err);
                     }
                 } catch (ProcessCanceledException canceledException) {

@@ -5,6 +5,7 @@ import com.compilerexplorer.common.datamodel.ProjectSettings;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
 import com.compilerexplorer.project.idea.IdeaProjectListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
@@ -28,7 +29,7 @@ public class ProjectListener {
     }
 
     private void changed(Boolean unused) {
-        refresh();
+        ApplicationManager.getApplication().invokeLater(this::refresh);
     }
 
     public void refresh() {

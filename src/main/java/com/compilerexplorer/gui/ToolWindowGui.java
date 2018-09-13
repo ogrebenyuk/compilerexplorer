@@ -10,8 +10,8 @@ import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
@@ -45,8 +45,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.intellij.openapi.editor.ScrollType.CENTER;
-
 public class ToolWindowGui {
     private static final long UPDATE_DELAY_MILLIS = 1000;
     @NotNull
@@ -77,6 +75,8 @@ public class ToolWindowGui {
     private final Map<CompiledText.SourceLocation, List<Pair<Integer, Integer>>> locationsFromSourceMap = new HashMap<>();
     @NotNull
     private final TextAttributes highlightAttributes = new TextAttributes();
+    @NotNull
+    private final CaretTracker caretTracker;
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
@@ -161,17 +161,22 @@ public class ToolWindowGui {
                 ed.setHorizontalScrollbarVisible(true);
                 ed.setVerticalScrollbarVisible(true);
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
+                ed.setViewer(true);
+                ed.getSettings().setLineNumbersShown(true);
                 return ed;
             }
         };
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
-        new EditorChangeListener(project, unused -> {
-            if (!suppressUpdates) {
-                schedulePreprocess();
-            }
-        });
+        new EditorChangeListener(project, unused ->
+            ApplicationManager.getApplication().invokeLater(() -> {
+                SettingsState state = getState();
+                if (state.getEnabled() && state.getAutoupdateFromSource()) {
+                    schedulePreprocess();
+                }
+            })
+        , () -> this.suppressUpdates);
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
@@ -215,7 +220,7 @@ public class ToolWindowGui {
         toolWindow.setAdditionalGearActions(actionGroup);
 
         highlightAttributes.setBackgroundColor(HIGHLIGHT_COLOR);
-        CaretTracker caretTracker = new CaretTracker(this::highlightLocations);
+        caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
     }
 
@@ -308,6 +313,7 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asResetSignalConsumer() {
         return refreshSignal -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             projectSettingsComboBox.removeAllItems();
             projectSettingsComboBox.setToolTipText("");
         };
@@ -316,6 +322,7 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asReconnectSignalConsumer() {
         return refreshSignal -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             matchesComboBox.removeAllItems();
             matchesComboBox.setToolTipText("");
         };
@@ -324,14 +331,16 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<RefreshSignal> asRecompileSignalConsumer() {
         return refreshSignal -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             sourceRemoteMatched = null;
-            showError("");
+            //showError("");
         };
     }
 
     @NotNull
     public Consumer<ProjectSettings> asProjectSettingsConsumer() {
         return projectSettings -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             suppressUpdates = true;
             SourceSettings oldSelection = projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex());
             SourceSettings newSelection = projectSettings.getSettings().stream()
@@ -355,6 +364,7 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<SourceRemoteMatched> asSourceRemoteMatchedConsumer() {
         return sourceRemoteMatched_ -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             suppressUpdates = true;
             sourceRemoteMatched = sourceRemoteMatched_;
             CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
@@ -384,8 +394,9 @@ public class ToolWindowGui {
     @NotNull
     public Consumer<CompiledText> asCompiledTextConsumer() {
         return compiledText -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
             suppressUpdates = true;
-            editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
+
             locationsFromSourceMap.clear();
             StringBuilder asmBuilder = new StringBuilder();
             int currentOffset = 0;
@@ -400,8 +411,17 @@ public class ToolWindowGui {
                     currentOffset = nextOffset + 1;
                 }
             }
+
+            int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
+
+            editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
             editor.setText(asmBuilder.toString());
             editor.setEnabled(true);
+
+            if (editor.getEditor() != null) {
+                scrollToPosition(editor.getEditor(), oldScrollPosition);
+                caretTracker.refresh();
+            }
             suppressUpdates = false;
         };
     }
@@ -412,6 +432,7 @@ public class ToolWindowGui {
     }
 
     private void showError(@NotNull String reason) {
+        ApplicationManager.getApplication().assertIsDispatchThread();
         suppressUpdates = true;
         locationsFromSourceMap.clear();
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
@@ -436,21 +457,16 @@ public class ToolWindowGui {
     }
 
     private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
+        ApplicationManager.getApplication().assertIsDispatchThread();
         EditorEx ed = (EditorEx) editor.getEditor();
         if (ed == null) {
             return;
         }
 
         boolean scroll = getState().getAutoscrollFromSource();
-        int middleLine = -1;
-        int closestLine = -1;
-        int closestLineDistance = -1;
-        if (scroll) {
-            Rectangle visibleArea = ed.getScrollingModel().getVisibleArea();
-            Point middlePoint = new Point(visibleArea.x + (visibleArea.width / 2),visibleArea.y + (visibleArea.height / 2));
-            LogicalPosition middlePosition = ed.xyToLogicalPosition(middlePoint);
-            middleLine = middlePosition.line;
-        }
+        int currentScrollPosition = scroll ? findCurrentScrollPosition(ed) : -1;
+        int closestPosition = -1;
+        int closestPositionDistance = -1;
 
         MarkupModelEx markupModel = ed.getMarkupModel();
         markupModel.removeAllHighlighters();
@@ -462,20 +478,36 @@ public class ToolWindowGui {
                     highlighter.setErrorStripeMarkColor(HIGHLIGHT_COLOR);
 
                     if (scroll) {
-                        LogicalPosition position = ed.offsetToLogicalPosition(range.getKey());
-                        int line = position.line;
-                        int diff = Math.abs(line - middleLine);
-                        if ((closestLineDistance < 0) || (diff < closestLineDistance)) {
-                            closestLineDistance = diff;
-                            closestLine = line;
+                        int positionBegin = ed.offsetToXY(range.getKey()).y;
+                        int diffBegin = Math.abs(positionBegin - currentScrollPosition);
+                        if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
+                            closestPositionDistance = diffBegin;
+                            closestPosition = positionBegin;
+                        }
+                        int positionEnd = ed.offsetToXY(range.getValue()).y + ed.getLineHeight();
+                        int diffEnd = Math.abs(positionEnd - currentScrollPosition);
+                        if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
+                            closestPositionDistance = diffEnd;
+                            closestPosition = positionEnd;
                         }
                     }
                 }
             }
         }
 
-        if (scroll && (closestLine >= 0)) {
-            ed.getScrollingModel().scrollTo(new LogicalPosition(closestLine, 0), CENTER);
+        if (scroll && (closestPosition >= 0)) {
+            scrollToPosition(ed, closestPosition - (ed.getScrollingModel().getVisibleAreaOnScrollingFinished().height / 2));
         }
+    }
+
+    private static int findCurrentScrollPosition(@NotNull Editor ed) {
+        return ed.getScrollingModel().getVisibleAreaOnScrollingFinished().y;
+    }
+
+    private static void scrollToPosition(@NotNull Editor ed, int y) {
+        boolean useAnimation = !ed.getScrollingModel().getVisibleAreaOnScrollingFinished().equals(ed.getScrollingModel().getVisibleArea());
+        if (!useAnimation) ed.getScrollingModel().disableAnimation();
+        ed.getScrollingModel().scrollVertically(y);
+        if (!useAnimation) ed.getScrollingModel().enableAnimation();
     }
 }

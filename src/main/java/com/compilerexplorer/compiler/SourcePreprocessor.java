@@ -12,6 +12,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,7 +61,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             return;
         }
 
-        String sourceText = document.getText();
+        String sourceText = "# 1 \"" + source.getPath() + "\"\n" + document.getText();
         if (!state.getPreprocessLocally()) {
             preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
             return;
@@ -74,7 +75,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches());
                 try {
-                    CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, "", indicator);
+                    CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));
@@ -103,7 +104,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         "-E",
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
-                        "-c", sourceSettings.getSource().getPath())
+                        "-c", "-"/*sourceSettings.getSource().getPath()*/)
         ).toArray(String[]::new);
     }
 

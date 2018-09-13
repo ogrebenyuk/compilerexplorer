@@ -1,24 +1,22 @@
 package com.compilerexplorer.gui.listeners;
 
-import com.compilerexplorer.common.SettingsProvider;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class EditorChangeListener {
-    public EditorChangeListener(@NotNull Project project, @NotNull Consumer<Boolean> consumer) {
+    public EditorChangeListener(@NotNull Project project, @NotNull Consumer<Boolean> consumer, @NotNull Producer<Boolean> suppressUpdatesProducer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
             public void documentChanged(DocumentEvent event) {
-                SettingsState state = SettingsProvider.getInstance(project).getState();
-                if (state.getEnabled() && state.getAutoupdateFromSource() && belongsToProject(event.getDocument())) {
+                if (!suppressUpdatesProducer.produce() && belongsToProject(event.getDocument())) {
                     consumer.accept(false);
                 }
             }

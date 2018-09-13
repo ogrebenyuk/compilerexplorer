@@ -14,6 +14,7 @@ import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.compilerexplorer.gui.FormAncestorListener;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
@@ -97,14 +98,16 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             private boolean lastEnabled = toolWindow.isVisible();
             @Override
             public void accept(@NotNull Boolean unused) {
-                boolean enabled = toolWindow.isVisible();
-                if (enabled != lastEnabled) {
-                    lastEnabled = enabled;
-                    state.setEnabled(enabled);
-                    if (enabled) {
-                        refresher.accept(RefreshSignal.RESET);
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    boolean enabled = toolWindow.isVisible();
+                    if (enabled != lastEnabled) {
+                        lastEnabled = enabled;
+                        state.setEnabled(enabled);
+                        if (enabled) {
+                            refresher.accept(RefreshSignal.RESET);
+                        }
                     }
-                }
+                });
             }
         });
 
