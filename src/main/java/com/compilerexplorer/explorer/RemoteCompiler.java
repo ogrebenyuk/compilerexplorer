@@ -7,6 +7,7 @@ import com.compilerexplorer.common.datamodel.SourceSettings;
 import com.compilerexplorer.common.datamodel.state.Filters;
 import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.google.common.collect.Lists;
 import com.google.common.net.UrlEscapers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -27,6 +28,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -42,6 +47,8 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     private final TaskRunner taskRunner;
     @Nullable
     private PreprocessedSource lastPreprocessedSource;
+    @NotNull
+    private final Map<String, String> normalizedPathMap;
 
     public RemoteCompiler(@NotNull Project project_,
                           @NotNull Consumer<CompiledText> compiledTextConsumer_,
@@ -51,6 +58,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         compiledTextConsumer = compiledTextConsumer_;
         errorConsumer = errorConsumer_;
         taskRunner = taskRunner_;
+        normalizedPathMap = new HashMap<>();
     }
 
     @Override
@@ -66,7 +74,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         String url = state.getUrl();
         Filters filters = new Filters(state.getFilters());
         String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches());
-        String name = sourceSettings.getSource().getName();
+        String name = sourceSettings.getSourceName();
         taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
@@ -108,6 +116,9 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
 
                     if (compiledResult.code == 0) {
+                        normalizePaths(compiledResult.stdout);
+                        normalizePaths(compiledResult.stderr);
+                        normalizePaths(compiledResult.asm);
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), compiledResult)));
                     } else {
                         String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
@@ -146,5 +157,26 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         if (lastPreprocessedSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
             accept(lastPreprocessedSource);
         }
+    }
+
+    private void normalizePaths(@NotNull List<CompiledText.CompiledChunk> chunks) {
+        chunks.forEach(chunk -> {
+            if (chunk.source != null) {
+                chunk.source.file = tryNormalizePath(chunk.source.file);
+            }
+        });
+    }
+
+    @Nullable
+    private String tryNormalizePath(@Nullable String path) {
+        if (path == null) {
+            return path;
+        }
+        return normalizedPathMap.computeIfAbsent(path, PathNormalizer::normalizePath);
+    }
+
+    @NotNull
+    public Consumer<RefreshSignal> asResetSignalConsumer() {
+        return refreshSignal -> normalizedPathMap.clear();
     }
 }

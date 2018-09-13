@@ -59,6 +59,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                 case RESET:
                     compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
                     form.asResetSignalConsumer().accept(refreshSignal);
+                    explorer.asResetSignalConsumer().accept(refreshSignal);
                 case RECONNECT:
                     remoteCompilersProducer.asRefreshSignalConsumer().accept(refreshSignal);
                     sourceRemoteMatchSaver.asRefreshSignalConsumer().accept(refreshSignal);

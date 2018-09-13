@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tracker;
 
+import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.datamodel.CompiledText;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -32,7 +33,7 @@ public class CaretTracker {
     @NotNull
     private List<CompiledText.SourceLocation> collectLocations(@NotNull VirtualFile file, @NotNull List<Caret> carets) {
         return carets.stream().
-                map(c -> new CompiledText.SourceLocation(file.getPath(), c.getLogicalPosition().line + 1)).
+                map(c -> new CompiledText.SourceLocation(PathNormalizer.normalizePath(file.getPath()), c.getLogicalPosition().line + 1)).
                 collect(Collectors.toList());
     }
 

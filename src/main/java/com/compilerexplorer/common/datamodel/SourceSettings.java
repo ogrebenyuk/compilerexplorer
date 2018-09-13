@@ -1,5 +1,6 @@
 package com.compilerexplorer.common.datamodel;
 
+import com.compilerexplorer.common.PathNormalizer;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.OCLanguageKind;
@@ -13,6 +14,10 @@ public class SourceSettings {
     @NotNull
     private final VirtualFile source;
     @NotNull
+    private final String sourcePath;
+    @NotNull
+    private final String sourceName;
+    @NotNull
     private final OCLanguageKind language;
     @NotNull
     private final File compiler;
@@ -23,6 +28,8 @@ public class SourceSettings {
 
     public SourceSettings(@NotNull VirtualFile source_, @NotNull OCLanguageKind language_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_) {
         source = source_;
+        sourcePath = PathNormalizer.normalizePath(source.getPath());
+        sourceName = source.getPresentableName();
         language = language_;
         compiler = compiler_;
         compilerKind = compilerKind_;
@@ -32,6 +39,16 @@ public class SourceSettings {
     @NotNull
     public VirtualFile getSource() {
         return source;
+    }
+
+    @NotNull
+    public String getSourcePath() {
+        return sourcePath;
+    }
+
+    @NotNull
+    public String getSourceName() {
+        return sourceName;
     }
 
     @NotNull

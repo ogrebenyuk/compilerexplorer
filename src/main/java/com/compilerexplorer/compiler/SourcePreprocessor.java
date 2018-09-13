@@ -54,20 +54,19 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         }
 
         SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
-        VirtualFile source = sourceSettings.getSource();
-        Document document = FileDocumentManager.getInstance().getDocument(source);
+        Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.getSource());
         if (document == null) {
-            errorLater("Cannot get document " + source.getPath());
+            errorLater("Cannot get document " + sourceSettings.getSourcePath());
             return;
         }
 
-        String sourceText = "# 1 \"" + source.getPath() + "\"\n" + document.getText();
+        String sourceText = "# 1 \"" + sourceSettings.getSourcePath().replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
         if (!state.getPreprocessLocally()) {
             preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
             return;
         }
 
-        String name = source.getPresentableName();
+        String name = sourceSettings.getSourceName();
         File compiler = preprocessableSource.getSourceCompilerSettings().getSourceSettings().getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
         taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + name) {

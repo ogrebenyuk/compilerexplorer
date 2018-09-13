@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.datamodel.*;
@@ -103,7 +104,7 @@ public class ToolWindowGui {
             }
             @NotNull
             private String getText(@NotNull SourceSettings value) {
-                return value.getSource().getPresentableName();
+                return value.getSourceName();
             }
         });
         projectSettingsComboBox.addItemListener(event -> {
@@ -181,7 +182,13 @@ public class ToolWindowGui {
                             if (file != null) {
                                 FileEditorManager.getInstance(project).openFile(file, true);
                                 Arrays.stream(EditorFactory.getInstance().getAllEditors())
-                                        .filter(editor -> editor.getProject() == project && file.equals(FileDocumentManager.getInstance().getFile(editor.getDocument())))
+                                        .filter(editor -> {
+                                            if (editor.getProject() == project) {
+                                                VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
+                                                return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
+                                            }
+                                            return false;
+                                        })
                                         .forEach(editor -> {
                                             editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
                                             editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
@@ -310,7 +317,7 @@ public class ToolWindowGui {
 
     @NotNull
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
-        return "File: " + sourceSettings.getSource().getPath()
+        return "File: " + sourceSettings.getSourcePath()
                 + "\nLanguage: " + sourceSettings.getLanguage().getDisplayName()
                 + "\nCompiler: " + sourceSettings.getCompiler().getAbsolutePath()
                 + "\nCompiler kind: " + sourceSettings.getCompilerKind()
@@ -384,7 +391,7 @@ public class ToolWindowGui {
             suppressUpdates = true;
             SourceSettings oldSelection = projectSettingsComboBox.getItemAt(projectSettingsComboBox.getSelectedIndex());
             SourceSettings newSelection = projectSettings.getSettings().stream()
-                    .filter(x -> oldSelection != null && x.getSource().getPath().equals(oldSelection.getSource().getPath()))
+                    .filter(x -> oldSelection != null && x.getSourcePath().equals(oldSelection.getSourcePath()))
                     .findFirst()
                     .orElse(projectSettings.getSettings().size() != 0 ? projectSettings.getSettings().firstElement() : null);
             DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings());

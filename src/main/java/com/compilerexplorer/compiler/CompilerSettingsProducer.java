@@ -59,14 +59,14 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         }
 
         if (!isSupportedCompilerType(sourceSettings.getCompilerKind())) {
-            errorLater("Unsupported compiler type \"" + sourceSettings.getCompilerKind().toString() + "\" for " + sourceSettings.getSource().getPath());
+            errorLater("Unsupported compiler type \"" + sourceSettings.getCompilerKind().toString() + "\" for " + sourceSettings.getSourcePath());
             return;
         }
 
         File compiler = sourceSettings.getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
 
-        taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + sourceSettings.getSource().getPresentableName()) {
+        taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + sourceSettings.getSourceName()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] versionCommandLine = getVersionCommandLine(sourceSettings);
