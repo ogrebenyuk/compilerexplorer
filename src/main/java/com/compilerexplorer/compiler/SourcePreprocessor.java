@@ -11,8 +11,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
+import com.jetbrains.cidr.lang.workspace.compiler.GCCCompiler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -96,14 +95,17 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                 Stream.concat(
                         Stream.concat(
                                 Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
-                                sourceSettings.getSwitches().stream()),
-                        Arrays.stream(additionalSwitches.split(" "))),
+                                sourceSettings.getSwitches().stream()
+                        ),
+                        Arrays.stream(additionalSwitches.split(" "))
+                ),
                 Stream.of(
                         "-I" + project.getBasePath(),
                         "-E",
                         "-o", "-",
-                        "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
-                        "-c", "-")
+                        GCCCompiler.getLanguageOption(sourceSettings.getLanguage()),
+                        "-c", "-"
+                )
         ).toArray(String[]::new);
     }
 
