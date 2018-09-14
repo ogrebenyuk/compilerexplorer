@@ -7,25 +7,25 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 public class OCProjectListener {
-    public OCProjectListener(@NotNull Project project, @NotNull Consumer<Boolean> changeConsumer) {
+    public OCProjectListener(@NotNull Project project, @NotNull Runnable changeConsumer) {
         project.getMessageBus().connect().subscribe(OCWorkspaceModificationListener.TOPIC, new OCWorkspaceModificationListener() {
             public void projectsChanged() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
             public void projectFilesChanged() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
             public void sourceFilesChanged() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
             public void buildSettingsChanged() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
             public void selectedResolveConfigurationChanged() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
             public void buildFinished() {
-                changeConsumer.accept(false);
+                changeConsumer.run();
             }
         });
     }

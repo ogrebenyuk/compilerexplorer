@@ -103,10 +103,10 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
         refresher.accept(RefreshSignal.RESET);
 
-        new FormAncestorListener(form.getContent(), new Consumer<Boolean>() {
+        new FormAncestorListener(form.getContent(), new Runnable() {
             private boolean lastEnabled = toolWindow.isVisible();
             @Override
-            public void accept(@NotNull Boolean unused) {
+            public void run() {
                 ApplicationManager.getApplication().invokeLater(() -> {
                     boolean enabled = toolWindow.isVisible();
                     if (enabled != lastEnabled) {

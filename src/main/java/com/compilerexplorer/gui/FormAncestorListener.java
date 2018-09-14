@@ -8,15 +8,15 @@ import javax.swing.event.AncestorListener;
 import java.util.function.Consumer;
 
 public class FormAncestorListener {
-    public FormAncestorListener(@NotNull JComponent component, @NotNull Consumer<Boolean> consumer) {
+    public FormAncestorListener(@NotNull JComponent component, @NotNull Runnable consumer) {
         component.addAncestorListener (new AncestorListener() {
             @Override
             public void ancestorAdded(AncestorEvent event) {
-                consumer.accept(false);
+                consumer.run();
             }
             @Override
             public void ancestorRemoved(AncestorEvent event) {
-                consumer.accept(false);
+                consumer.run();
             }
             @Override
             public void ancestorMoved(AncestorEvent event) {

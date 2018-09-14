@@ -31,7 +31,7 @@ public class ProjectListener {
         new OCProjectListener(project, this::changed);
     }
 
-    private void changed(Boolean unused) {
+    private void changed() {
         timerScheduler.schedule(this::refresh);
     }
 

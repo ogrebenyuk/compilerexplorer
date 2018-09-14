@@ -201,7 +201,7 @@ public class ToolWindowGui {
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
-        new EditorChangeListener(project, unused ->
+        new EditorChangeListener(project, () ->
             ApplicationManager.getApplication().invokeLater(() -> {
                 SettingsState state = getState();
                 if (state.getEnabled() && state.getAutoupdateFromSource()) {

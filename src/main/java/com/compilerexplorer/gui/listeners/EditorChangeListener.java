@@ -9,15 +9,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 public class EditorChangeListener {
-    public EditorChangeListener(@NotNull Project project, @NotNull Consumer<Boolean> consumer, @NotNull Producer<Boolean> suppressUpdatesProducer) {
+    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer, @NotNull Producer<Boolean> suppressUpdatesProducer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
             public void documentChanged(DocumentEvent event) {
                 if (!suppressUpdatesProducer.produce() && belongsToProject(event.getDocument())) {
-                    consumer.accept(false);
+                    consumer.run();
                 }
             }
             private boolean belongsToProject(@NotNull Document document) {
