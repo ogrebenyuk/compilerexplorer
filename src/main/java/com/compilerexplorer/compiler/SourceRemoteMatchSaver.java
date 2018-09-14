@@ -9,27 +9,33 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
+import java.util.function.Function;
 
-public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
+public class SourceRemoteMatchSaver<T> implements Consumer<T> {
     @NotNull
     private final Project project;
     @NotNull
-    private final Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
+    private final Consumer<T> sourceRemoteMatchedConsumer;
+    @NotNull
+    private final Function<T, SourceRemoteMatched> producer;
 
-    public SourceRemoteMatchSaver(@NotNull Project project_, @NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
+    public SourceRemoteMatchSaver(@NotNull Project project_,
+                                  @NotNull Consumer<T> sourceRemoteMatchedConsumer_,
+                                  @NotNull Function<T, SourceRemoteMatched> producer_) {
         project = project_;
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
+        producer = producer_;
     }
 
     @Override
-    public void accept(@NotNull SourceRemoteMatched sourceRemoteMatched) {
+    public void accept(@NotNull T sourceRemoteMatched) {
         SettingsState state = SettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
         }
 
-        state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched.getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), sourceRemoteMatched.getRemoteCompilerMatches());
+        state.getCompilerMatches().put(new LocalCompilerPath(producer.apply(sourceRemoteMatched).getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), producer.apply(sourceRemoteMatched).getRemoteCompilerMatches());
         sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
     }
 

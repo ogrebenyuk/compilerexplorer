@@ -72,9 +72,13 @@ public class ToolWindowGui {
     @Nullable
     private Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
     @Nullable
+    private Consumer<PreprocessedSource> preprocessedSourceConsumer;
+    @Nullable
     private Consumer<RefreshSignal> refreshSignalConsumer;
     @Nullable
     private SourceRemoteMatched sourceRemoteMatched;
+    @Nullable
+    private CompiledText compiledText;
     @NotNull
     private TimerScheduler timerScheduler = new TimerScheduler();
     private boolean suppressUpdates = false;
@@ -135,7 +139,7 @@ public class ToolWindowGui {
         });
         matchesComboBox.addItemListener(event -> {
             if (!suppressUpdates && event.getStateChange() == ItemEvent.SELECTED) {
-                ApplicationManager.getApplication().invokeLater(() -> selectCompilerMatch(matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex())));
+                ApplicationManager.getApplication().invokeLater(() -> selectCompilerMatchAndRecompile(matchesComboBox.getItemAt(matchesComboBox.getSelectedIndex())));
             }
         });
         headPanel.add(matchesComboBox);
@@ -329,6 +333,26 @@ public class ToolWindowGui {
         }
     }
 
+    private void selectCompilerMatchAndRecompile(@NotNull CompilerMatch compilerMatch) {
+        matchesComboBox.setToolTipText(getMatchTooltip(compilerMatch));
+        if (preprocessedSourceConsumer != null && compiledText != null) {
+            preprocessedSourceConsumer.accept(
+                    new PreprocessedSource(
+                            new SourceRemoteMatched(
+                                    compiledText.getPreprocessedSource().getSourceRemoteMatched().getSourceCompilerSettings(),
+                                    new CompilerMatches(
+                                            compilerMatch,
+                                            compiledText.getPreprocessedSource().getSourceRemoteMatched().getRemoteCompilerMatches().getOtherMatches()
+                                    )
+                            ),
+                            compiledText.getPreprocessedSource().getPreprocessedText()
+                    )
+            );
+        } else {
+            selectCompilerMatch(compilerMatch);
+        }
+    }
+
     @NotNull
     private String getMatchTooltip(@NotNull CompilerMatch compilerMatch) {
         return "Id: " + compilerMatch.getRemoteCompilerInfo().getId()
@@ -343,6 +367,10 @@ public class ToolWindowGui {
 
     public void setSourceRemoteMatchedConsumer(@NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
         sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
+    }
+
+    public void setPreprocessedSourceConsumer(@NotNull Consumer<PreprocessedSource> preprocessedSourceConsumer_) {
+        preprocessedSourceConsumer = preprocessedSourceConsumer_;
     }
 
     public void setRefreshSignalConsumer(@NotNull Consumer<RefreshSignal> refreshSignalConsumer_) {
@@ -377,6 +405,7 @@ public class ToolWindowGui {
         return refreshSignal -> {
             ApplicationManager.getApplication().assertIsDispatchThread();
             sourceRemoteMatched = null;
+            compiledText = null;
             //showError("");
         };
     }
@@ -437,9 +466,13 @@ public class ToolWindowGui {
 
     @NotNull
     public Consumer<CompiledText> asCompiledTextConsumer() {
-        return compiledText -> {
+        return compiledText_ -> {
             ApplicationManager.getApplication().assertIsDispatchThread();
             suppressUpdates = true;
+            compiledText = compiledText_;
+            if (compiledText == null) {
+                return;
+            }
 
             List<Pair<Integer, Integer>> newHighlighterRanges = new ArrayList<>();
             locationsFromSourceMap.clear();

@@ -3,7 +3,9 @@ package com.compilerexplorer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
+import com.compilerexplorer.common.datamodel.PreprocessedSource;
 import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.common.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.SourceRemoteMatchProducer;
 import com.compilerexplorer.compiler.CompilerSettingsProducer;
@@ -25,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
 
@@ -49,10 +52,14 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
         form.setSourceSettingsConsumer(compilerSettingsProducer);
 
         RemoteCompiler explorer = new RemoteCompiler(project, form.asCompiledTextConsumer(), form.asErrorConsumer(), taskRunner);
-        SourcePreprocessor preprocessor = new SourcePreprocessor(project, explorer, form.asErrorConsumer(), taskRunner);
-        SourceRemoteMatchSaver sourceRemoteMatchSaver = new SourceRemoteMatchSaver(project, preprocessor);
+        SourceRemoteMatchSaver<PreprocessedSource> sourceRemoteMatchSaver2 = new SourceRemoteMatchSaver<>(project, explorer, PreprocessedSource::getSourceRemoteMatched);
 
-        form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver);
+        form.setPreprocessedSourceConsumer(sourceRemoteMatchSaver2);
+
+        SourcePreprocessor preprocessor = new SourcePreprocessor(project, sourceRemoteMatchSaver2, form.asErrorConsumer(), taskRunner);
+        SourceRemoteMatchSaver<SourceRemoteMatched> sourceRemoteMatchSaver1 = new SourceRemoteMatchSaver<>(project, preprocessor, Function.identity());
+
+        form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver1);
 
         Consumer<RefreshSignal> resetter = refreshSignal -> {
             switch(refreshSignal) {
@@ -62,7 +69,8 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                     explorer.asResetSignalConsumer().accept(refreshSignal);
                 case RECONNECT:
                     remoteCompilersProducer.asRefreshSignalConsumer().accept(refreshSignal);
-                    sourceRemoteMatchSaver.asRefreshSignalConsumer().accept(refreshSignal);
+                    sourceRemoteMatchSaver1.asRefreshSignalConsumer().accept(refreshSignal);
+                    sourceRemoteMatchSaver2.asRefreshSignalConsumer().accept(refreshSignal);
                     form.asReconnectSignalConsumer().accept(refreshSignal);
                 case PREPROCESS:
                 case COMPILE:
