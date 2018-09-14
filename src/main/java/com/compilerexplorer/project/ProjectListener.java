@@ -1,6 +1,7 @@
 package com.compilerexplorer.project;
 
 import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.TimerScheduler;
 import com.compilerexplorer.common.datamodel.ProjectSettings;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
@@ -19,6 +20,8 @@ public class ProjectListener {
     private final Consumer<ProjectSettings> projectSettingsConsumer;
     @NotNull
     private final Producer<ProjectSettings> ocProjectSettingsProducer;
+    @NotNull
+    private final TimerScheduler timerScheduler = new TimerScheduler();
 
     public ProjectListener(@NotNull Project project_, @NotNull Consumer<ProjectSettings> projectSettingsConsumer_) {
         project = project_;
@@ -29,7 +32,7 @@ public class ProjectListener {
     }
 
     private void changed(Boolean unused) {
-        ApplicationManager.getApplication().invokeLater(this::refresh);
+        timerScheduler.schedule(this::refresh);
     }
 
     public void refresh() {

@@ -89,7 +89,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
                         errorLater("Cannot run compiler:\n" + String.join(" ", versionCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText);
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    errorLater("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nCanceled");
+                    //errorLater("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nCanceled");
                 } catch (Exception exception) {
                     errorLater("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nException: " + exception.getMessage());
                 }

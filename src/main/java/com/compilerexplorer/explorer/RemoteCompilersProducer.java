@@ -103,7 +103,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                         consumer.accept(t);
                     });
                 } catch (ProcessCanceledException canceledException) {
-                    errorLater("Canceled reading from " + url);
+                    //errorLater("Canceled reading from " + url);
                 } catch (Exception e) {
                     errorLater("Exception reading from " + url + ": " + e.getMessage());
                 }

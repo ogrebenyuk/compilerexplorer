@@ -125,7 +125,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                         errorLater(err);
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    errorLater("Canceled compiling " + name);
+                    //errorLater("Canceled compiling " + name);
                 } catch (Exception e) {
                     errorLater("Exception compiling " + name + ": " + e.getMessage());
                 }

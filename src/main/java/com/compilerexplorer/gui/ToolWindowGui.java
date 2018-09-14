@@ -3,6 +3,7 @@ package com.compilerexplorer.gui;
 import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.TimerScheduler;
 import com.compilerexplorer.common.datamodel.*;
 import com.compilerexplorer.common.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
@@ -46,7 +47,6 @@ import java.awt.event.ItemEvent;
 import java.lang.Error;
 import java.util.*;
 import java.util.List;
-import java.util.Timer;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -54,7 +54,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ToolWindowGui {
-    private static final long UPDATE_DELAY_MILLIS = 1000;
     @NotNull
     private static final Color HIGHLIGHT_COLOR = JBColor.CYAN;
 
@@ -77,7 +76,7 @@ public class ToolWindowGui {
     @Nullable
     private SourceRemoteMatched sourceRemoteMatched;
     @NotNull
-    private Timer updateTimer = new Timer();
+    private TimerScheduler timerScheduler = new TimerScheduler();
     private boolean suppressUpdates = false;
     @NotNull
     private final Map<CompiledText.SourceLocation, List<Pair<Integer, Integer>>> locationsFromSourceMap = new HashMap<>();
@@ -287,24 +286,13 @@ public class ToolWindowGui {
     }
 
     private void schedulePreprocess() {
-        scheduleUpdate(this::preprocess);
+        timerScheduler.schedule(this::preprocess);
     }
 
     private void preprocess() {
         if (refreshSignalConsumer != null) {
             ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.PREPROCESS));
         }
-    }
-
-    private void scheduleUpdate(@NotNull Runnable runnable) {
-        updateTimer.cancel();
-        updateTimer = new Timer();
-        updateTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runnable.run();
-            }
-        }, UPDATE_DELAY_MILLIS);
     }
 
     private void selectSourceSettings(@NotNull SourceSettings sourceSettings) {

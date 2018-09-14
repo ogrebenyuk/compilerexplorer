@@ -82,7 +82,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         errorLater("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr());
                     }
                 } catch (ProcessCanceledException canceledException) {
-                    errorLater("Canceled preprocessing " + name + ":\n" + String.join(" ", preprocessorCommandLine));
+                    //errorLater("Canceled preprocessing " + name + ":\n" + String.join(" ", preprocessorCommandLine));
                 } catch (Exception exception) {
                     errorLater("Cannot preprocess " + name + ":\n" + String.join(" ", preprocessorCommandLine) + "\nException: " + exception.getMessage());
                 }
