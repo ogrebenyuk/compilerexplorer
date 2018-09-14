@@ -86,6 +86,16 @@ public class ToolWindowGui {
     private final TextAttributes highlightAttributes = new TextAttributes();
     @NotNull
     private final CaretTracker caretTracker;
+    @NotNull
+    private final List<RangeHighlighter> highlighters = new ArrayList<>();
+    @NotNull
+    private final LineMarkerRenderer lineMarkerRenderer = (editor, graphics, rectangle) -> {
+        graphics.setColor(HIGHLIGHT_COLOR);
+        int margin = rectangle.width;
+        int xPoints[] = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
+        int yPoints[] = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
+        graphics.fillPolygon(xPoints, yPoints, 4);
+    };
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
@@ -171,7 +181,7 @@ public class ToolWindowGui {
                 ed.setVerticalScrollbarVisible(true);
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
-                //ed.getSettings().setLineNumbersShown(true);
+                ed.getSettings().setLineMarkerAreaShown(true);
                 ed.getCaretModel().addCaretListener(new EditorCaretListener(event -> {
                     if (!suppressUpdates && getState().getAutoscrollToSource()) {
                         CompiledText.SourceLocation source = findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition()));
@@ -431,10 +441,13 @@ public class ToolWindowGui {
             ApplicationManager.getApplication().assertIsDispatchThread();
             suppressUpdates = true;
 
+            List<Pair<Integer, Integer>> newHighlighterRanges = new ArrayList<>();
             locationsFromSourceMap.clear();
             locationsToSourceMap.clear();
             StringBuilder asmBuilder = new StringBuilder();
             int currentOffset = 0;
+            CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
+            int lastRangeBegin = 0;
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
                     int nextOffset = currentOffset + chunk.text.length();
@@ -443,9 +456,23 @@ public class ToolWindowGui {
                     if (chunk.source != null && chunk.source.file != null) {
                         locationsFromSourceMap.computeIfAbsent(chunk.source, unused -> new ArrayList<>()).add(new Pair<>(currentOffset, nextOffset));
                         locationsToSourceMap.put(currentOffset, new Pair<>(nextOffset, chunk.source));
+                        if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
+                            if (!lastChunk.file.isEmpty()) {
+                                newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
+                            }
+                            lastRangeBegin = currentOffset;
+                            lastChunk.file = chunk.source.file;
+                            lastChunk.line = chunk.source.line;
+                        }
+                    } else if (!lastChunk.file.isEmpty()) {
+                        newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
+                        lastChunk.file = "";
                     }
                     currentOffset = nextOffset + 1;
                 }
+            }
+            if (lastChunk.file != null) {
+                newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
             }
 
             int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
@@ -455,6 +482,14 @@ public class ToolWindowGui {
             editor.setEnabled(true);
 
             if (editor.getEditor() != null) {
+                highlighters.clear();
+                MarkupModelEx markupModel = (MarkupModelEx) editor.getEditor().getMarkupModel();
+                markupModel.removeAllHighlighters();
+                newHighlighterRanges.forEach(range -> {
+                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+                    highlighter.setLineMarkerRenderer(lineMarkerRenderer);
+                });
+
                 scrollToPosition(editor.getEditor(), oldScrollPosition);
                 highlightLocations(caretTracker.getLocations(), true, false);
             }
@@ -511,7 +546,8 @@ public class ToolWindowGui {
 
         MarkupModelEx markupModel = ed.getMarkupModel();
         if (highlight) {
-            markupModel.removeAllHighlighters();
+            highlighters.forEach(markupModel::removeHighlighter);
+            highlighters.clear();
         }
         for (CompiledText.SourceLocation location : locations) {
             List<Pair<Integer, Integer>> ranges = locationsFromSourceMap.get(location);
@@ -520,6 +556,7 @@ public class ToolWindowGui {
                     if (highlight) {
                         RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
                         highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
+                        highlighters.add(highlighter);
                     }
                     if (scroll) {
                         int positionBegin = ed.offsetToXY(range.getKey()).y;

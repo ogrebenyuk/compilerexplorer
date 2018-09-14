@@ -103,7 +103,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         "-E",
                         "-o", "-",
                         "-x", sourceSettings.getLanguage().getDisplayName().toLowerCase(),
-                        "-c", "-"/*sourceSettings.getSource().getPath()*/)
+                        "-c", "-")
         ).toArray(String[]::new);
     }
 
