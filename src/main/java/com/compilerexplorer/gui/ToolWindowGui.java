@@ -102,6 +102,7 @@ public class ToolWindowGui {
         int yPoints[] = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
         graphics.fillPolygon(xPoints, yPoints, 4);
     };
+    private boolean showAnnotations = false;
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
@@ -269,6 +270,7 @@ public class ToolWindowGui {
     }
 
     private void setupAnnotations(@NotNull EditorEx ed) {
+        showAnnotations = false;
         ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
         ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 2);
         DefaultActionGroup gutterGroup = new DefaultActionGroup();
@@ -305,6 +307,7 @@ public class ToolWindowGui {
     }
 
     private void showAnnotations(@NotNull EditorEx ed_) {
+        showAnnotations = true;
         ed_.getGutter().registerTextAnnotation(new TextAnnotationGutterProvider() {
             @Override
             @Nullable
@@ -606,6 +609,7 @@ public class ToolWindowGui {
             }
 
             int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
+            boolean oldShowAnnotations = showAnnotations;
 
             editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
             editor.setText(asmBuilder.toString());
@@ -622,6 +626,9 @@ public class ToolWindowGui {
 
                 scrollToPosition(editor.getEditor(), oldScrollPosition);
                 highlightLocations(caretTracker.getLocations(), true, false);
+            }
+            if (oldShowAnnotations) {
+                showAnnotations((EditorEx) editor.getEditor());
             }
             suppressUpdates = false;
         };
