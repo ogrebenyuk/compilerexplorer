@@ -13,10 +13,9 @@ import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.LogicalPosition;
-import com.intellij.openapi.editor.ScrollType;
+import com.intellij.openapi.editor.*;
+import com.intellij.openapi.editor.colors.ColorKey;
+import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
@@ -44,7 +43,10 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.lang.Error;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -188,27 +190,10 @@ public class ToolWindowGui {
                 ed.getSettings().setLineMarkerAreaShown(true);
                 ed.getCaretModel().addCaretListener(new EditorCaretListener(event -> {
                     if (!suppressUpdates && getState().getAutoscrollToSource()) {
-                        CompiledText.SourceLocation source = findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition()));
-                        if (source != null) {
-                            VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
-                            if (file != null) {
-                                FileEditorManager.getInstance(project).openFile(file, true);
-                                Arrays.stream(EditorFactory.getInstance().getAllEditors())
-                                        .filter(editor -> {
-                                            if (editor.getProject() == project) {
-                                                VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
-                                                return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
-                                            }
-                                            return false;
-                                        })
-                                        .forEach(editor -> {
-                                            editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
-                                            editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
-                                        });
-                            }
-                        }
+                        scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition())));
                     }
                 }));
+                setupAnnotations(ed);
                 return ed;
             }
         };
@@ -283,6 +268,94 @@ public class ToolWindowGui {
         });
     }
 
+    private void setupAnnotations(@NotNull EditorEx ed) {
+        ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
+        ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 2);
+        DefaultActionGroup gutterGroup = new DefaultActionGroup();
+        gutterGroup.add(new AnAction("Annotate") {
+            @Override
+            public void actionPerformed(AnActionEvent event) {
+                showAnnotations(ed);
+                ed.getGutterComponentEx().setGutterPopupGroup(null);
+            }
+        });
+        ed.getGutterComponentEx().setGutterPopupGroup(gutterGroup);
+        ed.getGutterComponentEx().addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
+            }
+            @Override
+            public void mousePressed(MouseEvent e) {
+                // empty
+            }
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                // empty
+            }
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                // empty
+            }
+            @Override
+            public void mouseExited(MouseEvent e) {
+                // empty
+            }
+        });
+    }
+
+    private void showAnnotations(@NotNull EditorEx ed_) {
+        ed_.getGutter().registerTextAnnotation(new TextAnnotationGutterProvider() {
+            @Override
+            @Nullable
+            public String getLineText(int line, @Nullable Editor ed) {
+                CompiledText.SourceLocation source = findSource(line, ed);
+                return source != null ? getLineText(source) : null;
+            }
+            @Override
+            @Nullable
+            public String getToolTip(int line, @Nullable Editor ed) {
+                CompiledText.SourceLocation source = findSource(line, ed);
+                return source != null ? getTooltipText(source) : null;
+            }
+            @Override
+            public EditorFontType getStyle(int line, @Nullable Editor ed) {
+                return EditorFontType.ITALIC;
+            }
+            @Override
+            @Nullable
+            public ColorKey getColor(int line, @Nullable Editor ed) {
+                return null;
+            }
+            @Override
+            @Nullable
+            public Color getBgColor(int line, @Nullable Editor ed) {
+                return null;
+            }
+            @Override
+            @Nullable
+            public List<AnAction> getPopupActions(int line, @Nullable Editor ed) {
+                return null;
+            }
+            @Override
+            public void gutterClosed() {
+                setupAnnotations(ed_);
+            }
+            @Nullable
+            private CompiledText.SourceLocation findSource(int line, @Nullable Editor ed) {
+                return (ed != null) ? findSourceLocationFromOffset(ed.logicalPositionToOffset(new LogicalPosition(line, 0))) : null;
+            }
+            @NotNull
+            private String getLineText(@NotNull CompiledText.SourceLocation source) {
+                return Paths.get(source.file).getFileName().toString() + ":" + source.line;
+            }
+            @NotNull
+            private String getTooltipText(@NotNull CompiledText.SourceLocation source) {
+                return source.file + ":" + source.line;
+            }
+        });
+    }
+
     private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {
         actionGroup.add(new ToggleAction(text) {
             @Override
@@ -297,6 +370,27 @@ public class ToolWindowGui {
                 }
             }
         });
+    }
+
+    private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
+        if (source != null) {
+            VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
+            if (file != null) {
+                FileEditorManager.getInstance(project).openFile(file, true);
+                Arrays.stream(EditorFactory.getInstance().getAllEditors())
+                        .filter(editor -> {
+                            if (editor.getProject() == project) {
+                                VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
+                                return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
+                            }
+                            return false;
+                        })
+                        .forEach(editor -> {
+                            editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
+                            editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
+                        });
+            }
+        }
     }
 
     private void schedulePreprocess() {
