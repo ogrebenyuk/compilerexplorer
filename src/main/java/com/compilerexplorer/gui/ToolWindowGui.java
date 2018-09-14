@@ -481,31 +481,34 @@ public class ToolWindowGui {
             int currentOffset = 0;
             CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
             int lastRangeBegin = 0;
+            BiConsumer<CompiledText.SourceLocation, Pair<Integer, Integer>> rangeAdder = (source, range) -> {
+                newHighlighterRanges.add(range);
+                locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
+                locationsToSourceMap.put(range.getKey(), new Pair<>(range.getValue(), source));
+            };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
                     int nextOffset = currentOffset + chunk.text.length();
                     asmBuilder.append(chunk.text);
                     asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
-                        locationsFromSourceMap.computeIfAbsent(chunk.source, unused -> new ArrayList<>()).add(new Pair<>(currentOffset, nextOffset));
-                        locationsToSourceMap.put(currentOffset, new Pair<>(nextOffset, chunk.source));
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                             if (!lastChunk.file.isEmpty()) {
-                                newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
+                                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
                             }
                             lastRangeBegin = currentOffset;
                             lastChunk.file = chunk.source.file;
                             lastChunk.line = chunk.source.line;
                         }
                     } else if (!lastChunk.file.isEmpty()) {
-                        newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
+                        rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
                     currentOffset = nextOffset + 1;
                 }
             }
-            if (lastChunk.file != null) {
-                newHighlighterRanges.add(new Pair<>(lastRangeBegin, currentOffset - 1));
+            if (!lastChunk.file.isEmpty()) {
+                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
             }
 
             int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
