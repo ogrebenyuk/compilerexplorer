@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
 
 public class RemoteCompiler implements Consumer<PreprocessedSource> {
     @NotNull
+    private static final String ADDITIONAL_SWITCHES = "-Wno-pedantic";
+    @NotNull
     private final Project project;
     @NotNull
     private final Consumer<CompiledText> compiledTextConsumer;
@@ -140,7 +142,8 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     @NotNull
     private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
         return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-             + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
+                + " " + ADDITIONAL_SWITCHES
+                + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
     }
 
     private static class Options {
