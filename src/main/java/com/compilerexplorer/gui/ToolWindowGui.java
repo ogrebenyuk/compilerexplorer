@@ -33,7 +33,6 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.ui.components.JBTextField;
-import javafx.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
 import org.jetbrains.annotations.Nullable;
@@ -85,9 +84,9 @@ public class ToolWindowGui {
     private TimerScheduler timerScheduler = new TimerScheduler();
     private boolean suppressUpdates = false;
     @NotNull
-    private final Map<CompiledText.SourceLocation, List<Pair<Integer, Integer>>> locationsFromSourceMap = new HashMap<>();
+    private final Map<CompiledText.SourceLocation, List<Range>> locationsFromSourceMap = new HashMap<>();
     @NotNull
-    private final SortedMap<Integer, Pair<Integer, CompiledText.SourceLocation>> locationsToSourceMap = new TreeMap<>();
+    private final SortedMap<Integer, EndAndSource> locationsToSourceMap = new TreeMap<>();
     @NotNull
     private final TextAttributes highlightAttributes = new TextAttributes();
     @NotNull
@@ -571,17 +570,17 @@ public class ToolWindowGui {
                 return;
             }
 
-            List<Pair<Integer, Integer>> newHighlighterRanges = new ArrayList<>();
+            List<Range> newHighlighterRanges = new ArrayList<>();
             locationsFromSourceMap.clear();
             locationsToSourceMap.clear();
             StringBuilder asmBuilder = new StringBuilder();
             int currentOffset = 0;
             CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
             int lastRangeBegin = 0;
-            BiConsumer<CompiledText.SourceLocation, Pair<Integer, Integer>> rangeAdder = (source, range) -> {
+            BiConsumer<CompiledText.SourceLocation, Range> rangeAdder = (source, range) -> {
                 newHighlighterRanges.add(range);
                 locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
-                locationsToSourceMap.put(range.getKey(), new Pair<>(range.getValue(), source));
+                locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
             };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
@@ -591,21 +590,21 @@ public class ToolWindowGui {
                     if (chunk.source != null && chunk.source.file != null) {
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                             if (!lastChunk.file.isEmpty()) {
-                                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
+                                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                             }
                             lastRangeBegin = currentOffset;
                             lastChunk.file = chunk.source.file;
                             lastChunk.line = chunk.source.line;
                         }
                     } else if (!lastChunk.file.isEmpty()) {
-                        rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
+                        rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
                     currentOffset = nextOffset + 1;
                 }
             }
             if (!lastChunk.file.isEmpty()) {
-                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Pair<>(lastRangeBegin, currentOffset - 1));
+                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
             }
 
             int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
@@ -620,7 +619,7 @@ public class ToolWindowGui {
                 MarkupModelEx markupModel = (MarkupModelEx) editor.getEditor().getMarkupModel();
                 markupModel.removeAllHighlighters();
                 newHighlighterRanges.forEach(range -> {
-                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
                     highlighter.setLineMarkerRenderer(lineMarkerRenderer);
                 });
 
@@ -687,22 +686,22 @@ public class ToolWindowGui {
             highlighters.clear();
         }
         for (CompiledText.SourceLocation location : locations) {
-            List<Pair<Integer, Integer>> ranges = locationsFromSourceMap.get(location);
+            List<Range> ranges = locationsFromSourceMap.get(location);
             if (ranges != null) {
-                for (Pair<Integer, Integer> range : ranges) {
+                for (Range range : ranges) {
                     if (highlight) {
-                        RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.getKey(), range.getValue(), HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
+                        RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
                         highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
                         highlighters.add(highlighter);
                     }
                     if (scroll) {
-                        int positionBegin = ed.offsetToXY(range.getKey()).y;
+                        int positionBegin = ed.offsetToXY(range.begin).y;
                         int diffBegin = Math.abs(positionBegin - currentScrollPosition);
                         if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
                             closestPositionDistance = diffBegin;
                             closestPosition = positionBegin;
                         }
-                        int positionEnd = ed.offsetToXY(range.getValue()).y + ed.getLineHeight();
+                        int positionEnd = ed.offsetToXY(range.end).y + ed.getLineHeight();
                         int diffEnd = Math.abs(positionEnd - currentScrollPosition);
                         if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
                             closestPositionDistance = diffEnd;
@@ -731,13 +730,34 @@ public class ToolWindowGui {
 
     @Nullable
     private CompiledText.SourceLocation findSourceLocationFromOffset(int offset) {
-        SortedMap<Integer, Pair<Integer, CompiledText.SourceLocation>> headMap = locationsToSourceMap.headMap(offset + 1);
+        SortedMap<Integer, EndAndSource> headMap = locationsToSourceMap.headMap(offset + 1);
         if (!headMap.isEmpty()) {
-            Pair<Integer, CompiledText.SourceLocation> lastValue = headMap.get(headMap.lastKey());
-            if (lastValue.getKey() >= offset) {
-                return lastValue.getValue();
+            EndAndSource lastValue = headMap.get(headMap.lastKey());
+            if (lastValue.end >= offset) {
+                return lastValue.source;
             }
         }
         return null;
+    }
+
+    private static class Range {
+        final int begin;
+        final int end;
+
+        Range(int begin_, int end_) {
+            begin = begin_;
+            end = end_;
+        }
+    }
+
+    private static class EndAndSource {
+        final int end;
+        @NotNull
+        final CompiledText.SourceLocation source;
+
+        EndAndSource(int length_, @NotNull CompiledText.SourceLocation source_) {
+            end = length_;
+            source = source_;
+        }
     }
 }
