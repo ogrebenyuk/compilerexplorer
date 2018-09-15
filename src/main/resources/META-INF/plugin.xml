@@ -4,14 +4,14 @@
     <vendor email="grebenyukoleksandr@gmail.com">Oleksandr Grebenyuk</vendor>
 
     <description><![CDATA[
-    Compiler Explorer UI
+    Compiler Explorer UI plugin for CLion.
+    This plugin shows compilation results from a remote Compiler Explorer instance.
     ]]></description>
 
     <idea-version since-build="180"/>
 
     <depends>com.intellij.modules.clion</depends>
     <depends>com.intellij.modules.cidr.lang</depends>
-    <depends>com.intellij.modules.cidr.debugger</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.SettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>

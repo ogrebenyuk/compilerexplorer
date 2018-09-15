@@ -11,7 +11,8 @@ version '1.4-SNAPSHOT'
 
 patchPluginXml {
     changeNotes """
-      First fully working version
+        Added source line highlighing.
+        Added scrolling to/from source.
     """
 }
 
