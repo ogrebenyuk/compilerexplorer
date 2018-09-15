@@ -39,12 +39,12 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
             }
         }
 
-        String localName = sourceCompilerSettings.getLocalCompilerSettings().getName();
-        String localVersion = sourceCompilerSettings.getLocalCompilerSettings().getName().toLowerCase().equals("gcc")
+        String localName = sourceCompilerSettings.getLocalCompilerSettings().getName().toLowerCase();
+        String localVersion = localName.equals("gcc")
                 ? stripLastGCCVersionDigitIfNeeded(sourceCompilerSettings.getLocalCompilerSettings().getVersion())
                 : sourceCompilerSettings.getLocalCompilerSettings().getVersion();
         String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
-        String language = sourceCompilerSettings.getSourceSettings().getLanguage().getDisplayName();
+        String language = sourceCompilerSettings.getSourceSettings().getLanguage();
         List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language);
         CompilerMatches matches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
         sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, matches));

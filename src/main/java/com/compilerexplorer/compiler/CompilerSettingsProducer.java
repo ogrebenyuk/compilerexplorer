@@ -12,15 +12,11 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import static com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind.CLANG;
-import static com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind.GCC;
 
 public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
@@ -59,7 +55,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         }
 
         if (!isSupportedCompilerType(sourceSettings.getCompilerKind())) {
-            errorLater("Unsupported compiler type \"" + sourceSettings.getCompilerKind().toString() + "\" for " + sourceSettings.getSourcePath());
+            errorLater("Unsupported compiler type \"" + sourceSettings.getCompilerKind() + "\" for " + sourceSettings.getSourcePath());
             return;
         }
 
@@ -77,7 +73,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
                         String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);
                         String compilerTarget = parseCompilerTarget(versionText);
                         if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
-                            LocalCompilerSettings newSettings = new LocalCompilerSettings(sourceSettings.getCompilerKind().toString().toLowerCase(), compilerVersion, compilerTarget);
+                            LocalCompilerSettings newSettings = new LocalCompilerSettings(sourceSettings.getCompilerKind(), compilerVersion, compilerTarget);
                             ApplicationManager.getApplication().invokeLater(() -> {
                                 state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()), newSettings);
                                 sourceCompilerSettingsConsumer.accept(new SourceCompilerSettings(sourceSettings, newSettings));
@@ -113,13 +109,13 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         ).toArray(String[]::new);
     }
 
-    private static boolean isSupportedCompilerType(@NotNull OCCompilerKind compilerKind) {
-        return compilerKind == GCC || compilerKind == CLANG;
+    private static boolean isSupportedCompilerType(@NotNull String compilerKind) {
+        return compilerKind.equals("GCC") || compilerKind.equals("Clang");
     }
 
     @NotNull
-    private static String parseCompilerVersion(@NotNull OCCompilerKind compilerKind, @NotNull String versionText) {
-        return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toString().toLowerCase() + " version ([^ ]*).*", "$1");
+    private static String parseCompilerVersion(@NotNull String compilerKind, @NotNull String versionText) {
+        return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toLowerCase() + " version ([^ ]*).*", "$1");
     }
 
     @NotNull

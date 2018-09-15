@@ -2,8 +2,6 @@ package com.compilerexplorer.datamodel;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.jetbrains.cidr.lang.OCLanguageKind;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -17,17 +15,17 @@ public class SourceSettings {
     @NotNull
     private final String sourceName;
     @NotNull
-    private final OCLanguageKind language;
+    private final String language;
     @NotNull
     private final String languageSwitch;
     @NotNull
     private final File compiler;
     @NotNull
-    private final OCCompilerKind compilerKind;
+    private final String compilerKind;
     @NotNull
     private final List<String> switches;
 
-    public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull OCLanguageKind language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_) {
+    public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_) {
         source = source_;
         sourcePath = sourcePath_;
         sourceName = source.getPresentableName();
@@ -54,7 +52,7 @@ public class SourceSettings {
     }
 
     @NotNull
-    public OCLanguageKind getLanguage() {
+    public String getLanguage() {
         return language;
     }
 
@@ -69,7 +67,7 @@ public class SourceSettings {
     }
 
     @NotNull
-    public OCCompilerKind getCompilerKind() {
+    public String getCompilerKind() {
         return compilerKind;
     }
 
@@ -96,10 +94,10 @@ public class SourceSettings {
         }
         SourceSettings other = (SourceSettings)obj;
         return getSource().getPath().equals(other.getSource().getPath())
-                && getLanguage().getDisplayName().equals(other.getLanguage().getDisplayName())
+                && getLanguage().equals(other.getLanguage())
                 && getLanguageSwitch().equals(other.getLanguageSwitch())
                 && FileUtil.filesEqual(getCompiler(), other.getCompiler())
-                && getCompilerKind().toString().equals(other.getCompilerKind().toString())
+                && getCompilerKind().equals(other.getCompilerKind())
                 && String.join(" ", getSwitches()).equals(String.join(" ", other.getSwitches()))
                 ;
     }

@@ -423,7 +423,7 @@ public class ToolWindowGui {
     @NotNull
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
         return "File: " + sourceSettings.getSourcePath()
-                + "\nLanguage: " + sourceSettings.getLanguage().getDisplayName()
+                + "\nLanguage: " + sourceSettings.getLanguage()
                 + "\nCompiler: " + sourceSettings.getCompiler().getAbsolutePath()
                 + "\nCompiler kind: " + sourceSettings.getCompilerKind()
                 + "\nCompiler options: " + String.join(" ", sourceSettings.getSwitches());
