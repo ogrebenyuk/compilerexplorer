@@ -1,9 +1,9 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
-import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.common.datamodel.state.*;
+import com.compilerexplorer.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.datamodel.state.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -89,13 +89,13 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     }
 
     @VisibleForTesting
-    public static boolean versionMatches(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch) {
-        String localVersionRegex = "^.* " + (tryMinorMismatch ? (regexize(stripLastVersionPart(localVersion)) + "\\.[0-9]+") : regexize(localVersion)) + "( .*)?$";
+    static boolean versionMatches(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch) {
+        String localVersionRegex = "^.* " + (tryMinorMismatch ? (turnIntoRegex(stripLastVersionPart(localVersion)) + "\\.[0-9]+") : turnIntoRegex(localVersion)) + "( .*)?$";
         return remoteName.matches(localVersionRegex);
     }
 
     @NotNull
-    private static String regexize(@NotNull String version) {
+    private static String turnIntoRegex(@NotNull String version) {
         return version.replaceAll("\\.", "\\\\.");
     }
 

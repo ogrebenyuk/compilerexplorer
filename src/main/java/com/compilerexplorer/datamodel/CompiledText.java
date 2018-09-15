@@ -1,13 +1,14 @@
-package com.compilerexplorer.common.datamodel;
+package com.compilerexplorer.datamodel;
 
-import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class CompiledText {
 
     public static class SourceLocation {
+        @Nullable
         public String file;
         public int line;
 
@@ -21,20 +22,22 @@ public class CompiledText {
             line = line_;
         }
 
+        @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
-            return file.hashCode()
+            return (file != null ? file.hashCode() : 0)
                     + line
                     ;
         }
 
+        @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof SourceLocation)) {
                 return false;
             }
             SourceLocation other = (SourceLocation)obj;
-            return file.equals(other.file)
+            return (file != null ? file.equals(other.file) : other.file == null)
                     && line == other.line
                     ;
         }
@@ -44,6 +47,7 @@ public class CompiledText {
         public String text;
         public SourceLocation source;
 
+        @SuppressWarnings("unused")
         @Override
         public int hashCode() {
             return text.hashCode()
@@ -51,6 +55,7 @@ public class CompiledText {
                     ;
         }
 
+        @SuppressWarnings("unused")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof CompiledChunk)) {
@@ -69,6 +74,7 @@ public class CompiledText {
         public List<CompiledChunk> stderr;
         public List<CompiledChunk> asm;
 
+        @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
             return code
@@ -78,6 +84,7 @@ public class CompiledText {
                     ;
         }
 
+        @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof CompiledResult)) {
@@ -93,18 +100,14 @@ public class CompiledText {
     }
 
     @NotNull
-    private PreprocessedSource preprocessedSource;
+    private final PreprocessedSource preprocessedSource;
 
     @NotNull
-    private RemoteCompilerId compilerId;
+    private final CompiledResult compiledResult;
 
-    @NotNull
-    private CompiledResult compiledResult;
-
-    public CompiledText(@NotNull PreprocessedSource preprocessedSource_, @NotNull RemoteCompilerId compilerId_, @NotNull CompiledResult compiledResult_) {
+    public CompiledText(@NotNull PreprocessedSource preprocessedSource_, @NotNull CompiledResult compiledResult_) {
         preprocessedSource = preprocessedSource_;
         compiledResult = compiledResult_;
-        compilerId = compilerId_;
     }
 
     @NotNull
@@ -113,23 +116,19 @@ public class CompiledText {
     }
 
     @NotNull
-    public RemoteCompilerId getCompilerId() {
-        return compilerId;
-    }
-
-    @NotNull
     public CompiledResult getCompiledResult() {
         return compiledResult;
     }
 
+    @SuppressWarnings("unused")
     @Override
     public int hashCode() {
         return getPreprocessedSource().hashCode()
-                + getCompilerId().hashCode()
                 + getCompiledResult().hashCode()
                 ;
     }
 
+    @SuppressWarnings("unused")
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof CompiledText)) {
@@ -137,7 +136,6 @@ public class CompiledText {
         }
         CompiledText other = (CompiledText)obj;
         return getPreprocessedSource().equals(other.getPreprocessedSource())
-                && getCompilerId().equals(other.getCompilerId())
                 && getCompiledResult().equals(other.getCompiledResult())
                 ;
     }

@@ -13,7 +13,7 @@ public class EditorChangeListener {
     public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer, @NotNull Producer<Boolean> suppressUpdatesProducer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
-            public void documentChanged(DocumentEvent event) {
+            public void documentChanged(@NotNull DocumentEvent event) {
                 if (!suppressUpdatesProducer.produce() && belongsToProject(event.getDocument())) {
                     consumer.run();
                 }

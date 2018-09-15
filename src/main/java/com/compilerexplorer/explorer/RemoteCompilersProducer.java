@@ -1,10 +1,9 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.common.datamodel.state.RemoteCompilerInfo;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.state.RemoteCompilerInfo;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

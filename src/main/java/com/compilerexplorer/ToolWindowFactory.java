@@ -3,10 +3,10 @@ package com.compilerexplorer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.common.datamodel.PreprocessedSource;
-import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
-import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.PreprocessedSource;
+import com.compilerexplorer.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.SourceRemoteMatchProducer;
 import com.compilerexplorer.compiler.CompilerSettingsProducer;
 import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
@@ -94,7 +94,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             }
         };
         Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
-            RefreshSignal signal = upgradeSignalIfDisconnected(project, state, refreshSignal);
+            RefreshSignal signal = upgradeSignalIfDisconnected(state, refreshSignal);
             resetter.accept(signal);
             refresher.accept(signal);
         };
@@ -124,7 +124,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
     }
 
     @NotNull
-    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull Project project, @NotNull SettingsState state, @NotNull RefreshSignal signal) {
+    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull SettingsState state, @NotNull RefreshSignal signal) {
         if (signal != RefreshSignal.RESET && !state.getConnected()) {
             return RefreshSignal.RECONNECT;
         }

@@ -1,11 +1,11 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.datamodel.SourceCompilerSettings;
-import com.compilerexplorer.common.datamodel.SourceSettings;
-import com.compilerexplorer.common.datamodel.state.LocalCompilerPath;
-import com.compilerexplorer.common.datamodel.state.LocalCompilerSettings;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.datamodel.SourceSettings;
+import com.compilerexplorer.datamodel.state.LocalCompilerPath;
+import com.compilerexplorer.datamodel.state.LocalCompilerSettings;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProcessCanceledException;

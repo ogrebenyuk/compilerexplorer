@@ -1,8 +1,8 @@
 package com.compilerexplorer.project.clion.oc;
 
 import com.compilerexplorer.common.PathNormalizer;
-import com.compilerexplorer.common.datamodel.ProjectSettings;
-import com.compilerexplorer.common.datamodel.SourceSettings;
+import com.compilerexplorer.datamodel.ProjectSettings;
+import com.compilerexplorer.datamodel.SourceSettings;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.Producer;
 import com.jetbrains.cidr.lang.OCLanguageKind;

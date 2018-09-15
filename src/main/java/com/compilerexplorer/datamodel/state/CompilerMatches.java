@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
@@ -22,6 +22,7 @@ public class CompilerMatches {
         // empty
     }
 
+    @SuppressWarnings("CopyConstructorMissesField")
     public CompilerMatches(@NotNull CompilerMatches other) {
         copyFrom(other);
     }
@@ -36,7 +37,7 @@ public class CompilerMatches {
         return chosenMatch;
     }
 
-    public void setChosenMatch(@NotNull CompilerMatch chosenMatch_) {
+    private void setChosenMatch(@NotNull CompilerMatch chosenMatch_) {
         chosenMatch = new CompilerMatch(chosenMatch_);
     }
 
@@ -45,11 +46,11 @@ public class CompilerMatches {
         return otherMatches;
     }
 
-    void setOtherMatches(@NotNull List<CompilerMatch> otherMatches_) {
+    private void setOtherMatches(@NotNull List<CompilerMatch> otherMatches_) {
         otherMatches = otherMatches_.stream().map(CompilerMatch::new).collect(Collectors.toList());
     }
 
-    public void copyFrom(@NotNull CompilerMatches other) {
+    private void copyFrom(@NotNull CompilerMatches other) {
         setChosenMatch(other.getChosenMatch());
         setOtherMatches(other.getOtherMatches());
     }

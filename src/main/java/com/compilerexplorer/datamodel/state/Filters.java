@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;
@@ -33,11 +33,8 @@ public class Filters {
     @Property
     @SerializedName("demangle")
     private boolean demangle = false;
-    @Property
-    @SerializedName("optOutput")
-    private boolean optOutput = false;
 
-    public Filters() {
+    Filters() {
         // empty
     }
 
@@ -109,15 +106,7 @@ public class Filters {
         demangle = demangle_;
     }
 
-    public boolean getOptOutput() {
-        return optOutput;
-    }
-
-    public void setOptOutput(boolean optOutput_) {
-        optOutput = optOutput_;
-    }
-
-    public void copyFrom(@NotNull Filters other) {
+    private void copyFrom(@NotNull Filters other) {
         setBinary(other.getBinary());
         setExecute(other.getExecute());
         setLabels(other.getLabels());
@@ -126,12 +115,19 @@ public class Filters {
         setTrim(other.getTrim());
         setIntel(other.getIntel());
         setDemangle(other.getDemangle());
-        setOptOutput(other.getOptOutput());
     }
 
     @Override
     public int hashCode() {
-        return 0;
+        return (getBinary() ? 1 : 0)
+                + (getExecute() ? 1 : 0)
+                + (getLabels() ? 1 : 0)
+                + (getDirectives() ? 1 : 0)
+                + (getCommentOnly() ? 1 : 0)
+                + (getTrim() ? 1 : 0)
+                + (getIntel() ? 1 : 0)
+                + (getDemangle() ? 1 : 0)
+                ;
     }
 
     @Override
@@ -148,7 +144,6 @@ public class Filters {
                 && getTrim() == other.getTrim()
                 && getIntel() == other.getIntel()
                 && getDemangle() == other.getDemangle()
-                && getOptOutput() == other.getOptOutput()
                 ;
     }
 }

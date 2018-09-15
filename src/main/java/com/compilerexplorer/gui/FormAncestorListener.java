@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
-import java.util.function.Consumer;
 
 public class FormAncestorListener {
     public FormAncestorListener(@NotNull JComponent component, @NotNull Runnable consumer) {

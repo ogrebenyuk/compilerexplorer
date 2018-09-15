@@ -1,7 +1,7 @@
 package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.panels.VerticalLayout;
@@ -11,7 +11,6 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class SettingsGui {

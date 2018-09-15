@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
@@ -55,10 +55,6 @@ public class SettingsState {
         // empty
     }
 
-    public SettingsState(@NotNull SettingsState other) {
-        copyFrom(other);
-    }
-
     public boolean getEnabled() {
         return enabled;
     }
@@ -109,7 +105,7 @@ public class SettingsState {
         return filters;
     }
 
-    public void setFilters(@NotNull Filters filters_) {
+    private void setFilters(@NotNull Filters filters_) {
         filters = new Filters(filters_);
     }
 

@@ -4,8 +4,6 @@ import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceModificationListener;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 public class OCProjectListener {
     public OCProjectListener(@NotNull Project project, @NotNull Runnable changeConsumer) {
         project.getMessageBus().connect().subscribe(OCWorkspaceModificationListener.TOPIC, new OCWorkspaceModificationListener() {

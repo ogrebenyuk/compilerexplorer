@@ -4,8 +4,8 @@ import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TimerScheduler;
-import com.compilerexplorer.common.datamodel.*;
-import com.compilerexplorer.common.datamodel.state.*;
+import com.compilerexplorer.datamodel.*;
+import com.compilerexplorer.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
 import com.compilerexplorer.gui.listeners.EditorCaretListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
@@ -81,7 +81,7 @@ public class ToolWindowGui {
     @Nullable
     private CompiledText compiledText;
     @NotNull
-    private TimerScheduler timerScheduler = new TimerScheduler();
+    private final TimerScheduler timerScheduler = new TimerScheduler();
     private boolean suppressUpdates = false;
     @NotNull
     private final Map<CompiledText.SourceLocation, List<Range>> locationsFromSourceMap = new HashMap<>();
@@ -226,24 +226,24 @@ public class ToolWindowGui {
 
         actionGroup.add(new AnAction("Compiler Explorer Settings...") {
             @Override
-            public void actionPerformed(AnActionEvent event) {
+            public void actionPerformed(@NotNull AnActionEvent event) {
                 ShowSettingsUtil.getInstance().showSettingsDialog(project, "Compiler Explorer");
             }
             @Override
-            public void update(AnActionEvent event) {
+            public void update(@NotNull AnActionEvent event) {
                 event.getPresentation().setIcon(AllIcons.General.Settings);
             }
         });
 
         actionGroup.add(new AnAction("Reset Cache and Reload") {
             @Override
-            public void actionPerformed(AnActionEvent event) {
+            public void actionPerformed(@NotNull AnActionEvent event) {
                 if (refreshSignalConsumer != null) {
                     refreshSignalConsumer.accept(RefreshSignal.RESET);
                 }
             }
             @Override
-            public void update(AnActionEvent event) {
+            public void update(@NotNull AnActionEvent event) {
                 event.getPresentation().setIcon(AllIcons.Actions.ForceRefresh);
             }
         });
@@ -256,11 +256,11 @@ public class ToolWindowGui {
 
         toolWindow.setTitleActions(new AnAction("Scroll from Source") {
             @Override
-            public void actionPerformed(AnActionEvent event) {
+            public void actionPerformed(@NotNull AnActionEvent event) {
                 highlightLocations(caretTracker.getLocations(), false, true);
             }
             @Override
-            public void update(AnActionEvent event) {
+            public void update(@NotNull AnActionEvent event) {
                 event.getPresentation().setHoveredIcon(AllIcons.General.LocateHover);
                 event.getPresentation().setIcon(AllIcons.General.Locate);
                 event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
@@ -275,7 +275,7 @@ public class ToolWindowGui {
         DefaultActionGroup gutterGroup = new DefaultActionGroup();
         gutterGroup.add(new AnAction("Annotate") {
             @Override
-            public void actionPerformed(AnActionEvent event) {
+            public void actionPerformed(@NotNull AnActionEvent event) {
                 showAnnotations(ed);
                 ed.getGutterComponentEx().setGutterPopupGroup(null);
             }
@@ -283,23 +283,23 @@ public class ToolWindowGui {
         ed.getGutterComponentEx().setGutterPopupGroup(gutterGroup);
         ed.getGutterComponentEx().addMouseListener(new MouseListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mouseClicked(@NotNull MouseEvent e) {
                 scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
             }
             @Override
-            public void mousePressed(MouseEvent e) {
+            public void mousePressed(@NotNull MouseEvent e) {
                 // empty
             }
             @Override
-            public void mouseReleased(MouseEvent e) {
+            public void mouseReleased(@NotNull MouseEvent e) {
                 // empty
             }
             @Override
-            public void mouseEntered(MouseEvent e) {
+            public void mouseEntered(@NotNull MouseEvent e) {
                 // empty
             }
             @Override
-            public void mouseExited(MouseEvent e) {
+            public void mouseExited(@NotNull MouseEvent e) {
                 // empty
             }
         });
@@ -321,6 +321,7 @@ public class ToolWindowGui {
                 return source != null ? getTooltipText(source) : null;
             }
             @Override
+            @NotNull
             public EditorFontType getStyle(int line, @Nullable Editor ed) {
                 return EditorFontType.ITALIC;
             }
@@ -349,16 +350,23 @@ public class ToolWindowGui {
             }
             @NotNull
             private String getLineText(@NotNull CompiledText.SourceLocation source) {
-                return Paths.get(source.file).getFileName().toString() + ":" + source.line;
+                return source.file != null ? (Paths.get(source.file).getFileName().toString() + ":" + source.line) : "";
             }
             @NotNull
             private String getTooltipText(@NotNull CompiledText.SourceLocation source) {
-                return source.file + ":" + source.line;
+                return source.file != null ? (source.file + ":" + source.line) : "";
             }
         });
     }
 
-    private <T> void addToggleAction(@NotNull DefaultActionGroup actionGroup, @NotNull String text, Supplier<T> supplier, Function<T, Boolean> getter, BiConsumer<T, Boolean> setter, boolean recompile) {
+    private <T> void addToggleAction(
+            @NotNull DefaultActionGroup actionGroup,
+            @NotNull String text,
+            @NotNull Supplier<T> supplier,
+            @NotNull Function<T, Boolean> getter,
+            @NotNull BiConsumer<T, Boolean> setter,
+            boolean recompile
+    ) {
         actionGroup.add(new ToggleAction(text) {
             @Override
             public boolean isSelected(AnActionEvent event) {
@@ -375,7 +383,7 @@ public class ToolWindowGui {
     }
 
     private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
-        if (source != null) {
+        if (source != null && source.file != null) {
             VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
             if (file != null) {
                 FileEditorManager.getInstance(project).openFile(file, true);
@@ -589,21 +597,21 @@ public class ToolWindowGui {
                     asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
-                            if (!lastChunk.file.isEmpty()) {
+                            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                             }
                             lastRangeBegin = currentOffset;
                             lastChunk.file = chunk.source.file;
                             lastChunk.line = chunk.source.line;
                         }
-                    } else if (!lastChunk.file.isEmpty()) {
+                    } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                         rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
                     currentOffset = nextOffset + 1;
                 }
             }
-            if (!lastChunk.file.isEmpty()) {
+            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
             }
 

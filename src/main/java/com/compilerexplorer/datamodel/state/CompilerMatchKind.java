@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import org.jetbrains.annotations.NotNull;
 

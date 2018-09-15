@@ -1,13 +1,11 @@
 package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.common.datamodel.CompiledText;
-import com.compilerexplorer.common.datamodel.PreprocessedSource;
-import com.compilerexplorer.common.datamodel.SourceSettings;
-import com.compilerexplorer.common.datamodel.state.Filters;
-import com.compilerexplorer.common.datamodel.state.RemoteCompilerId;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
-import com.google.common.collect.Lists;
+import com.compilerexplorer.datamodel.CompiledText;
+import com.compilerexplorer.datamodel.PreprocessedSource;
+import com.compilerexplorer.datamodel.SourceSettings;
+import com.compilerexplorer.datamodel.state.Filters;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.google.common.net.UrlEscapers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -28,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +60,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         normalizedPathMap = new HashMap<>();
     }
 
+    @SuppressWarnings("WeakerAccess")
     @Override
     public void accept(@NotNull PreprocessedSource preprocessedSource) {
         lastPreprocessedSource = preprocessedSource;
@@ -121,7 +119,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                         normalizePaths(compiledResult.stdout);
                         normalizePaths(compiledResult.stderr);
                         normalizePaths(compiledResult.asm);
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, new RemoteCompilerId(remoteCompilerId), compiledResult)));
+                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, compiledResult)));
                     } else {
                         String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
                         errorLater(err);
@@ -173,7 +171,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     @Nullable
     private String tryNormalizePath(@Nullable String path) {
         if (path == null) {
-            return path;
+            return null;
         }
         return normalizedPathMap.computeIfAbsent(path, PathNormalizer::normalizePath);
     }

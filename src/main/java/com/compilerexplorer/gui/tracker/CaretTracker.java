@@ -1,11 +1,10 @@
 package com.compilerexplorer.gui.tracker;
 
 import com.compilerexplorer.common.PathNormalizer;
-import com.compilerexplorer.common.datamodel.CompiledText;
+import com.compilerexplorer.datamodel.CompiledText;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;

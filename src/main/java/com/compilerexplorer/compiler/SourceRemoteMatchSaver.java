@@ -2,9 +2,9 @@ package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SettingsProvider;
-import com.compilerexplorer.common.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.common.datamodel.state.LocalCompilerPath;
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.datamodel.state.LocalCompilerPath;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 

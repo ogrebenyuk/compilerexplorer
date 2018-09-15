@@ -1,6 +1,6 @@
 package com.compilerexplorer.common;
 
-import com.compilerexplorer.common.datamodel.state.SettingsState;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
@@ -17,7 +17,7 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
     @NotNull
     private final Project project;
     @NotNull
-    private SettingsState state;
+    private final SettingsState state;
     @Nullable
     private Consumer<RefreshSignal> refreshSignalConsumer;
 
@@ -25,6 +25,7 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
         return ServiceManager.getService(project, SettingsProvider.class);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public SettingsProvider(@NotNull Project project_) {
         project = project_;
         state = new SettingsState();

@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,7 @@ public class LocalCompilerSettings {
         return name;
     }
 
-    public void setName(@NotNull String name_) {
+    private void setName(@NotNull String name_) {
         name = name_;
     }
 
@@ -46,7 +46,7 @@ public class LocalCompilerSettings {
         return version;
     }
 
-    public void setVersion(@NotNull String version_) {
+    private void setVersion(@NotNull String version_) {
         version = version_;
     }
 
@@ -55,11 +55,11 @@ public class LocalCompilerSettings {
         return target;
     }
 
-    public void setTarget(@NotNull String target_) {
+    private void setTarget(@NotNull String target_) {
         target = target_;
     }
 
-    public void copyFrom(@NotNull LocalCompilerSettings other) {
+    private void copyFrom(@NotNull LocalCompilerSettings other) {
         setName(other.getName());
         setVersion(other.getVersion());
         setTarget(other.getTarget());

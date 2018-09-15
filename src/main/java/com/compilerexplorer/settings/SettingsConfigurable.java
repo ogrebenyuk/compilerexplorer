@@ -4,12 +4,14 @@ import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.settings.gui.SettingsGui;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
 public class SettingsConfigurable implements Configurable {
     @NotNull
     private final SettingsProvider provider;
+    @Nullable
     private SettingsGui form;
 
     SettingsConfigurable(@NotNull SettingsProvider provider_) {
@@ -17,6 +19,7 @@ public class SettingsConfigurable implements Configurable {
     }
 
     @Override
+    @NotNull
     public String getDisplayName() {
         return "Compiler Explorer";
     }
@@ -33,17 +36,21 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        return !provider.getState().equals(form.getState());
+        return form != null && !provider.getState().equals(form.getState());
     }
 
     @Override
     public void apply() {
-        provider.copyFrom(form.getState());
+        if (form != null) {
+            provider.copyFrom(form.getState());
+        }
     }
 
     @Override
     public void reset() {
-        form.copyFrom(provider.getState());
+        if (form != null) {
+            form.copyFrom(provider.getState());
+        }
     }
 
     @Override

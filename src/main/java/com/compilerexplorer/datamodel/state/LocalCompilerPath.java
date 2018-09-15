@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
@@ -25,23 +25,25 @@ public class LocalCompilerPath {
     }
 
     @NotNull
-    public String getPath() {
+    private String getPath() {
         return path;
     }
 
-    public void setPath(@NotNull String path_) {
+    private void setPath(@NotNull String path_) {
         path = path_;
     }
 
-    public void copyFrom(@NotNull LocalCompilerPath other) {
+    private void copyFrom(@NotNull LocalCompilerPath other) {
         setPath(other.getPath());
     }
 
+    @SuppressWarnings("unused")
     @Override
     public int hashCode() {
         return getPath().hashCode();
     }
 
+    @SuppressWarnings("unused")
     @Override
     public boolean equals(@NotNull Object obj) {
         if (!(obj instanceof LocalCompilerPath)) {

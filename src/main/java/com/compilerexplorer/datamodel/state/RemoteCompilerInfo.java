@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;
@@ -22,18 +22,12 @@ public class RemoteCompilerInfo {
     @SerializedName("lang")
     private String language = "";
 
-    public RemoteCompilerInfo() {
+    RemoteCompilerInfo() {
         // empty
     }
 
-    public RemoteCompilerInfo(@NotNull RemoteCompilerInfo other) {
+    RemoteCompilerInfo(@NotNull RemoteCompilerInfo other) {
         copyFrom(other);
-    }
-
-    public RemoteCompilerInfo(@NotNull String id_, @NotNull String name_, @NotNull String language_) {
-        setId(id_);
-        setName(name_);
-        setLanguage(language_);
     }
 
     @NotNull
@@ -41,7 +35,7 @@ public class RemoteCompilerInfo {
         return id;
     }
 
-    public void setId(@NotNull String id_) {
+    private void setId(@NotNull String id_) {
         id = id_;
     }
 
@@ -50,7 +44,7 @@ public class RemoteCompilerInfo {
         return name;
     }
 
-    public void setName(@NotNull String name_) {
+    private void setName(@NotNull String name_) {
         name = name_;
     }
 
@@ -59,11 +53,11 @@ public class RemoteCompilerInfo {
         return language;
     }
 
-    public void setLanguage(@NotNull String language_) {
+    private void setLanguage(@NotNull String language_) {
         language = language_;
     }
 
-    public void copyFrom(@NotNull RemoteCompilerInfo other) {
+    private void copyFrom(@NotNull RemoteCompilerInfo other) {
         setId(other.getId());
         setName(other.getName());
         setLanguage(other.getLanguage());

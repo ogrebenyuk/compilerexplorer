@@ -1,6 +1,6 @@
-package com.compilerexplorer.common.datamodel;
+package com.compilerexplorer.datamodel;
 
-import com.compilerexplorer.common.datamodel.state.CompilerMatches;
+import com.compilerexplorer.datamodel.state.CompilerMatches;
 import org.jetbrains.annotations.NotNull;
 
 public class SourceRemoteMatched {

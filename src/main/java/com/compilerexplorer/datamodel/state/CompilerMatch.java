@@ -1,4 +1,4 @@
-package com.compilerexplorer.common.datamodel.state;
+package com.compilerexplorer.datamodel.state;
 
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +19,8 @@ public class CompilerMatch {
         // empty
     }
 
-    public CompilerMatch(@NotNull CompilerMatch other) {
+    @SuppressWarnings("CopyConstructorMissesField")
+    CompilerMatch(@NotNull CompilerMatch other) {
         copyFrom(other);
     }
 
@@ -33,7 +34,7 @@ public class CompilerMatch {
         return remoteCompilerInfo;
     }
 
-    public void setRemoteCompilerInfo(@NotNull RemoteCompilerInfo remoteCompilerInfo_) {
+    private void setRemoteCompilerInfo(@NotNull RemoteCompilerInfo remoteCompilerInfo_) {
         remoteCompilerInfo = new RemoteCompilerInfo(remoteCompilerInfo_);
     }
 
@@ -42,11 +43,11 @@ public class CompilerMatch {
         return compilerMatchKind;
     }
 
-    void setCompilerMatchKind(@NotNull CompilerMatchKind compilerMatchKind_) {
+    private void setCompilerMatchKind(@NotNull CompilerMatchKind compilerMatchKind_) {
         compilerMatchKind = compilerMatchKind_;
     }
 
-    public void copyFrom(@NotNull CompilerMatch other) {
+    private void copyFrom(@NotNull CompilerMatch other) {
         setRemoteCompilerInfo(other.getRemoteCompilerInfo());
         setCompilerMatchKind(other.getCompilerMatchKind());
     }
