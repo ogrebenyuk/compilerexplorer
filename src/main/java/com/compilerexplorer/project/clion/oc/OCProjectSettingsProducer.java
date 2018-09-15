@@ -8,6 +8,7 @@ import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.OCWorkspaceRunConfigurationListener;
+import com.jetbrains.cidr.lang.workspace.compiler.GCCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerSettings;
 import org.jetbrains.annotations.NotNull;
@@ -47,7 +48,7 @@ public class OCProjectSettingsProducer implements Producer<ProjectSettings> {
                 OCCompilerKind compilerKind = compilerSettings.getCompiler(language);
                 CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches(language, virtualFile);
                 if (compiler != null && compilerKind != null && switches != null) {
-                    return new SourceSettings(virtualFile, language, compiler, compilerKind, switches.getList(CidrCompilerSwitches.Format.RAW));
+                    return new SourceSettings(virtualFile, language, GCCCompiler.getLanguageOption(language), compiler, compilerKind, switches.getList(CidrCompilerSwitches.Format.RAW));
                 }
             }
             return null;

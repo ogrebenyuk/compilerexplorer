@@ -20,17 +20,20 @@ public class SourceSettings {
     @NotNull
     private final OCLanguageKind language;
     @NotNull
+    private final String languageSwitch;
+    @NotNull
     private final File compiler;
     @NotNull
     private final OCCompilerKind compilerKind;
     @NotNull
     private final List<String> switches;
 
-    public SourceSettings(@NotNull VirtualFile source_, @NotNull OCLanguageKind language_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_) {
+    public SourceSettings(@NotNull VirtualFile source_, @NotNull OCLanguageKind language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull OCCompilerKind compilerKind_, @NotNull List<String> switches_) {
         source = source_;
         sourcePath = PathNormalizer.normalizePath(source.getPath());
         sourceName = source.getPresentableName();
         language = language_;
+        languageSwitch = languageSwitch_;
         compiler = compiler_;
         compilerKind = compilerKind_;
         switches = switches_;
@@ -57,6 +60,11 @@ public class SourceSettings {
     }
 
     @NotNull
+    public String getLanguageSwitch() {
+        return languageSwitch;
+    }
+
+    @NotNull
     public File getCompiler() {
         return compiler;
     }
@@ -73,11 +81,12 @@ public class SourceSettings {
 
     @Override
     public int hashCode() {
-        return source.hashCode()
-                + language.hashCode()
-                + FileUtil.fileHashCode(compiler)
-                + compilerKind.hashCode()
-                + switches.hashCode()
+        return getSource().hashCode()
+                + getLanguage().hashCode()
+                + getLanguageSwitch().hashCode()
+                + FileUtil.fileHashCode(getCompiler())
+                + getCompilerKind().hashCode()
+                + getSwitches().hashCode()
                 ;
     }
 
@@ -87,11 +96,12 @@ public class SourceSettings {
             return false;
         }
         SourceSettings other = (SourceSettings)obj;
-        return source.getPath().equals(other.source.getPath())
-                && language.getDisplayName().equals(other.language.getDisplayName())
-                && FileUtil.filesEqual(compiler, other.compiler)
-                && compilerKind.toString().equals(other.compilerKind.toString())
-                && String.join(" ", switches).equals(String.join(" ", other.switches))
+        return getSource().getPath().equals(other.getSource().getPath())
+                && getLanguage().getDisplayName().equals(other.getLanguage().getDisplayName())
+                && getLanguageSwitch().equals(other.getLanguageSwitch())
+                && FileUtil.filesEqual(getCompiler(), other.getCompiler())
+                && getCompilerKind().toString().equals(other.getCompilerKind().toString())
+                && String.join(" ", getSwitches()).equals(String.join(" ", other.getSwitches()))
                 ;
     }
 }

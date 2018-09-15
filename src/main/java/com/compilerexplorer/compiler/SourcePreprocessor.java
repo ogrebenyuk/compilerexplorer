@@ -103,7 +103,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         "-I" + project.getBasePath(),
                         "-E",
                         "-o", "-",
-                        GCCCompiler.getLanguageOption(sourceSettings.getLanguage()),
+                        sourceSettings.getLanguageSwitch(),
                         "-c", "-"
                 )
         ).toArray(String[]::new);
