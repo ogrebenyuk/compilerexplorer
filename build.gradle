@@ -7,7 +7,7 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.4-SNAPSHOT'
+version '1.5'
 
 patchPluginXml {
     changeNotes """
