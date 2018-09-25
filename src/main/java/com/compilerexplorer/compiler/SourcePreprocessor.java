@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.lang.Error;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -93,13 +94,15 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         return Stream.concat(
                 Stream.concat(
                         Stream.concat(
-                                Stream.of(sourceSettings.getCompiler().getAbsolutePath()),
+                                Stream.of(sourceSettings.getCompiler().getAbsolutePath(),
+                                        "-I" + Paths.get(sourceSettings.getSourcePath()).getParent().toString(),
+                                        "-I" + project.getBasePath()
+                                ),
                                 sourceSettings.getSwitches().stream()
                         ),
                         Arrays.stream(additionalSwitches.split(" "))
                 ),
                 Stream.of(
-                        "-I" + project.getBasePath(),
                         "-E",
                         "-o", "-",
                         sourceSettings.getLanguageSwitch(),
