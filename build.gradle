@@ -7,12 +7,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.5'
+version '1.6'
 
 patchPluginXml {
     changeNotes """
         Added source line highlighing.
         Added scrolling to/from source.
+        Fixed several bugs.
     """
 }
 
