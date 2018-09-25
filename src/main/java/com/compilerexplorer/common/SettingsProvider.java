@@ -43,7 +43,6 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
     @Override
     @NotNull
     public SettingsState getState() {
-        ApplicationManager.getApplication().assertIsDispatchThread();
         return state;
     }
 
