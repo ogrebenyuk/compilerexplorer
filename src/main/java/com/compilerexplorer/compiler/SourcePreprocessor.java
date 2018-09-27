@@ -98,7 +98,10 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                                         "-I" + Paths.get(sourceSettings.getSourcePath()).getParent().toString(),
                                         "-I" + project.getBasePath()
                                 ),
-                                sourceSettings.getSwitches().stream()
+                                Stream.concat(
+                                        sourceSettings.getSwitches().stream(),
+                                        AdditionalSwitches.INSTANCE.stream()
+                                )
                         ),
                         Arrays.stream(additionalSwitches.split(" "))
                 ),
