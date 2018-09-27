@@ -384,21 +384,25 @@ public class ToolWindowGui {
 
     private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
         if (source != null && source.file != null) {
-            VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
-            if (file != null) {
-                FileEditorManager.getInstance(project).openFile(file, true);
-                Arrays.stream(EditorFactory.getInstance().getAllEditors())
-                        .filter(editor -> {
-                            if (editor.getProject() == project) {
-                                VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
-                                return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
-                            }
-                            return false;
-                        })
-                        .forEach(editor -> {
-                            editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
-                            editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
-                        });
+            try {
+                VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
+                if (file != null) {
+                    FileEditorManager.getInstance(project).openFile(file, true);
+                    Arrays.stream(EditorFactory.getInstance().getAllEditors())
+                            .filter(editor -> {
+                                if (editor.getProject() == project) {
+                                    VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
+                                    return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
+                                }
+                                return false;
+                            })
+                            .forEach(editor -> {
+                                editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
+                                editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
+                            });
+                }
+            } catch (Exception e) {
+                // empty
             }
         }
     }
