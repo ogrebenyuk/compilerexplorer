@@ -40,12 +40,11 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
         }
 
         String localName = sourceCompilerSettings.getLocalCompilerSettings().getName().toLowerCase();
-        String localVersion = localName.equals("gcc")
-                ? stripLastGCCVersionDigitIfNeeded(sourceCompilerSettings.getLocalCompilerSettings().getVersion())
-                : sourceCompilerSettings.getLocalCompilerSettings().getVersion();
+        String localVersionFull = sourceCompilerSettings.getLocalCompilerSettings().getVersion();
+        String localVersion = localName.equals("gcc") ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
         String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
         String language = sourceCompilerSettings.getSourceSettings().getLanguage();
-        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localTarget, language);
+        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);
         CompilerMatches matches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
         sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, matches));
     }
@@ -54,11 +53,12 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     private static List<CompilerMatch> findRemoteCompilerMatches(@NotNull List<RemoteCompilerInfo> remoteCompilers,
                                                                  @NotNull String localName,
                                                                  @NotNull String localVersion,
+                                                                 @NotNull String localVersionFull,
                                                                  @NotNull String localTarget,
                                                                  @NotNull String language) {
         return remoteCompilers.stream()
                 .filter(s -> s.getLanguage().toLowerCase().equals(language.toLowerCase()))
-                .map(s -> findCompilerVersionMatch(s, localName, localVersion, localTarget))
+                .map(s -> findCompilerVersionMatch(s, localName, localVersion, localVersionFull, localTarget))
                 .collect(Collectors.toList());
     }
 
@@ -75,13 +75,20 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     private static CompilerMatch findCompilerVersionMatch(@NotNull RemoteCompilerInfo remoteCompilerInfo,
                                                           @NotNull String localName,
                                                           @NotNull String localVersion,
+                                                          @NotNull String localVersionFull,
                                                           @NotNull String localTarget) {
-        boolean targetMatches = remoteCompilerInfo.getName().replaceAll("-", "_").contains(localTarget.replaceAll("-", "_"));
-        boolean nameMatches = remoteCompilerInfo.getName().toLowerCase().contains(localName.toLowerCase());
+        String remoteVersion = remoteCompilerInfo.getVersion();
+        String remoteName = remoteCompilerInfo.getName();
+        boolean targetMatches =
+                remoteVersion.replaceAll("-", "_").contains(localTarget.replaceAll("-", "_")) ||
+                remoteName.replaceAll("-", "_").contains(localTarget.replaceAll("-", "_"));
+        boolean nameMatches =
+                remoteVersion.toLowerCase().contains(localName.toLowerCase()) ||
+                remoteName.toLowerCase().contains(localName.toLowerCase());
         if (targetMatches && nameMatches) {
-            if (versionMatches(remoteCompilerInfo.getName(), localVersion, false)) {
+            if (versionMatches(remoteVersion, localVersionFull, false) || versionMatches(remoteName, localVersion, false)) {
                 return new CompilerMatch(remoteCompilerInfo, CompilerMatchKind.EXACT_MATCH);
-            } else if (versionMatches(remoteCompilerInfo.getName(), localVersion, true)) {
+            } else if (versionMatches(remoteVersion, localVersionFull, true) || versionMatches(remoteName, localVersion, true)) {
                 return new CompilerMatch(remoteCompilerInfo, CompilerMatchKind.MINOR_MISMATCH);
             }
         }

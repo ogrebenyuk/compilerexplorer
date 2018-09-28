@@ -21,6 +21,10 @@ public class RemoteCompilerInfo {
     @Property
     @SerializedName("lang")
     private String language = "";
+    @NotNull
+    @Property
+    @SerializedName("version")
+    private String version = "";
 
     RemoteCompilerInfo() {
         // empty
@@ -57,10 +61,20 @@ public class RemoteCompilerInfo {
         language = language_;
     }
 
+    @NotNull
+    public String getVersion() {
+        return version;
+    }
+
+    private void setVersion(@NotNull String version_) {
+        version = version_;
+    }
+
     private void copyFrom(@NotNull RemoteCompilerInfo other) {
         setId(other.getId());
         setName(other.getName());
         setLanguage(other.getLanguage());
+        setVersion(other.getVersion());
     }
 
     @Override
@@ -68,6 +82,7 @@ public class RemoteCompilerInfo {
         return getId().hashCode()
                 + getName().hashCode()
                 + getLanguage().hashCode()
+                + getVersion().hashCode()
                 ;
     }
 
@@ -80,6 +95,7 @@ public class RemoteCompilerInfo {
         return getId().equals(other.getId())
                 && getName().equals(other.getName())
                 && getLanguage().equals(other.getLanguage())
+                && getVersion().equals(other.getVersion())
                 ;
     }
 }
