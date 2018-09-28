@@ -85,7 +85,6 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                     while ((line = br.readLine()) != null) {
                         indicator.checkCanceled();
                         output = output.concat(line);
-                        System.out.println(line);
                     }
                     httpClient.close();
                     indicator.checkCanceled();
