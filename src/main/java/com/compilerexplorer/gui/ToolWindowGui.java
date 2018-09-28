@@ -211,18 +211,19 @@ public class ToolWindowGui {
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        addToggleAction(actionGroup, "Compile to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true);
-        addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true);
-        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true);
-        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true);
-        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true);
-        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true);
-        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true);
-        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true);
+        addToggleAction(actionGroup, "Compile to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
+        addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
+        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false);
+        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false);
+        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false);
+        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
         actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false);
-        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false);
-        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false);
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false);
+        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false);
+        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true);
 
         actionGroup.add(new AnAction("Compiler Explorer Settings...") {
             @Override
@@ -365,7 +366,8 @@ public class ToolWindowGui {
             @NotNull Supplier<T> supplier,
             @NotNull Function<T, Boolean> getter,
             @NotNull BiConsumer<T, Boolean> setter,
-            boolean recompile
+            boolean recompile,
+            boolean reparse
     ) {
         actionGroup.add(new ToggleAction(text) {
             @Override
@@ -377,6 +379,9 @@ public class ToolWindowGui {
                 setter.accept(supplier.get(), selected);
                 if (recompile && refreshSignalConsumer != null) {
                     refreshSignalConsumer.accept(RefreshSignal.COMPILE);
+                }
+                if (reparse) {
+                    asCompiledTextConsumer().accept(compiledText);
                 }
             }
         });
@@ -582,6 +587,8 @@ public class ToolWindowGui {
                 return;
             }
 
+            SettingsState state = getState();
+            boolean shortenTemplates = state.getShortenTemplates();
             List<Range> newHighlighterRanges = new ArrayList<>();
             locationsFromSourceMap.clear();
             locationsToSourceMap.clear();
@@ -597,7 +604,7 @@ public class ToolWindowGui {
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
                     int nextOffset = currentOffset + chunk.text.length();
-                    asmBuilder.append(chunk.text);
+                    parseChunk(asmBuilder, chunk.text, shortenTemplates);
                     asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
@@ -659,6 +666,73 @@ public class ToolWindowGui {
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
         suppressUpdates = false;
+    }
+
+    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
+        if (shortenTemplates && containsTemplates(text)) {
+            doShortenTemplates(builder, text);
+        } else {
+            builder.append(text);
+        }
+    }
+
+    private static boolean containsTemplates(@NotNull String text) {
+        return text.indexOf('<') >= 0;
+    }
+
+    private static void doShortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
+        int length = text.length();
+        int depth = 0;
+        for (int i = 0; i < length; ++i) {
+            char c = text.charAt(i);
+            if (c == '<') {
+                if (isOperator(text, i)) {
+                    if (depth == 0) {
+                        builder.append(c);
+                    }
+                    if (i + 1 < length && text.charAt(i + 1) == c) {
+                        if (depth == 0) {
+                            builder.append(c);
+                        }
+                        ++i;
+                    }
+                } else {
+                    if (depth == 0) {
+                        builder.append(c);
+                        builder.append("...");
+                    }
+                    depth++;
+                }
+            } else if (c == '>') {
+                if (isOperator(text, i)) {
+                    if (depth == 0) {
+                        builder.append(c);
+                    }
+                    if (i + 1 < length && text.charAt(i + 1) == c) {
+                        if (depth == 0) {
+                            builder.append(c);
+                        }
+                        ++i;
+                    }
+                } else {
+                    depth--;
+                    if (depth == 0) {
+                        builder.append(c);
+                    }
+                }
+            } else {
+                if (depth == 0) {
+                    builder.append(c);
+                }
+            }
+        }
+    }
+
+    private static boolean isOperator(@NotNull String text, int i) {
+        return ((i >= 8 && text.charAt(i - 1) == 'r' && text.substring(i - 8, i).equals("operator")) ||
+                (i >= 1 && text.charAt(i - 1) == '-') ||
+                (i >= 10 && text.charAt(i - 1) == '=' && text.substring(i - 8, i).equals("operator<="))
+        );
     }
 
     @NotNull

@@ -50,6 +50,8 @@ public class SettingsState {
     private boolean autoscrollToSource = false;
     @Property
     private boolean autoupdateFromSource = true;
+    @Property
+    private boolean shortenTemplates = false;
 
     public SettingsState() {
         // empty
@@ -160,6 +162,14 @@ public class SettingsState {
         autoupdateFromSource = autoupdateFromSource_;
     }
 
+    public boolean getShortenTemplates() {
+        return shortenTemplates;
+    }
+
+    public void setShortenTemplates(boolean shortenTemplates_) {
+        shortenTemplates = shortenTemplates_;
+    }
+
     public void copyFrom(@NotNull SettingsState other) {
         setEnabled(other.getEnabled());
         setUrl(other.getUrl());
@@ -173,6 +183,7 @@ public class SettingsState {
         setAutoscrollFromSource(other.getAutoscrollFromSource());
         setAutoscrollToSource(other.getAutoscrollToSource());
         setAutoupdateFromSource(other.getAutoupdateFromSource());
+        setShortenTemplates(other.getShortenTemplates());
     }
 
     @Override
@@ -189,6 +200,7 @@ public class SettingsState {
                 + (getAutoscrollFromSource() ? 1 : 0)
                 + (getAutoscrollToSource() ? 1 : 0)
                 + (getAutoupdateFromSource() ? 1 : 0)
+                + (getShortenTemplates() ? 1 : 0)
                 ;
     }
 
@@ -210,6 +222,7 @@ public class SettingsState {
                 && getAutoscrollFromSource() == (other.getAutoscrollFromSource())
                 && getAutoscrollToSource() == (other.getAutoscrollToSource())
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
+                && getShortenTemplates() == (other.getShortenTemplates())
                 ;
     }
 }

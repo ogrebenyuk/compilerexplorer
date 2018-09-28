@@ -108,13 +108,17 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             @Override
             public void run() {
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    boolean enabled = toolWindow.isVisible();
-                    if (enabled != lastEnabled) {
-                        lastEnabled = enabled;
-                        state.setEnabled(enabled);
-                        if (enabled) {
-                            refresher.accept(RefreshSignal.RESET);
+                    try {
+                        boolean enabled = toolWindow.isVisible();
+                        if (enabled != lastEnabled) {
+                            lastEnabled = enabled;
+                            state.setEnabled(enabled);
+                            if (enabled) {
+                                refresher.accept(RefreshSignal.RESET);
+                            }
                         }
+                    } catch (Exception e) {
+                        // empty
                     }
                 });
             }
