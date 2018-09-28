@@ -603,8 +603,8 @@ public class ToolWindowGui {
             };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
-                    int nextOffset = currentOffset + chunk.text.length();
-                    parseChunk(asmBuilder, chunk.text, shortenTemplates);
+                    int chunkSize = parseChunk(asmBuilder, chunk.text, shortenTemplates);
+                    int nextOffset = currentOffset + chunkSize;
                     asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
@@ -668,11 +668,12 @@ public class ToolWindowGui {
         suppressUpdates = false;
     }
 
-    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
+    private static int parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
         if (shortenTemplates && containsTemplates(text)) {
-            doShortenTemplates(builder, text);
+            return doShortenTemplates(builder, text);
         } else {
             builder.append(text);
+            return text.length();
         }
     }
 
@@ -680,26 +681,31 @@ public class ToolWindowGui {
         return text.indexOf('<') >= 0;
     }
 
-    private static void doShortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
+    private static int doShortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
         int length = text.length();
         int depth = 0;
+        int count = 0;
         for (int i = 0; i < length; ++i) {
             char c = text.charAt(i);
             if (c == '<') {
                 if (isOperator(text, i)) {
                     if (depth == 0) {
                         builder.append(c);
+                        ++count;
                     }
                     if (i + 1 < length && text.charAt(i + 1) == c) {
                         if (depth == 0) {
                             builder.append(c);
+                            ++count;
                         }
                         ++i;
                     }
                 } else {
                     if (depth == 0) {
                         builder.append(c);
+                        ++count;
                         builder.append("...");
+                        count += 3;
                     }
                     depth++;
                 }
@@ -707,10 +713,12 @@ public class ToolWindowGui {
                 if (isOperator(text, i)) {
                     if (depth == 0) {
                         builder.append(c);
+                        ++count;
                     }
                     if (i + 1 < length && text.charAt(i + 1) == c) {
                         if (depth == 0) {
                             builder.append(c);
+                            ++count;
                         }
                         ++i;
                     }
@@ -718,14 +726,17 @@ public class ToolWindowGui {
                     depth--;
                     if (depth == 0) {
                         builder.append(c);
+                        ++count;
                     }
                 }
             } else {
                 if (depth == 0) {
                     builder.append(c);
+                    ++count;
                 }
             }
         }
+        return count;
     }
 
     private static boolean isOperator(@NotNull String text, int i) {
