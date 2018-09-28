@@ -472,6 +472,7 @@ public class ToolWindowGui {
                 + "\nLanguage: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
                 + "\nName: " + compilerMatch.getRemoteCompilerInfo().getName()
                 + "\nVersion: " + compilerMatch.getRemoteCompilerInfo().getVersion()
+                + "\nExecutable: " + compilerMatch.getRemoteCompilerInfo().getExecutable()
                 + "\nMatch kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind());
     }
 
