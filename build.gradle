@@ -7,11 +7,12 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.7'
+version '1.8'
 
 patchPluginXml {
     changeNotes """
-        Fixed several minor bugs.
+        Added "Shorten Templates" feature.
+        Improved local to remote compiler matching heuristics.
     """
 }
 
