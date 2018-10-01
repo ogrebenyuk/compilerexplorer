@@ -781,7 +781,11 @@ public class ToolWindowGui {
 
         MarkupModelEx markupModel = ed.getMarkupModel();
         if (highlight) {
-            highlighters.forEach(markupModel::removeHighlighter);
+            try {
+                highlighters.forEach(markupModel::removeHighlighter);
+            } catch (Exception e) {
+                // empty
+            }
             highlighters.clear();
         }
         for (CompiledText.SourceLocation location : locations) {
