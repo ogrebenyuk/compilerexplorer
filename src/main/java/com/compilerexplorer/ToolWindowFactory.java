@@ -17,7 +17,6 @@ import com.compilerexplorer.gui.FormAncestorListener;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
@@ -66,12 +65,15 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
                     compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
                     form.asResetSignalConsumer().accept(refreshSignal);
                     explorer.asResetSignalConsumer().accept(refreshSignal);
+                    // fall through
                 case RECONNECT:
                     remoteCompilersProducer.asRefreshSignalConsumer().accept(refreshSignal);
                     sourceRemoteMatchSaver1.asRefreshSignalConsumer().accept(refreshSignal);
                     sourceRemoteMatchSaver2.asRefreshSignalConsumer().accept(refreshSignal);
                     form.asReconnectSignalConsumer().accept(refreshSignal);
+                    // fall through
                 case PREPROCESS:
+                    // fall through
                 case COMPILE:
                     form.asRecompileSignalConsumer().accept(refreshSignal);
             }

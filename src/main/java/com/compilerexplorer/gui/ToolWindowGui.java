@@ -7,7 +7,6 @@ import com.compilerexplorer.common.TimerScheduler;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
-import com.compilerexplorer.gui.listeners.EditorCaretListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
@@ -16,6 +15,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.ColorKey;
 import com.intellij.openapi.editor.colors.EditorFontType;
+import com.intellij.openapi.editor.event.CaretEvent;
+import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.ex.EditorMarkupModel;
 import com.intellij.openapi.editor.ex.MarkupModelEx;
@@ -188,11 +189,14 @@ public class ToolWindowGui {
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
                 ed.getSettings().setLineMarkerAreaShown(true);
-                ed.getCaretModel().addCaretListener(new EditorCaretListener(event -> {
-                    if (!suppressUpdates && getState().getAutoscrollToSource()) {
-                        scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition())));
+                ed.getCaretModel().addCaretListener(new CaretListener() {
+                    @Override
+                    public void caretPositionChanged(CaretEvent event) {
+                        if (!suppressUpdates && getState().getAutoscrollToSource()) {
+                            scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition())));
+                        }
                     }
-                }));
+                });
                 setupAnnotations(ed);
                 return ed;
             }
@@ -664,9 +668,11 @@ public class ToolWindowGui {
         suppressUpdates = true;
         locationsFromSourceMap.clear();
         locationsToSourceMap.clear();
+
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
+
         highlighters.clear();
         suppressUpdates = false;
     }
