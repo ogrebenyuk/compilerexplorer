@@ -635,8 +635,8 @@ public class ToolWindowGui {
             editor.setText(asmBuilder.toString());
             editor.setEnabled(true);
 
+            highlighters.clear();
             if (editor.getEditor() != null) {
-                highlighters.clear();
                 MarkupModelEx markupModel = (MarkupModelEx) editor.getEditor().getMarkupModel();
                 markupModel.removeAllHighlighters();
                 newHighlighterRanges.forEach(range -> {
@@ -667,6 +667,7 @@ public class ToolWindowGui {
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(reason));
         editor.setEnabled(false);
+        highlighters.clear();
         suppressUpdates = false;
     }
 
