@@ -7,12 +7,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.8'
+version '1.9'
 
 patchPluginXml {
     changeNotes """
-        Added "Shorten Templates" feature.
-        Improved local to remote compiler matching heuristics.
+        Track source selection changes, in addition to caret changes, for highlighting.<br/>
+        Fix plugin icon to show always, even before first use.<br/>
+        Fix occasional assertion that highlighted range not found.
     """
 }
 
