@@ -32,7 +32,6 @@ import java.util.function.Function;
 public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        toolWindow.setIcon(IconLoader.getIcon("/icons/toolWindow.png"));
         addComponentToToolWindow(toolWindow, createComponent(project, toolWindow));
     }
 
