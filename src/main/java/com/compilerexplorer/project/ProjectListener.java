@@ -31,7 +31,7 @@ public class ProjectListener {
     }
 
     private void changed() {
-        timerScheduler.schedule(this::refresh);
+        timerScheduler.schedule(this::refresh, CompilerExplorerSettingsProvider.getInstance(project).getState().getDelayMillis());
     }
 
     public void refresh() {

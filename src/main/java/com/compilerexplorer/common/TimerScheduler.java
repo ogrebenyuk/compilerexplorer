@@ -7,12 +7,10 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class TimerScheduler {
-    private static final long DELAY_MILLIS = 1000;
-
     @NotNull
     private Timer timer = new Timer();
 
-    public void schedule(@NotNull Runnable runnable) {
+    public void schedule(@NotNull Runnable runnable, long delayMillis) {
         timer.cancel();
         timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -20,6 +18,6 @@ public class TimerScheduler {
             public void run() {
                 ApplicationManager.getApplication().invokeLater(runnable);
             }
-        }, DELAY_MILLIS);
+        }, delayMillis);
     }
 }

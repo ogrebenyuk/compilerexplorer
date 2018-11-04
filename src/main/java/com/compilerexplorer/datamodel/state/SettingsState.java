@@ -23,6 +23,7 @@ public class SettingsState {
     private static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
     @NotNull
     private static final Color DEFAULT_HIGHLIGHT_COLOR = JBColor.CYAN;
+    private static final long DEFAULT_DELAY_MILLIS = 1000;
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -61,6 +62,8 @@ public class SettingsState {
     private boolean shortenTemplates = false;
     @Property
     private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
+    @Property
+    private long delayMillis = DEFAULT_DELAY_MILLIS;
 
     public SettingsState() {
         // empty
@@ -187,6 +190,14 @@ public class SettingsState {
         highlightColorRGB = highlightColorRGB_;
     }
 
+    public long getDelayMillis() {
+        return delayMillis;
+    }
+
+    public void setDelayMillis(long delayMillis_) {
+        delayMillis = delayMillis_;
+    }
+
     public void copyFrom(@NotNull SettingsState other) {
         setEnabled(other.getEnabled());
         setUrl(other.getUrl());
@@ -202,6 +213,7 @@ public class SettingsState {
         setAutoupdateFromSource(other.getAutoupdateFromSource());
         setShortenTemplates(other.getShortenTemplates());
         setHighlightColorRGB(other.getHighlightColorRGB());
+        setDelayMillis(other.getDelayMillis());
     }
 
     @Override
@@ -220,6 +232,7 @@ public class SettingsState {
                 + (getAutoupdateFromSource() ? 1 : 0)
                 + (getShortenTemplates() ? 1 : 0)
                 + getHighlightColorRGB()
+                + ((int) getDelayMillis())
                 ;
     }
 
@@ -243,6 +256,7 @@ public class SettingsState {
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
                 && getShortenTemplates() == (other.getShortenTemplates())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
+                && getDelayMillis() == other.getDelayMillis()
                 ;
     }
 }

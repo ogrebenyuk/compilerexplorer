@@ -5,6 +5,7 @@ import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.ColorPanel;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +31,8 @@ public class SettingsGui {
     private boolean ignoreUpdates;
     @NotNull
     private final ColorPanel highlightColorChooserPanel;
+    @NotNull
+    private final JTextField delayMillisField;
     @NotNull
     private final TaskRunner taskRunner;
 
@@ -117,6 +120,16 @@ public class SettingsGui {
 
         content.add(highlightColorPanel, VerticalLayout.TOP);
 
+        JPanel delayMillisPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
+        JLabel delayMillisLabel = new JLabel();
+        delayMillisLabel.setVisible(true);
+        delayMillisLabel.setText("Autoupdate delay (ms): ");
+        delayMillisPanel.add(delayMillisLabel);
+        delayMillisField = new JBTextField(6);
+        delayMillisPanel.add(delayMillisField);
+
+        content.add(delayMillisPanel, VerticalLayout.TOP);
+
         ignoreUpdates = false;
     }
 
@@ -142,6 +155,7 @@ public class SettingsGui {
         urlField.setText(state.getUrl());
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
         highlightColorChooserPanel.setSelectedColor(new Color(state.getHighlightColorRGB()));
+        delayMillisField.setText(String.valueOf(state.getDelayMillis()));
     }
 
     private void populateStateFromGui(@NotNull SettingsState state_) {
@@ -150,6 +164,11 @@ public class SettingsGui {
         Color highlightColor = highlightColorChooserPanel.getSelectedColor();
         if (highlightColor != null) {
             state_.setHighlightColorRGB(highlightColor.getRGB());
+        }
+        try {
+            state_.setDelayMillis(Long.parseLong(delayMillisField.getText()));
+        } catch (Exception exception) {
+            // empty
         }
     }
 

@@ -12,6 +12,7 @@ version '1.9'
 patchPluginXml {
     changeNotes """
         Added a selection of the highligh color.<br/>
+        Added a selection of the autoupdate delay.<br/>
         Renamed several classes to reduce a chance of conflict with other plugins.<br/>
     """
 }

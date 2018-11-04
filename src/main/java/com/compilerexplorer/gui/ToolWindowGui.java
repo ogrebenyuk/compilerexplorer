@@ -412,7 +412,7 @@ public class ToolWindowGui {
     }
 
     private void schedulePreprocess() {
-        timerScheduler.schedule(this::preprocess);
+        timerScheduler.schedule(this::preprocess, getState().getDelayMillis());
     }
 
     private void preprocess() {
