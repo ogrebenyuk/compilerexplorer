@@ -3,11 +3,11 @@ import static org.apache.tools.ant.taskdefs.condition.Os.*
 plugins {
     id 'java'
     id 'org.jetbrains.intellij' version '0.3.7'
-    id "de.undercouch.download" version "3.4.2"
+    id 'de.undercouch.download' version '3.4.2'
 }
 
 group 'com.compilerexplorer'
-version '1.9'
+version '1.10'
 
 patchPluginXml {
     changeNotes """
