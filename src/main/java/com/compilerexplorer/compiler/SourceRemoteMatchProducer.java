@@ -25,7 +25,7 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
 
     @Override
     public void accept(@NotNull SourceCompilerSettings sourceCompilerSettings) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;

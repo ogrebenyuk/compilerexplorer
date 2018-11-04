@@ -62,7 +62,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     @Override
     public void accept(@NotNull PreprocessedSource preprocessedSource) {
         lastPreprocessedSource = preprocessedSource;
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
@@ -153,7 +153,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     }
 
     public void refresh() {
-        if (lastPreprocessedSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
+        if (lastPreprocessedSource != null && CompilerExplorerSettingsProvider.getInstance(project).getState().getEnabled()) {
             accept(lastPreprocessedSource);
         }
     }

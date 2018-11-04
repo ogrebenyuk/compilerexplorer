@@ -40,7 +40,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
 
     @Override
     public void accept(@NotNull SourceSettings sourceSettings) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
@@ -96,7 +96,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
-            SettingsState state = SettingsProvider.getInstance(project).getState();
+            SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
             state.setLocalCompilerSettings(SettingsState.EMPTY.getLocalCompilerSettings());
         };
     }

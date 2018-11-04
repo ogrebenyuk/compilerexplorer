@@ -4,6 +4,7 @@ import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.ColorPanel;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +29,8 @@ public class SettingsGui {
     private final JCheckBox preprocessCheckbox;
     private boolean ignoreUpdates;
     @NotNull
+    private final ColorPanel highlightColorChooserPanel;
+    @NotNull
     private final TaskRunner taskRunner;
 
     public SettingsGui(@NotNull Project project_) {
@@ -37,10 +40,10 @@ public class SettingsGui {
         state = new SettingsState();
         content = new JPanel(new VerticalLayout(GAP));
         JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
-        JLabel label = new JLabel();
-        label.setVisible(true);
-        label.setText("Compiler Explorer URL: ");
-        urlPanel.add(label, BorderLayout.WEST);
+        JLabel urlLabel = new JLabel();
+        urlLabel.setVisible(true);
+        urlLabel.setText("Compiler Explorer URL: ");
+        urlPanel.add(urlLabel, BorderLayout.WEST);
         urlField = new JTextField();
         urlField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
@@ -104,6 +107,16 @@ public class SettingsGui {
 
         content.add(preprocessPanel, VerticalLayout.TOP);
 
+        JPanel highlightColorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
+        JLabel highlightColorLabel = new JLabel();
+        highlightColorLabel.setVisible(true);
+        highlightColorLabel.setText("Highlight color: ");
+        highlightColorPanel.add(highlightColorLabel);
+        highlightColorChooserPanel = new ColorPanel();
+        highlightColorPanel.add(highlightColorChooserPanel);
+
+        content.add(highlightColorPanel, VerticalLayout.TOP);
+
         ignoreUpdates = false;
     }
 
@@ -128,11 +141,16 @@ public class SettingsGui {
     private void populateGuiFromState() {
         urlField.setText(state.getUrl());
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
+        highlightColorChooserPanel.setSelectedColor(new Color(state.getHighlightColorRGB()));
     }
 
     private void populateStateFromGui(@NotNull SettingsState state_) {
         state_.setUrl(urlField.getText());
         state_.setPreprocessLocally(preprocessCheckbox.isSelected());
+        Color highlightColor = highlightColorChooserPanel.getSelectedColor();
+        if (highlightColor != null) {
+            state_.setHighlightColorRGB(highlightColor.getRGB());
+        }
     }
 
     public void reset() {

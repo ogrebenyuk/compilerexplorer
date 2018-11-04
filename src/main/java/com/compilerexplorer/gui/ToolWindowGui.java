@@ -1,8 +1,8 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.common.TimerScheduler;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.*;
@@ -31,7 +31,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.ListCellRendererWrapper;
 import com.intellij.ui.components.JBTextField;
 import org.jetbrains.annotations.NotNull;
@@ -56,9 +55,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class ToolWindowGui {
-    @NotNull
-    private static final Color HIGHLIGHT_COLOR = JBColor.CYAN;
-
     @NotNull
     private final Project project;
     @NotNull
@@ -96,7 +92,7 @@ public class ToolWindowGui {
     private final List<RangeHighlighter> highlighters = new ArrayList<>();
     @NotNull
     private final LineMarkerRenderer lineMarkerRenderer = (editor, graphics, rectangle) -> {
-        graphics.setColor(HIGHLIGHT_COLOR);
+        graphics.setColor(new Color(getState().getHighlightColorRGB()));
         int margin = rectangle.width;
         int xPoints[] = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
         int yPoints[] = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
@@ -255,7 +251,6 @@ public class ToolWindowGui {
 
         toolWindow.setAdditionalGearActions(actionGroup);
 
-        highlightAttributes.setBackgroundColor(HIGHLIGHT_COLOR);
         caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
 
@@ -762,7 +757,7 @@ public class ToolWindowGui {
 
     @NotNull
     private SettingsState getState() {
-        return SettingsProvider.getInstance(project).getState();
+        return CompilerExplorerSettingsProvider.getInstance(project).getState();
     }
 
     @NotNull
@@ -781,7 +776,8 @@ public class ToolWindowGui {
             return;
         }
 
-        boolean scroll = forceScroll || getState().getAutoscrollFromSource();
+        SettingsState state = getState();
+        boolean scroll = forceScroll || state.getAutoscrollFromSource();
         int currentScrollPosition = scroll ? findCurrentScrollPosition(ed) : -1;
         int closestPosition = -1;
         int closestPositionDistance = -1;
@@ -800,6 +796,7 @@ public class ToolWindowGui {
             if (ranges != null) {
                 for (Range range : ranges) {
                     if (highlight) {
+                        highlightAttributes.setBackgroundColor(new Color(state.getHighlightColorRGB()));
                         RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
                         highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
                         highlighters.add(highlighter);

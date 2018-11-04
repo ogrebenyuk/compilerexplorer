@@ -1,12 +1,17 @@
 package com.compilerexplorer.datamodel.state;
 
+import com.intellij.ui.JBColor;
+import com.intellij.ui.LightColors;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlTransient;
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
@@ -16,6 +21,8 @@ public class SettingsState {
     private static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     @NotNull
     private static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
+    @NotNull
+    private static final Color DEFAULT_HIGHLIGHT_COLOR = JBColor.CYAN;
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -52,6 +59,8 @@ public class SettingsState {
     private boolean autoupdateFromSource = true;
     @Property
     private boolean shortenTemplates = false;
+    @Property
+    private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
 
     public SettingsState() {
         // empty
@@ -170,6 +179,14 @@ public class SettingsState {
         shortenTemplates = shortenTemplates_;
     }
 
+    public int getHighlightColorRGB() {
+        return highlightColorRGB;
+    }
+
+    public void setHighlightColorRGB(int highlightColorRGB_) {
+        highlightColorRGB = highlightColorRGB_;
+    }
+
     public void copyFrom(@NotNull SettingsState other) {
         setEnabled(other.getEnabled());
         setUrl(other.getUrl());
@@ -184,6 +201,7 @@ public class SettingsState {
         setAutoscrollToSource(other.getAutoscrollToSource());
         setAutoupdateFromSource(other.getAutoupdateFromSource());
         setShortenTemplates(other.getShortenTemplates());
+        setHighlightColorRGB(other.getHighlightColorRGB());
     }
 
     @Override
@@ -201,6 +219,7 @@ public class SettingsState {
                 + (getAutoscrollToSource() ? 1 : 0)
                 + (getAutoupdateFromSource() ? 1 : 0)
                 + (getShortenTemplates() ? 1 : 0)
+                + getHighlightColorRGB()
                 ;
     }
 
@@ -223,6 +242,7 @@ public class SettingsState {
                 && getAutoscrollToSource() == (other.getAutoscrollToSource())
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
                 && getShortenTemplates() == (other.getShortenTemplates())
+                && getHighlightColorRGB() == other.getHighlightColorRGB()
                 ;
     }
 }

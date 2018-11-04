@@ -1,7 +1,7 @@
 package com.compilerexplorer;
 
 import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SourceCompilerSettings;
@@ -28,7 +28,7 @@ import javax.swing.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
+public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         addComponentToToolWindow(toolWindow, createComponent(project, toolWindow));
@@ -36,7 +36,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
 
     @NotNull
     private static JComponent createComponent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         TaskRunner taskRunner = new TaskRunner();
 
         ToolWindowGui form = new ToolWindowGui(project, (ToolWindowEx)toolWindow);
@@ -100,7 +100,7 @@ public class ToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFact
             refresher.accept(signal);
         };
         form.setRefreshSignalConsumer(refreshSignalConsumer);
-        SettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
+        CompilerExplorerSettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
 
         refresher.accept(RefreshSignal.RESET);
 

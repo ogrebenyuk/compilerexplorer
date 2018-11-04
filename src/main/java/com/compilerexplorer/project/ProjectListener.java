@@ -1,6 +1,6 @@
 package com.compilerexplorer.project;
 
-import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.TimerScheduler;
 import com.compilerexplorer.datamodel.ProjectSettings;
 import com.compilerexplorer.project.clion.oc.OCProjectListener;
@@ -35,7 +35,7 @@ public class ProjectListener {
     }
 
     public void refresh() {
-        if (!SettingsProvider.getInstance(project).getState().getEnabled()) {
+        if (!CompilerExplorerSettingsProvider.getInstance(project).getState().getEnabled()) {
             return;
         }
 

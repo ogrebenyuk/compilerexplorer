@@ -1,7 +1,7 @@
 package com.compilerexplorer.compiler;
 
+import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.SettingsProvider;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.LocalCompilerPath;
 import com.compilerexplorer.datamodel.state.SettingsState;
@@ -29,7 +29,7 @@ public class SourceRemoteMatchSaver<T> implements Consumer<T> {
 
     @Override
     public void accept(@NotNull T sourceRemoteMatched) {
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
@@ -42,7 +42,7 @@ public class SourceRemoteMatchSaver<T> implements Consumer<T> {
     @NotNull
     public Consumer<RefreshSignal> asRefreshSignalConsumer() {
         return refreshSignal -> {
-            SettingsState state = SettingsProvider.getInstance(project).getState();
+            SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
             state.setCompilerMatches(SettingsState.EMPTY.getCompilerMatches());
         };
     }

@@ -1,6 +1,6 @@
 package com.compilerexplorer.settings;
 
-import com.compilerexplorer.common.SettingsProvider;
+import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.settings.gui.SettingsGui;
 import com.intellij.openapi.options.Configurable;
 import org.jetbrains.annotations.NotNull;
@@ -8,13 +8,13 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-public class SettingsConfigurable implements Configurable {
+public class CompilerExplorerSettingsConfigurable implements Configurable {
     @NotNull
-    private final SettingsProvider provider;
+    private final CompilerExplorerSettingsProvider provider;
     @Nullable
     private SettingsGui form;
 
-    SettingsConfigurable(@NotNull SettingsProvider provider_) {
+    CompilerExplorerSettingsConfigurable(@NotNull CompilerExplorerSettingsProvider provider_) {
         provider = provider_;
     }
 

@@ -14,8 +14,8 @@
     <depends>com.intellij.modules.cidr.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.SettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>
-        <projectService serviceImplementation="com.compilerexplorer.common.SettingsProvider"/>
-        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.ToolWindowFactory" icon="/icons/toolWindow.png"/>
+        <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>
+        <projectService serviceImplementation="com.compilerexplorer.common.CompilerExplorerSettingsProvider"/>
+        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="/icons/toolWindow.png"/>
     </extensions>
 </idea-plugin>

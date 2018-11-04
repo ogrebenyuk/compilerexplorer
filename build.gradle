@@ -11,9 +11,8 @@ version '1.9'
 
 patchPluginXml {
     changeNotes """
-        Track source selection changes, in addition to caret changes, for highlighting.<br/>
-        Fix plugin icon to show always, even before first use.<br/>
-        Fix occasional assertion that highlighted range not found.
+        Added a selection of the highligh color.<br/>
+        Renamed several classes to reduce a chance of conflict with other plugins.<br/>
     """
 }
 

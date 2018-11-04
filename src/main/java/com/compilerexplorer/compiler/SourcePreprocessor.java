@@ -46,7 +46,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     @Override
     public void accept(@NotNull SourceRemoteMatched preprocessableSource) {
         lastPreprocessableSource = preprocessableSource;
-        SettingsState state = SettingsProvider.getInstance(project).getState();
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
@@ -119,7 +119,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     }
 
     public void refresh() {
-        if (lastPreprocessableSource != null && SettingsProvider.getInstance(project).getState().getEnabled()) {
+        if (lastPreprocessableSource != null && CompilerExplorerSettingsProvider.getInstance(project).getState().getEnabled()) {
             accept(lastPreprocessableSource);
         }
     }

@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-@State(name = "SettingsProvider", storages = @Storage(file = "compilerexplorer.settings.xml"))
-public class SettingsProvider implements PersistentStateComponent<SettingsState> {
+@State(name = "CompilerExplorerSettingsProvider", storages = @Storage(file = "compilerexplorer.settings.xml"))
+public class CompilerExplorerSettingsProvider implements PersistentStateComponent<SettingsState> {
     @NotNull
     private final Project project;
     @NotNull
@@ -20,12 +20,12 @@ public class SettingsProvider implements PersistentStateComponent<SettingsState>
     @Nullable
     private Consumer<RefreshSignal> refreshSignalConsumer;
 
-    public static SettingsProvider getInstance(@NotNull Project project) {
-        return ServiceManager.getService(project, SettingsProvider.class);
+    public static CompilerExplorerSettingsProvider getInstance(@NotNull Project project) {
+        return ServiceManager.getService(project, CompilerExplorerSettingsProvider.class);
     }
 
     @SuppressWarnings("WeakerAccess")
-    public SettingsProvider(@NotNull Project project_) {
+    public CompilerExplorerSettingsProvider(@NotNull Project project_) {
         project = project_;
         state = new SettingsState();
     }
