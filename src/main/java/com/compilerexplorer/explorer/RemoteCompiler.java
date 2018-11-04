@@ -26,10 +26,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -95,7 +92,29 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
 
                     postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
 
-                    HttpResponse response = httpClient.execute(postRequest);
+                    HttpResponse[] responses = {null};
+                    Exception[] exceptions = {null};
+                    Thread thread = new Thread(() -> {
+                        try {
+                            responses[0] = httpClient.execute(postRequest);
+                        } catch (Exception exception) {
+                            exceptions[0] = exception;
+                        }
+                    });
+                    thread.start();
+
+                    while (thread.isAlive()) {
+                        thread.join(100);
+                        indicator.checkCanceled();
+                    }
+
+                    Exception exception = exceptions[0];
+                    if (exception != null) {
+                        throw exception;
+                    }
+
+                    HttpResponse response = responses[0];
+
                     if (response.getStatusLine().getStatusCode() != 200) {
                         httpClient.close();
                         throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);

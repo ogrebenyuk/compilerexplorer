@@ -13,6 +13,7 @@ patchPluginXml {
     changeNotes """
         Added a selection of the highligh color.<br/>
         Added a selection of the autoupdate delay.<br/>
+        Improve responsiveness to a cancel during remote compilation.<br/>
         Renamed several classes to reduce a chance of conflict with other plugins.<br/>
     """
 }
