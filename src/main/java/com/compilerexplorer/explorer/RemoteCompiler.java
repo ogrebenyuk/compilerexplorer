@@ -15,7 +15,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -92,7 +92,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
 
                     postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
 
-                    HttpResponse[] responses = {null};
+                    CloseableHttpResponse[] responses = {null};
                     Exception[] exceptions = {null};
                     Thread thread = new Thread(() -> {
                         try {
@@ -105,7 +105,12 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
 
                     while (thread.isAlive()) {
                         thread.join(100);
-                        indicator.checkCanceled();
+                        try {
+                            indicator.checkCanceled();
+                        } catch (Exception exception) {
+                            thread.interrupt();
+                            throw exception;
+                        }
                     }
 
                     Exception exception = exceptions[0];
@@ -113,10 +118,11 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                         throw exception;
                     }
 
-                    HttpResponse response = responses[0];
+                    CloseableHttpResponse response = responses[0];
 
                     if (response.getStatusLine().getStatusCode() != 200) {
                         httpClient.close();
+                        response.close();
                         throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
                     }
                     BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
@@ -127,6 +133,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                         output.append(line);
                     }
                     httpClient.close();
+                    response.close();
                     indicator.checkCanceled();
 
                     JsonObject obj = new JsonParser().parse(output.toString()).getAsJsonObject();

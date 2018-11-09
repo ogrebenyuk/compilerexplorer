@@ -1,14 +1,12 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.intellij.ui.JBColor;
-import com.intellij.ui.LightColors;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlTransient;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
