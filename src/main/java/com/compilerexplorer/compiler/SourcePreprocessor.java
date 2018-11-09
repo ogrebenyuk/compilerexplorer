@@ -111,7 +111,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                         sourceSettings.getLanguageSwitch(),
                         "-c", "-"
                 )
-        ).toArray(String[]::new);
+        ).filter(s -> !s.isEmpty()).toArray(String[]::new);
     }
 
     private void errorLater(@NotNull String text) {
