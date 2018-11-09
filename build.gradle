@@ -7,14 +7,12 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.10'
+version '1.11'
 
 patchPluginXml {
     changeNotes """
-        Added a selection of the highligh color.<br/>
-        Added a selection of the autoupdate delay.<br/>
-        Improve responsiveness to a cancel during remote compilation.<br/>
-        Renamed several classes to reduce a chance of conflict with other plugins.<br/>
+        Small bug fix in local preprocessor.<br/>
+        Better cleanup in remote compiler invocation.<br/>
     """
 }
 
