@@ -12,6 +12,7 @@ version '1.11'
 patchPluginXml {
     changeNotes """
         Upgraded to CLion 2018.3.<br/>
+        Show a sorted list of sources in the drop down box.<br/>
         ===
         1.11:<br/>
         Small bug fix in local preprocessor.<br/>

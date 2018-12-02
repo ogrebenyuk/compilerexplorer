@@ -4,6 +4,7 @@ import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.datamodel.ProjectSettings;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
@@ -14,6 +15,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.Vector;
 import java.util.function.Supplier;
@@ -41,7 +43,7 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
 
     @NotNull
     private static ProjectSettings collect(@NotNull OCResolveConfiguration configuration) {
-        return new ProjectSettings(configuration.getSources().stream().map(virtualFile -> {
+        return new ProjectSettings(configuration.getSources().stream().sorted(Comparator.comparing(VirtualFile::getName)).map(virtualFile -> {
             OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
             if (language != null) {
                 OCCompilerSettings compilerSettings = configuration.getCompilerSettings(language, virtualFile);
