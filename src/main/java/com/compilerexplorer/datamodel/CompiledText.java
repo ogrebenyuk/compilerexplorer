@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 
 public class CompiledText {
 
@@ -37,7 +38,7 @@ public class CompiledText {
                 return false;
             }
             SourceLocation other = (SourceLocation)obj;
-            return (file != null ? file.equals(other.file) : other.file == null)
+            return Objects.equals(file, other.file)
                     && line == other.line
                     ;
         }

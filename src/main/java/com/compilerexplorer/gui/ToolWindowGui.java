@@ -94,8 +94,8 @@ public class ToolWindowGui {
     private final LineMarkerRenderer lineMarkerRenderer = (editor, graphics, rectangle) -> {
         graphics.setColor(new Color(getState().getHighlightColorRGB()));
         int margin = rectangle.width;
-        int xPoints[] = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
-        int yPoints[] = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
+        int[] xPoints = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
+        int[] yPoints = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
         graphics.fillPolygon(xPoints, yPoints, 4);
     };
     private boolean showAnnotations = false;
@@ -187,7 +187,7 @@ public class ToolWindowGui {
                 ed.getSettings().setLineMarkerAreaShown(true);
                 ed.getCaretModel().addCaretListener(new CaretListener() {
                     @Override
-                    public void caretPositionChanged(CaretEvent event) {
+                    public void caretPositionChanged(@NotNull CaretEvent event) {
                         if (!suppressUpdates && getState().getAutoscrollToSource()) {
                             scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(event.getNewPosition())));
                         }
@@ -261,7 +261,6 @@ public class ToolWindowGui {
             }
             @Override
             public void update(@NotNull AnActionEvent event) {
-                event.getPresentation().setHoveredIcon(AllIcons.General.LocateHover);
                 event.getPresentation().setIcon(AllIcons.General.Locate);
                 event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
             }
@@ -370,11 +369,11 @@ public class ToolWindowGui {
     ) {
         actionGroup.add(new ToggleAction(text) {
             @Override
-            public boolean isSelected(AnActionEvent event) {
+            public boolean isSelected(@NotNull AnActionEvent event) {
                 return getter.apply(supplier.get());
             }
             @Override
-            public void setSelected(AnActionEvent event, boolean selected) {
+            public void setSelected(@NotNull AnActionEvent event, boolean selected) {
                 setter.accept(supplier.get(), selected);
                 if (recompile && refreshSignalConsumer != null) {
                     refreshSignalConsumer.accept(RefreshSignal.COMPILE);
@@ -647,7 +646,10 @@ public class ToolWindowGui {
                 highlightLocations(caretTracker.getLocations(), true, false);
             }
             if (oldShowAnnotations) {
-                showAnnotations((EditorEx) editor.getEditor());
+                EditorEx ed = (EditorEx) editor.getEditor();
+                if (ed != null) {
+                    showAnnotations(ed);
+                }
             }
             suppressUpdates = false;
         };

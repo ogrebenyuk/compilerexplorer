@@ -18,9 +18,6 @@ public enum CompilerMatchKind {
 
     @NotNull
     public static String asStringFull(@NotNull CompilerMatchKind kind) {
-        switch (kind) {
-            case NO_MATCH: return "no match";
-        }
-        return asString(kind);
+        return (kind == NO_MATCH) ? "no match" : asString(kind);
     }
 }
