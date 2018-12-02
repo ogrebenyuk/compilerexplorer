@@ -7,38 +7,40 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.11'
+version '1.12'
 
 patchPluginXml {
     changeNotes """
+        ===<br/>
+        1.12:<br/>
         Upgraded to CLion 2018.3.<br/>
         Show a sorted list of sources in the drop down box.<br/>
-        ===
+        ===<br/>
         1.11:<br/>
         Small bug fix in local preprocessor.<br/>
         Better cleanup in remote compiler invocation.<br/>
-        ===
+        ===<br/>
         1.10:<br/>
         Added a selection of the highligh color.<br/>
         Added a selection of the autoupdate delay.<br/>
         Improve responsiveness to a cancel during remote compilation.<br/>
         Renamed several classes to reduce a chance of conflict with other plugins.<br/>
-        ===
+        ===<br/>
         1.9:<br/>
         Track source selection changes, in addition to caret changes, for highlighting.<br/>
         Fix plugin icon to show always, even before first use.<br/>
         Fix occasional assertion that highlighted range not found.<br/>
-        ===
+        ===<br/>
         1.8:<br/>
         Added "Shorten Templates" feature.<br/>
         Improved local to remote compiler matching heuristics.<br/> 
-        ===
+        ===<br/>
         1.7:<br/>
         Fixed several minor bugs.<br/>
-        ===
+        ===<br/>
         1.6:<br/>
         Fixed several bugs.<br/>
-        ===
+        ===<br/>
         1.5:<br/>
         Added source line highlighing.<br/>
         Added scrolling to/from source.<br/>
