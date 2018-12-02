@@ -5,6 +5,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
+import com.intellij.openapi.editor.event.SelectionEvent;
 import com.intellij.openapi.editor.event.SelectionListener;
 import com.intellij.openapi.fileEditor.*;
 import com.intellij.openapi.project.Project;
@@ -74,7 +75,12 @@ public class AllEditorsListener {
         editor.getCaretModel().addCaretListener(caretListener);
         caretListeners.put(editor, caretListener);
 
-        SelectionListener selectionListener = event -> handleEditorEvent(event.getEditor());
+        SelectionListener selectionListener = new SelectionListener() {
+            @Override
+            public void selectionChanged(@NotNull SelectionEvent event) {
+                handleEditorEvent(event.getEditor());
+            }
+        };
         editor.getSelectionModel().addSelectionListener(selectionListener);
         selectionListeners.put(editor, selectionListener);
     }

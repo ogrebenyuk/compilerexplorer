@@ -11,14 +11,13 @@ version '1.11'
 
 patchPluginXml {
     changeNotes """
-        Small bug fix in local preprocessor.<br/>
-        Better cleanup in remote compiler invocation.<br/>
+        Upgraded to CLion 2018.3.<br/>
     """
 }
 
 sourceCompatibility = 1.8
 
-def clionVersion = '2018.1.6'
+def clionVersion = '2018.3'
 
 repositories {
     jcenter()

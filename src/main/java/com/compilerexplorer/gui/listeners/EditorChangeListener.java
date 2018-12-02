@@ -6,15 +6,16 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Supplier;
+
 public class EditorChangeListener {
-    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer, @NotNull Producer<Boolean> suppressUpdatesProducer) {
+    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer, @NotNull Supplier<Boolean> suppressUpdatesProducer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
             public void documentChanged(@NotNull DocumentEvent event) {
-                if (!suppressUpdatesProducer.produce() && belongsToProject(event.getDocument())) {
+                if (!suppressUpdatesProducer.get() && belongsToProject(event.getDocument())) {
                     consumer.run();
                 }
             }

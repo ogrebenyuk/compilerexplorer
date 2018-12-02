@@ -7,10 +7,10 @@ import com.compilerexplorer.project.clion.oc.OCProjectListener;
 import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
 import com.compilerexplorer.project.idea.IdeaProjectListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public class ProjectListener {
     @NotNull
@@ -18,7 +18,7 @@ public class ProjectListener {
     @NotNull
     private final Consumer<ProjectSettings> projectSettingsConsumer;
     @NotNull
-    private final Producer<ProjectSettings> ocProjectSettingsProducer;
+    private final Supplier<ProjectSettings> ocProjectSettingsProducer;
     @NotNull
     private final TimerScheduler timerScheduler = new TimerScheduler();
 
@@ -39,6 +39,6 @@ public class ProjectListener {
             return;
         }
 
-        projectSettingsConsumer.accept(ocProjectSettingsProducer.produce());
+        projectSettingsConsumer.accept(ocProjectSettingsProducer.get());
     }
 }

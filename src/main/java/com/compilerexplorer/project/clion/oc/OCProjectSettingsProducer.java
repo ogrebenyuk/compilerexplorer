@@ -4,7 +4,6 @@ import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.datamodel.ProjectSettings;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.Producer;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
@@ -17,9 +16,10 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.util.Objects;
 import java.util.Vector;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class OCProjectSettingsProducer implements Producer<ProjectSettings> {
+public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
     @NotNull
     private final Project project;
 
@@ -29,7 +29,7 @@ public class OCProjectSettingsProducer implements Producer<ProjectSettings> {
 
     @Override
     @NotNull
-    public ProjectSettings produce() {
+    public ProjectSettings get() {
         return collect(project);
     }
 
@@ -41,13 +41,13 @@ public class OCProjectSettingsProducer implements Producer<ProjectSettings> {
 
     @NotNull
     private static ProjectSettings collect(@NotNull OCResolveConfiguration configuration) {
-        OCCompilerSettings compilerSettings = configuration.getCompilerSettings();
         return new ProjectSettings(configuration.getSources().stream().map(virtualFile -> {
             OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
             if (language != null) {
-                File compiler = compilerSettings.getCompilerExecutable(language);
-                OCCompilerKind compilerKind = compilerSettings.getCompiler(language);
-                CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches(language, virtualFile);
+                OCCompilerSettings compilerSettings = configuration.getCompilerSettings(language, virtualFile);
+                File compiler = compilerSettings.getCompilerExecutable();
+                OCCompilerKind compilerKind = compilerSettings.getCompiler();
+                CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
                 if (compiler != null && compilerKind != null && switches != null) {
                     return new SourceSettings(virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW));
                 }
