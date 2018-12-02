@@ -12,6 +12,35 @@ version '1.11'
 patchPluginXml {
     changeNotes """
         Upgraded to CLion 2018.3.<br/>
+        ===
+        1.11:<br/>
+        Small bug fix in local preprocessor.<br/>
+        Better cleanup in remote compiler invocation.<br/>
+        ===
+        1.10:<br/>
+        Added a selection of the highligh color.<br/>
+        Added a selection of the autoupdate delay.<br/>
+        Improve responsiveness to a cancel during remote compilation.<br/>
+        Renamed several classes to reduce a chance of conflict with other plugins.<br/>
+        ===
+        1.9:<br/>
+        Track source selection changes, in addition to caret changes, for highlighting.<br/>
+        Fix plugin icon to show always, even before first use.<br/>
+        Fix occasional assertion that highlighted range not found.<br/>
+        ===
+        1.8:<br/>
+        Added "Shorten Templates" feature.<br/>
+        Improved local to remote compiler matching heuristics.<br/> 
+        ===
+        1.7:<br/>
+        Fixed several minor bugs.<br/>
+        ===
+        1.6:<br/>
+        Fixed several bugs.<br/>
+        ===
+        1.5:<br/>
+        Added source line highlighing.<br/>
+        Added scrolling to/from source.<br/>
     """
 }
 
