@@ -11,6 +11,7 @@ version '1.12'
 
 patchPluginXml {
     changeNotes """
+        Fixed NullPointerException when using public server <a href="https://godbolt.org">godbolt.org</a>.<br/>
         ===<br/>
         1.12:<br/>
         Upgraded to CLion 2018.3.<br/>

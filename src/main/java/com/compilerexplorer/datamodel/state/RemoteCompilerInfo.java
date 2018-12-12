@@ -3,29 +3,30 @@ package com.compilerexplorer.datamodel.state;
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class RemoteCompilerInfo {
-    @NotNull
+    @Nullable
     @Property
     @SerializedName("id")
     private String id = "";
-    @NotNull
+    @Nullable
     @Property
     @SerializedName("name")
     private String name = "";
-    @NotNull
+    @Nullable
     @Property
     @SerializedName("lang")
     private String language = "";
-    @NotNull
+    @Nullable
     @Property
     @SerializedName("version")
     private String version = "";
-    @NotNull
+    @Nullable
     @Property
     @SerializedName("exe")
     private String executable = "";
@@ -40,47 +41,52 @@ public class RemoteCompilerInfo {
 
     @NotNull
     public String getId() {
-        return id;
+        return getStringOrEmpty(id);
     }
 
-    private void setId(@NotNull String id_) {
+    private void setId(@Nullable String id_) {
         id = id_;
     }
 
     @NotNull
     public String getName() {
-        return name;
+        return getStringOrEmpty(name);
     }
 
-    private void setName(@NotNull String name_) {
+    private void setName(@Nullable String name_) {
         name = name_;
     }
 
     @NotNull
     public String getLanguage() {
-        return language;
+        return getStringOrEmpty(language);
     }
 
-    private void setLanguage(@NotNull String language_) {
+    private void setLanguage(@Nullable String language_) {
         language = language_;
     }
 
     @NotNull
     public String getVersion() {
-        return version;
+        return getStringOrEmpty(version);
     }
 
-    private void setVersion(@NotNull String version_) {
+    private void setVersion(@Nullable String version_) {
         version = version_;
     }
 
     @NotNull
     public String getExecutable() {
-        return executable;
+        return getStringOrEmpty(executable);
     }
 
-    private void setExecutable(@NotNull String executable_) {
+    private void setExecutable(@Nullable String executable_) {
         executable = executable_;
+    }
+
+    @NotNull
+    private static String getStringOrEmpty(@Nullable String s) {
+        return s != null ? s : "";
     }
 
     private void copyFrom(@NotNull RemoteCompilerInfo other) {
