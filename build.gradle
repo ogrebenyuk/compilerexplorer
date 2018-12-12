@@ -7,10 +7,12 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.12'
+version '1.13'
 
 patchPluginXml {
     changeNotes """
+        ===<br/>
+        1.13:<br/>
         Fixed NullPointerException when using public server <a href="https://godbolt.org">godbolt.org</a>.<br/>
         ===<br/>
         1.12:<br/>
