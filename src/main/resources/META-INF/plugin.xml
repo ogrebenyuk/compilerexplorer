@@ -4,7 +4,7 @@
     <vendor email="grebenyukoleksandr@gmail.com">Oleksandr Grebenyuk</vendor>
 
     <description><![CDATA[
-    Compiler Explorer UI plugin for CLion.
+    Compiler Explorer plugin for CLion.
     This plugin shows compilation results from a remote Compiler Explorer instance.
     ]]></description>
 
