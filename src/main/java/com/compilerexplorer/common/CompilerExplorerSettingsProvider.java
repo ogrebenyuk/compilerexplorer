@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
-@State(name = "CompilerExplorerSettingsProvider", storages = @Storage(file = "compilerexplorer.settings.xml"))
+@State(name = "CompilerExplorerSettingsProvider", storages = @Storage(value = "compilerexplorer.settings.xml"))
 public class CompilerExplorerSettingsProvider implements PersistentStateComponent<SettingsState> {
     @NotNull
     private final Project project;

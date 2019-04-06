@@ -15,9 +15,6 @@ import java.util.List;
 public class IdeaProjectListener {
     public IdeaProjectListener(@NotNull Project project, @NotNull Runnable changeConsumer) {
         project.getMessageBus().connect().subscribe(RunManagerListener.TOPIC, new RunManagerListener() {
-            public void runConfigurationSelected() {
-                changeConsumer.run();
-            }
             public void runConfigurationAdded(@NotNull RunnerAndConfigurationSettings conf) {
                 changeConsumer.run();
             }

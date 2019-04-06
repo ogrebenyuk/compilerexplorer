@@ -68,7 +68,7 @@ public class AllEditorsListener {
     private void addListeners(@NotNull Editor editor) {
         CaretListener caretListener = new CaretListener() {
             @Override
-            public void caretPositionChanged(CaretEvent event) {
+            public void caretPositionChanged(@NotNull CaretEvent event) {
                 handleEditorEvent(event.getEditor());
             }
         };
