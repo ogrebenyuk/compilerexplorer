@@ -20,6 +20,8 @@ public class SettingsState {
     @NotNull
     private static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
     @NotNull
+    private static final String DEFAULT_IGNORE_SWITCHES = "";
+    @NotNull
     private static final Color DEFAULT_HIGHLIGHT_COLOR = JBColor.CYAN;
     private static final long DEFAULT_DELAY_MILLIS = 1000;
 
@@ -50,6 +52,9 @@ public class SettingsState {
     @NotNull
     @Property
     private String additionalSwitches = DEFAULT_ADDITIONAL_SWITCHES;
+    @NotNull
+    @Property
+    private String ignoreSwitches = DEFAULT_IGNORE_SWITCHES;
     @Property
     private boolean autoscrollFromSource = false;
     @Property
@@ -148,6 +153,15 @@ public class SettingsState {
         additionalSwitches = additionalSwitches_;
     }
 
+    @NotNull
+    public String getIgnoreSwitches() {
+        return ignoreSwitches;
+    }
+
+    public void setIgnoreSwitches(@NotNull String ignoreSwitches_) {
+        ignoreSwitches = ignoreSwitches_;
+    }
+
     public boolean getAutoscrollFromSource() {
         return autoscrollFromSource;
     }
@@ -206,6 +220,7 @@ public class SettingsState {
         setCompilerMatches(other.getCompilerMatches());
         setPreprocessLocally(other.getPreprocessLocally());
         setAdditionalSwitches(other.getAdditionalSwitches());
+        setIgnoreSwitches(other.getIgnoreSwitches());
         setAutoscrollFromSource(other.getAutoscrollFromSource());
         setAutoscrollToSource(other.getAutoscrollToSource());
         setAutoupdateFromSource(other.getAutoupdateFromSource());
@@ -225,6 +240,7 @@ public class SettingsState {
                 + getCompilerMatches().hashCode()
                 + (getPreprocessLocally() ? 1 : 0)
                 + getAdditionalSwitches().hashCode()
+                + getIgnoreSwitches().hashCode()
                 + (getAutoscrollFromSource() ? 1 : 0)
                 + (getAutoscrollToSource() ? 1 : 0)
                 + (getAutoupdateFromSource() ? 1 : 0)
@@ -249,6 +265,7 @@ public class SettingsState {
                 && getCompilerMatches().equals(other.getCompilerMatches())
                 && getPreprocessLocally() == other.getPreprocessLocally()
                 && getAdditionalSwitches().equals(other.getAdditionalSwitches())
+                && getIgnoreSwitches().equals(other.getIgnoreSwitches())
                 && getAutoscrollFromSource() == (other.getAutoscrollFromSource())
                 && getAutoscrollToSource() == (other.getAutoscrollToSource())
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())

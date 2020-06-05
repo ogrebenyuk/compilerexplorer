@@ -34,6 +34,8 @@ public class SettingsGui {
     @NotNull
     private final JTextField delayMillisField;
     @NotNull
+    private final JTextField ignoreSwitchesField;
+    @NotNull
     private final TaskRunner taskRunner;
 
     public SettingsGui(@NotNull Project project_) {
@@ -130,6 +132,16 @@ public class SettingsGui {
 
         content.add(delayMillisPanel, VerticalLayout.TOP);
 
+        JPanel ignoreSwitchesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
+        JLabel ignoreSwitchesLabel = new JLabel();
+        ignoreSwitchesLabel.setVisible(true);
+        ignoreSwitchesLabel.setText("Ignore compiler switches: ");
+        ignoreSwitchesPanel.add(ignoreSwitchesLabel);
+        ignoreSwitchesField = new JBTextField(20);
+        ignoreSwitchesPanel.add(ignoreSwitchesField);
+
+        content.add(ignoreSwitchesPanel, VerticalLayout.TOP);
+
         ignoreUpdates = false;
     }
 
@@ -156,6 +168,7 @@ public class SettingsGui {
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
         highlightColorChooserPanel.setSelectedColor(new Color(state.getHighlightColorRGB()));
         delayMillisField.setText(String.valueOf(state.getDelayMillis()));
+        ignoreSwitchesField.setText(String.valueOf(state.getIgnoreSwitches()));
     }
 
     private void populateStateFromGui(@NotNull SettingsState state_) {
@@ -170,6 +183,7 @@ public class SettingsGui {
         } catch (Exception exception) {
             // empty
         }
+        state_.setIgnoreSwitches(ignoreSwitchesField.getText());
     }
 
     public void reset() {

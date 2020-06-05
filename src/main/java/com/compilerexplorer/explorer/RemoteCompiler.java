@@ -68,7 +68,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         SourceSettings sourceSettings = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
         String url = state.getUrl();
         Filters filters = new Filters(state.getFilters());
-        String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches());
+        String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
         String name = sourceSettings.getSourceName();
         taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
             @Override
@@ -162,10 +162,11 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
     }
 
     @NotNull
-    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
-        return sourceSettings.getSwitches().stream().map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+    private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches, @NotNull String ignoreSwitches) {
+        List<String> ignoreSwitchesList = Arrays.asList(ignoreSwitches.split(" "));
+        return sourceSettings.getSwitches().stream().filter(x -> !ignoreSwitchesList.contains(x)).map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
                 + (AdditionalSwitches.INSTANCE.isEmpty() ? "" : " " + String.join(" ", AdditionalSwitches.INSTANCE))
-                + (additionalSwitches.isEmpty() ? "" : " " + additionalSwitches);
+                + (additionalSwitches.isEmpty() ? "" : " " + Arrays.stream(additionalSwitches.split(" ")).filter(x -> !ignoreSwitchesList.contains(x)).collect(Collectors.joining(" ")));
     }
 
     private static class Options {

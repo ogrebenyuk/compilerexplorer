@@ -71,7 +71,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches());
+                String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
                 try {
                     CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
                     String preprocessedText = compilerRunner.getStdout();
@@ -90,7 +90,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     }
 
     @NotNull
-    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches) {
+    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches, @NotNull String ignoreSwitches) {
         return Stream.concat(
                 Stream.concat(
                         Stream.concat(
@@ -104,7 +104,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
                                 )
                         ),
                         Arrays.stream(additionalSwitches.split(" "))
-                ),
+                ).filter(x -> !Arrays.asList(ignoreSwitches.split(" ")).contains(x)),
                 Stream.of(
                         "-E",
                         "-o", "-",
