@@ -7,10 +7,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.14'
+version '1.15'
 
 patchPluginXml {
     changeNotes """
+        ===<br/>
+        1.15:<br/>
+        Added a feature to ignore certain compiler switches, configured on the Settings page.<br/>
         ===<br/>
         1.14:<br/>
         Updated to work with CLion 2019.1.<br/>
