@@ -2,7 +2,7 @@ import static org.apache.tools.ant.taskdefs.condition.Os.*
 
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '0.3.7'
+    id 'org.jetbrains.intellij' version '0.4.21'
     id 'de.undercouch.download' version '3.4.2'
 }
 
@@ -11,6 +11,7 @@ version '1.15'
 
 patchPluginXml {
     changeNotes """
+        Updated to CLion 2020.1.<br/>
         ===<br/>
         1.15:<br/>
         Added a feature to ignore certain compiler switches, configured on the Settings page.<br/>
@@ -58,7 +59,7 @@ patchPluginXml {
 
 sourceCompatibility = 1.8
 
-def clionVersion = '2019.1'
+def clionVersion = '2020.1'
 
 repositories {
     jcenter()
@@ -105,8 +106,7 @@ task setupClion() {
 compileJava.dependsOn('setupClion')
 
 publishPlugin {
-    username intellijPublishUsername
-    password intellijPublishPassword
+    token intellijPublishToken
 }
 
 runIde {
