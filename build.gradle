@@ -11,6 +11,7 @@ version '1.15'
 
 patchPluginXml {
     changeNotes """
+        Added a privacy notification about using localhost URL by default, which shows up on first start.<br/>
         Updated to CLion 2020.1.<br/>
         ===<br/>
         1.15:<br/>

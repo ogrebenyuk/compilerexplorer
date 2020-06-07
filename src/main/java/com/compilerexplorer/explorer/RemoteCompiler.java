@@ -70,7 +70,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         Filters filters = new Filters(state.getFilters());
         String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
         String name = sourceSettings.getSourceName();
-        taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: compiling " + name) {
+        taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": compiling " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String remoteCompilerId = preprocessedSource.getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();

@@ -1,5 +1,6 @@
 package com.compilerexplorer.datamodel.state;
 
+import com.compilerexplorer.common.Constants;
 import com.intellij.ui.JBColor;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
@@ -14,16 +15,16 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
     @NotNull
-    private static final String DEFAULT_URL = "http://localhost:10240";
+    private static final String DEFAULT_URL = Constants.DEFAULT_URL;
     private static final boolean DEFAULT_CONNECTED = false;
     private static final boolean DEFAULT_PREPROCESS_LOCALLY = true;
     @NotNull
-    private static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
+    private static final String DEFAULT_ADDITIONAL_SWITCHES = Constants.DEFAULT_ADDITIONAL_SWITCHES;
     @NotNull
-    private static final String DEFAULT_IGNORE_SWITCHES = "";
+    private static final String DEFAULT_IGNORE_SWITCHES = Constants.DEFAULT_IGNORE_SWITCHES;
     @NotNull
-    private static final Color DEFAULT_HIGHLIGHT_COLOR = JBColor.CYAN;
-    private static final long DEFAULT_DELAY_MILLIS = 1000;
+    private static final Color DEFAULT_HIGHLIGHT_COLOR = Constants.DEFAULT_HIGHLIGHT_COLOR;
+    private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -67,6 +68,8 @@ public class SettingsState {
     private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
+    @Property
+    private boolean initialNoticeShown = false;
 
     public SettingsState() {
         // empty
@@ -210,6 +213,14 @@ public class SettingsState {
         delayMillis = delayMillis_;
     }
 
+    public boolean getInitialNoticeShown() {
+        return initialNoticeShown;
+    }
+
+    public void setInitialNoticeShown(boolean initialNoticeShown_) {
+        initialNoticeShown = initialNoticeShown_;
+    }
+
     public void copyFrom(@NotNull SettingsState other) {
         setEnabled(other.getEnabled());
         setUrl(other.getUrl());
@@ -227,6 +238,7 @@ public class SettingsState {
         setShortenTemplates(other.getShortenTemplates());
         setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
+        setInitialNoticeShown(other.getInitialNoticeShown());
     }
 
     @Override
@@ -247,7 +259,8 @@ public class SettingsState {
                 + (getShortenTemplates() ? 1 : 0)
                 + getHighlightColorRGB()
                 + ((int) getDelayMillis())
-                ;
+                + (getInitialNoticeShown() ? 1 : 0)
+        ;
     }
 
     @Override
@@ -272,6 +285,7 @@ public class SettingsState {
                 && getShortenTemplates() == (other.getShortenTemplates())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
-                ;
+                && getInitialNoticeShown() == other.getInitialNoticeShown()
+        ;
     }
 }

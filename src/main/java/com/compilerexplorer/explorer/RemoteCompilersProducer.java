@@ -1,5 +1,6 @@
 package com.compilerexplorer.explorer;
 
+import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.datamodel.state.RemoteCompilerInfo;
@@ -66,7 +67,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
         }
 
         String url = state.getUrl();
-        taskRunner.runTask(new Task.Backgroundable(project, "Compiler Explorer: connecting to " + url) {
+        taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": connecting to " + url) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String endpoint = url + "/api/compilers";

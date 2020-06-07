@@ -1,15 +1,15 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
-import com.compilerexplorer.common.PathNormalizer;
-import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.TimerScheduler;
+import com.compilerexplorer.common.*;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.AllEditorsListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
+import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
@@ -99,6 +99,17 @@ public class ToolWindowGui {
         graphics.fillPolygon(xPoints, yPoints, 4);
     };
     private boolean showAnnotations = false;
+    @NotNull
+    AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent event) {
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, Constants.PROJECT_TITLE);
+        }
+        @Override
+        public void update(@NotNull AnActionEvent event) {
+            event.getPresentation().setIcon(AllIcons.General.Settings);
+        }
+    };
 
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
@@ -225,16 +236,7 @@ public class ToolWindowGui {
         addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false);
         addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true);
 
-        actionGroup.add(new AnAction("Compiler Explorer Settings...") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent event) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, "Compiler Explorer");
-            }
-            @Override
-            public void update(@NotNull AnActionEvent event) {
-                event.getPresentation().setIcon(AllIcons.General.Settings);
-            }
-        });
+        actionGroup.add(showSettingsAction);
 
         actionGroup.add(new AnAction("Reset Cache and Reload") {
             @Override
@@ -265,6 +267,8 @@ public class ToolWindowGui {
                 event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
             }
         });
+
+        maybeShowInitialNotice();
     }
 
     private void setupAnnotations(@NotNull EditorEx ed) {
@@ -868,5 +872,16 @@ public class ToolWindowGui {
             end = length_;
             source = source_;
         }
+    }
+
+    private void maybeShowInitialNotice() {
+        if (!getState().getInitialNoticeShown()) {
+            showInitialNotice();
+            getState().setInitialNoticeShown(true);
+        }
+    }
+
+    private void showInitialNotice() {
+        Notifications.Bus.notify(Constants.NOTIFICATION_GROUP.createNotification(Constants.INITIAL_NOTICE, NotificationType.INFORMATION).addAction(showSettingsAction), project);
     }
 }

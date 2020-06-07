@@ -1,5 +1,6 @@
 package com.compilerexplorer.settings.gui;
 
+import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
@@ -47,7 +48,7 @@ public class SettingsGui {
         JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
         JLabel urlLabel = new JLabel();
         urlLabel.setVisible(true);
-        urlLabel.setText("Compiler Explorer URL: ");
+        urlLabel.setText(Constants.PROJECT_TITLE + " URL: ");
         urlPanel.add(urlLabel, BorderLayout.WEST);
         urlField = new JTextField();
         urlField.getDocument().addDocumentListener(new DocumentListener() {
@@ -105,6 +106,16 @@ public class SettingsGui {
 
         content.add(testResultPanel, VerticalLayout.TOP);
 
+        JPanel ignoreSwitchesPanel = new JPanel(new BorderLayout(GAP, GAP));
+        JLabel ignoreSwitchesLabel = new JLabel();
+        ignoreSwitchesLabel.setVisible(true);
+        ignoreSwitchesLabel.setText("Ignore compiler switches: ");
+        ignoreSwitchesPanel.add(ignoreSwitchesLabel, BorderLayout.WEST);
+        ignoreSwitchesField = new JBTextField(20);
+        ignoreSwitchesPanel.add(ignoreSwitchesField, BorderLayout.CENTER);
+
+        content.add(ignoreSwitchesPanel, VerticalLayout.TOP);
+
         JPanel preprocessPanel = new JPanel(new BorderLayout(GAP, GAP));
         preprocessCheckbox = new JCheckBox();
         preprocessCheckbox.setText("Preprocess locally");
@@ -131,16 +142,6 @@ public class SettingsGui {
         delayMillisPanel.add(delayMillisField);
 
         content.add(delayMillisPanel, VerticalLayout.TOP);
-
-        JPanel ignoreSwitchesPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
-        JLabel ignoreSwitchesLabel = new JLabel();
-        ignoreSwitchesLabel.setVisible(true);
-        ignoreSwitchesLabel.setText("Ignore compiler switches: ");
-        ignoreSwitchesPanel.add(ignoreSwitchesLabel);
-        ignoreSwitchesField = new JBTextField(20);
-        ignoreSwitchesPanel.add(ignoreSwitchesField);
-
-        content.add(ignoreSwitchesPanel, VerticalLayout.TOP);
 
         ignoreUpdates = false;
     }
