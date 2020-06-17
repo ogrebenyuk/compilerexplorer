@@ -89,6 +89,8 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     request.options = new Options();
                     request.options.userArguments = switches;
                     request.options.filters = filters;
+                    request.options.compilerOptions = new CompilerOptions();
+                    request.options.compilerOptions.executorRequest = false;
 
                     postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
 
@@ -169,9 +171,14 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                 + (additionalSwitches.isEmpty() ? "" : " " + Arrays.stream(additionalSwitches.split(" ")).filter(x -> !ignoreSwitchesList.contains(x)).collect(Collectors.joining(" ")));
     }
 
+    private static class CompilerOptions {
+        boolean executorRequest;
+    }
+
     private static class Options {
         String userArguments;
         Filters filters;
+        CompilerOptions compilerOptions;
     }
 
     private static class Request {

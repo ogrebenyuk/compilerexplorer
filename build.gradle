@@ -14,6 +14,8 @@ patchPluginXml {
         Added a privacy notification about using localhost URL by default, which shows up on first start.<br/>
         Updated to CLion 2020.1.<br/>
         ===<br/>
+        Fixed a problem of missing executorRequest parameter
+        ===<br/>
         1.15:<br/>
         Added a feature to ignore certain compiler switches, configured on the Settings page.<br/>
         ===<br/>
