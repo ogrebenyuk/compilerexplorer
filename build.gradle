@@ -7,10 +7,11 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.16'
+version '1.17'
 
 patchPluginXml {
     changeNotes """
+        1.17:<br/>
         Fixed line breaks in some tooltips.<br/>
         Stopped using the remote compiler's "exe" property.<br/>
         ===<br/>
