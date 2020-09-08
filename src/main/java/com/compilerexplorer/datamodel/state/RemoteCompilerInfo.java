@@ -26,10 +26,6 @@ public class RemoteCompilerInfo {
     @Property
     @SerializedName("version")
     private String version = "";
-    @Nullable
-    @Property
-    @SerializedName("exe")
-    private String executable = "";
 
     RemoteCompilerInfo() {
         // empty
@@ -75,14 +71,6 @@ public class RemoteCompilerInfo {
         version = version_;
     }
 
-    @NotNull
-    public String getExecutable() {
-        return getStringOrEmpty(executable);
-    }
-
-    private void setExecutable(@Nullable String executable_) {
-        executable = executable_;
-    }
 
     @NotNull
     private static String getStringOrEmpty(@Nullable String s) {
@@ -94,7 +82,6 @@ public class RemoteCompilerInfo {
         setName(other.getName());
         setLanguage(other.getLanguage());
         setVersion(other.getVersion());
-        setExecutable(other.getExecutable());
     }
 
     @Override
@@ -103,7 +90,6 @@ public class RemoteCompilerInfo {
                 + getName().hashCode()
                 + getLanguage().hashCode()
                 + getVersion().hashCode()
-                + getExecutable().hashCode()
                 ;
     }
 
@@ -117,7 +103,6 @@ public class RemoteCompilerInfo {
                 && getName().equals(other.getName())
                 && getLanguage().equals(other.getLanguage())
                 && getVersion().equals(other.getVersion())
-                && getExecutable().equals(other.getExecutable())
                 ;
     }
 }

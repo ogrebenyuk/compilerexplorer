@@ -11,8 +11,11 @@ version '1.16'
 
 patchPluginXml {
     changeNotes """
+        Fixed line breaks in some tooltips.<br/>
+        Stopped using the remote compiler's "exe" property.<br/>
+        ===<br/>
         1.16:<br/>
-        Fixed a problem of missing executorRequest parameter
+        Fixed a problem of missing executorRequest parameter.<br/>
         Added a privacy notification about using localhost URL by default, which shows up on first start.<br/>
         Updated to CLion 2020.1.<br/>
         ===<br/>

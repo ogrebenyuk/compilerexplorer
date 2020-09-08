@@ -86,7 +86,7 @@ public class SettingsGui {
                     testState,
                     unused -> {
                         testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
-                        testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("\n")));
+                        testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("<br/>")));
                     },
                     error  -> {
                         testResultLabel.setText("Error: " + error.getMessage());

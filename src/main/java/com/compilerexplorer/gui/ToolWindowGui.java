@@ -434,10 +434,10 @@ public class ToolWindowGui {
     @NotNull
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
         return "File: " + sourceSettings.getSourcePath()
-                + "\nLanguage: " + sourceSettings.getLanguage()
-                + "\nCompiler: " + sourceSettings.getCompiler().getAbsolutePath()
-                + "\nCompiler kind: " + sourceSettings.getCompilerKind()
-                + "\nCompiler options: " + String.join(" ", sourceSettings.getSwitches());
+                + "<br/>Language: " + sourceSettings.getLanguage()
+                + "<br/>Compiler: " + sourceSettings.getCompiler().getAbsolutePath()
+                + "<br/>Compiler kind: " + sourceSettings.getCompilerKind()
+                + "<br/>Compiler options: " + String.join(" ", sourceSettings.getSwitches());
     }
 
     private void selectCompilerMatch(@NotNull CompilerMatch compilerMatch) {
@@ -471,11 +471,10 @@ public class ToolWindowGui {
     @NotNull
     private String getMatchTooltip(@NotNull CompilerMatch compilerMatch) {
         return "Id: " + compilerMatch.getRemoteCompilerInfo().getId()
-                + "\nLanguage: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
-                + "\nName: " + compilerMatch.getRemoteCompilerInfo().getName()
-                + "\nVersion: " + compilerMatch.getRemoteCompilerInfo().getVersion()
-                + "\nExecutable: " + compilerMatch.getRemoteCompilerInfo().getExecutable()
-                + "\nMatch kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind());
+                + "<br/>Language: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
+                + "<br/>Name: " + compilerMatch.getRemoteCompilerInfo().getName()
+                + "<br/>Version: " + compilerMatch.getRemoteCompilerInfo().getVersion()
+                + "<br/>Match kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind());
     }
 
     public void setSourceSettingsConsumer(@NotNull Consumer<SourceSettings> sourceSettingsConsumer_) {
