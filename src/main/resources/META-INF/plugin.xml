@@ -8,7 +8,7 @@
     This plugin shows compilation results from a remote Compiler Explorer instance.
     ]]></description>
 
-    <idea-version since-build="200"/>
+    <idea-version since-build="210"/>
 
     <depends>com.intellij.modules.clion</depends>
     <depends>com.intellij.modules.cidr.lang</depends>

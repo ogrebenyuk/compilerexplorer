@@ -4,6 +4,7 @@ import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.settings.gui.SettingsGui;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,8 +16,8 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     @Nullable
     private SettingsGui form;
 
-    CompilerExplorerSettingsConfigurable(@NotNull CompilerExplorerSettingsProvider provider_) {
-        provider = provider_;
+    CompilerExplorerSettingsConfigurable(@NotNull Project project_) {
+        provider = CompilerExplorerSettingsProvider.getInstance(project_);
     }
 
     @Override

@@ -7,10 +7,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.17'
+version '1.18'
 
 patchPluginXml {
     changeNotes """
+        1.18:<br/>
+        Updated to CLion 2021.1.<br/>
+        ===<br/>
         1.17:<br/>
         Fixed line breaks in some tooltips.<br/>
         Stopped using the remote compiler's "exe" property.<br/>
@@ -66,7 +69,7 @@ patchPluginXml {
 
 sourceCompatibility = 1.8
 
-def clionVersion = '2020.1'
+def clionVersion = '2021.1'
 
 repositories {
     jcenter()
@@ -78,39 +81,15 @@ dependencies {
 }
 
 intellij {
-    localPath = '.gradle/ide/clion-' + clionVersion
+    type = 'CL'
+    version = clionVersion
     updateSinceUntilBuild = false // Disables updating since-build attribute in plugin.xml
+    setPlugins(
+            "com.intellij.clion",
+            "com.intellij.cidr.base",
+            "com.intellij.cidr.lang"
+    )
 }
-
-task setupClion() {
-    def urlPrefix = 'https://download.jetbrains.com/cpp/CLion-'
-    def downloadPrefix = '.gradle/downloads/clion'
-    def targetLocation = ''
-    def ext = ''
-    def tree = fileTree(downloadPrefix)
-    if (isFamily(FAMILY_WINDOWS)) {
-        ext = '.win.zip'
-        targetLocation = '.gradle/ide/clion-' + clionVersion
-        tree = zipTree(downloadPrefix + ext)
-    }
-    if (isFamily(FAMILY_UNIX)) {
-        ext = '.tar.gz'
-        targetLocation = '.gradle/ide'
-        tree = tarTree(resources.gzip(downloadPrefix + ext))
-    }
-    if (!new File(targetLocation).exists()) {
-        download {
-            src urlPrefix + clionVersion + ext
-            dest downloadPrefix + ext
-        }
-        copy {
-            from tree
-            into targetLocation
-        }
-    }
-}
-
-compileJava.dependsOn('setupClion')
 
 publishPlugin {
     token intellijPublishToken
