@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
+
 public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     @NotNull
     private final Project project;
@@ -53,14 +55,16 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         }
 
         SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
+        OCResolveConfiguration configuration = sourceSettings.getConfiguration();
         Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.getSource());
         if (document == null) {
             errorLater("Cannot get document " + sourceSettings.getSourcePath());
             return;
         }
 
+        boolean isRemote = CompilerRunner.getHostMachine(configuration).isRemote();
         String sourceText = "# 1 \"" + sourceSettings.getSourcePath().replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
-        if (!state.getPreprocessLocally()) {
+        if (isRemote || !state.getPreprocessLocally()) {
             preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
             return;
         }
@@ -73,7 +77,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
                 try {
-                    CompilerRunner compilerRunner = new CompilerRunner(preprocessorCommandLine, compilerWorkingDir, sourceText, indicator);
+                    CompilerRunner compilerRunner = new CompilerRunner(configuration, preprocessorCommandLine, compilerWorkingDir, sourceText);
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));

@@ -137,7 +137,8 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
     }
 
     private static void addComponentToToolWindow(@NotNull ToolWindow toolWindow, @NotNull JComponent component) {
-        Content content = ContentFactory.SERVICE.getInstance().createContent(component, "", false);
+        ContentFactory contentFactory = ApplicationManager.getApplication().getService(ContentFactory.class);
+        Content content = contentFactory.createContent(component, "", false);
         toolWindow.getContentManager().addContent(content);
     }
 }

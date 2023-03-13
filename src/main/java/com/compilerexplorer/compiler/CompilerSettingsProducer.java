@@ -18,6 +18,8 @@ import java.io.File;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
+
 public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
     private final Project project;
@@ -61,13 +63,14 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
 
         File compiler = sourceSettings.getCompiler();
         File compilerWorkingDir = compiler.getParentFile();
+        OCResolveConfiguration configuration = sourceSettings.getConfiguration();
 
         taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + sourceSettings.getSourceName()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] versionCommandLine = getVersionCommandLine(sourceSettings);
                 try {
-                    CompilerRunner versionRunner = new CompilerRunner(versionCommandLine, compilerWorkingDir, "", indicator);
+                    CompilerRunner versionRunner = new CompilerRunner(configuration, versionCommandLine, compilerWorkingDir, "");
                     String versionText = versionRunner.getStderr();
                     if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
                         String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);

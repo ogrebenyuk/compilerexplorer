@@ -51,7 +51,7 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
                 OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
                 CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
                 if (compiler != null && compilerKind != null && switches != null) {
-                    return new SourceSettings(virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW));
+                    return new SourceSettings(configuration,  virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW));
                 }
             }
             return null;
