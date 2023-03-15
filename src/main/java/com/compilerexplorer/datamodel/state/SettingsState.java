@@ -25,6 +25,7 @@ public class SettingsState {
     @NotNull
     private static final Color DEFAULT_HIGHLIGHT_COLOR = Constants.DEFAULT_HIGHLIGHT_COLOR;
     private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
+    private static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = Constants.DEFAULT_COMPILER_TIMEOUT_MILLIS;
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -68,6 +69,8 @@ public class SettingsState {
     private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
+    @Property
+    private int compilerTimeoutMillis = DEFAULT_COMPILER_TIMEOUT_MILLIS;
     @Property
     private boolean initialNoticeShown = false;
 
@@ -213,6 +216,14 @@ public class SettingsState {
         delayMillis = delayMillis_;
     }
 
+    public int getCompilerTimeoutMillis() {
+        return compilerTimeoutMillis;
+    }
+
+    public void setCompilerTimeoutMillis(int compilerTimeoutMillis_) {
+        compilerTimeoutMillis = compilerTimeoutMillis_;
+    }
+
     public boolean getInitialNoticeShown() {
         return initialNoticeShown;
     }
@@ -238,6 +249,7 @@ public class SettingsState {
         setShortenTemplates(other.getShortenTemplates());
         setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
+        setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
         setInitialNoticeShown(other.getInitialNoticeShown());
     }
 
@@ -259,6 +271,7 @@ public class SettingsState {
                 + (getShortenTemplates() ? 1 : 0)
                 + getHighlightColorRGB()
                 + ((int) getDelayMillis())
+                + getCompilerTimeoutMillis()
                 + (getInitialNoticeShown() ? 1 : 0)
         ;
     }
@@ -285,6 +298,7 @@ public class SettingsState {
                 && getShortenTemplates() == (other.getShortenTemplates())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
+                && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()
                 && getInitialNoticeShown() == other.getInitialNoticeShown()
         ;
     }

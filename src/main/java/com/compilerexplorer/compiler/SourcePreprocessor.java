@@ -77,7 +77,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
                 try {
-                    CompilerRunner compilerRunner = new CompilerRunner(configuration, preprocessorCommandLine, compilerWorkingDir, sourceText);
+                    CompilerRunner compilerRunner = new CompilerRunner(configuration, preprocessorCommandLine, compilerWorkingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));

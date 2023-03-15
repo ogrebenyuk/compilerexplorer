@@ -1,6 +1,8 @@
 package com.compilerexplorer.compiler.common;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.jetbrains.cidr.execution.CidrRunProcessUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -41,7 +43,7 @@ public class CompilerRunner {
         }
     }
 
-    public CompilerRunner(@NotNull OCResolveConfiguration configuration_, @NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin) {
+    public CompilerRunner(@NotNull OCResolveConfiguration configuration_, @NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator, int compilerTimeoutMillis) {
         ProcessOutput output;
         try {
             final HostMachine host = getHostMachine(configuration_);
@@ -64,7 +66,7 @@ public class CompilerRunner {
             stdinStream.close();
 
             try {
-                output = host.runProcess(cl, null, 10000);
+                output = CidrRunProcessUtil.runProcess(process, progressIndicator, compilerTimeoutMillis);
                 if (output.isCancelled()) {
                     throw new ProcessCanceledException();
                 }

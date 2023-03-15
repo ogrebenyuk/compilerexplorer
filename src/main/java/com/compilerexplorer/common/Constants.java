@@ -19,6 +19,7 @@ public class Constants {
     @NotNull
     public static final Color DEFAULT_HIGHLIGHT_COLOR = JBColor.CYAN;
     public static final long DEFAULT_DELAY_MILLIS = 1000;
+    public static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = 60000;
     @NotNull
     public static final String NOTIFICATION_GROUP_NAME = PROJECT_TITLE;
     @NotNull

@@ -35,6 +35,8 @@ public class SettingsGui {
     @NotNull
     private final JTextField delayMillisField;
     @NotNull
+    private final JTextField compilerTimeoutMillisField;
+    @NotNull
     private final JTextField ignoreSwitchesField;
     @NotNull
     private final TaskRunner taskRunner;
@@ -143,6 +145,16 @@ public class SettingsGui {
 
         content.add(delayMillisPanel, VerticalLayout.TOP);
 
+        JPanel compilerTimeoutMillisPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
+        JLabel compilerTimeoutMillisLabel = new JLabel();
+        compilerTimeoutMillisLabel.setVisible(true);
+        compilerTimeoutMillisLabel.setText("Compiler timeout (ms): ");
+        compilerTimeoutMillisPanel.add(compilerTimeoutMillisLabel);
+        compilerTimeoutMillisField = new JBTextField(6);
+        compilerTimeoutMillisPanel.add(compilerTimeoutMillisField);
+
+        content.add(compilerTimeoutMillisPanel, VerticalLayout.TOP);
+
         ignoreUpdates = false;
     }
 
@@ -169,6 +181,7 @@ public class SettingsGui {
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
         highlightColorChooserPanel.setSelectedColor(new Color(state.getHighlightColorRGB()));
         delayMillisField.setText(String.valueOf(state.getDelayMillis()));
+        compilerTimeoutMillisField.setText(String.valueOf(state.getCompilerTimeoutMillis()));
         ignoreSwitchesField.setText(String.valueOf(state.getIgnoreSwitches()));
     }
 
@@ -181,6 +194,11 @@ public class SettingsGui {
         }
         try {
             state_.setDelayMillis(Long.parseLong(delayMillisField.getText()));
+        } catch (Exception exception) {
+            // empty
+        }
+        try {
+            state_.setCompilerTimeoutMillis(Integer.parseInt(compilerTimeoutMillisField.getText()));
         } catch (Exception exception) {
             // empty
         }

@@ -70,7 +70,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] versionCommandLine = getVersionCommandLine(sourceSettings);
                 try {
-                    CompilerRunner versionRunner = new CompilerRunner(configuration, versionCommandLine, compilerWorkingDir, "");
+                    CompilerRunner versionRunner = new CompilerRunner(configuration, versionCommandLine, compilerWorkingDir, "", indicator, state.getCompilerTimeoutMillis());
                     String versionText = versionRunner.getStderr();
                     if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
                         String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);
