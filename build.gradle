@@ -10,8 +10,9 @@ version '1.19'
 patchPluginXml {
     changeNotes = """
         1.19:<br/>
-        Remote toolchain support
-        Updated to CLion 2022.3.2
+        Remote toolchain support.<br/>
+        Updated to CLion 2022.3.2.<br/>
+        Contributed by Boris Yakuboff.<br/>
         ===<br/>
         1.18:<br/>
         Updated to CLion 2021.1.<br/>
