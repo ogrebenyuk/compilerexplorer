@@ -1,6 +1,7 @@
 package com.compilerexplorer.common;
 
 import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,5 +25,5 @@ public class Constants {
     public static final String INITIAL_NOTICE = "Default " + PROJECT_TITLE + " URL is set to \"" + DEFAULT_URL + "\" for privacy and can be changed on the settings page.";
 
     @NotNull
-    public static final NotificationGroup NOTIFICATION_GROUP = NotificationGroup.balloonGroup(NOTIFICATION_GROUP_NAME);
+    public static final NotificationGroup NOTIFICATION_GROUP = NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_GROUP_NAME);
 }

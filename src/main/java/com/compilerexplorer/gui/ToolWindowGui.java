@@ -7,7 +7,6 @@ import com.compilerexplorer.gui.listeners.AllEditorsListener;
 import com.compilerexplorer.gui.listeners.EditorChangeListener;
 import com.compilerexplorer.gui.tracker.CaretTracker;
 import com.intellij.icons.AllIcons;
-import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.*;
@@ -31,7 +30,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.ListCellRendererWrapper;
+import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.components.JBTextField;
 import org.jetbrains.annotations.NotNull;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
@@ -119,7 +118,7 @@ public class ToolWindowGui {
         headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
 
         projectSettingsComboBox = new ComboBox<>();
-        projectSettingsComboBox.setRenderer(new ListCellRendererWrapper<SourceSettings>() {
+        projectSettingsComboBox.setRenderer(new SimpleListCellRenderer<>() {
             @Override
             public void customize(@Nullable JList list, @Nullable SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
                 setText((value != null) ? getText(value) : "");
@@ -137,7 +136,7 @@ public class ToolWindowGui {
         headPanel.add(projectSettingsComboBox);
 
         matchesComboBox = new ComboBox<>();
-        matchesComboBox.setRenderer(new ListCellRendererWrapper<CompilerMatch>() {
+        matchesComboBox.setRenderer(new SimpleListCellRenderer<>() {
             @Override
             public void customize(@Nullable JList list, @Nullable CompilerMatch value, int index, boolean isSelected, boolean cellHasFocus) {
                 setText((value != null) ? getText(value) : "");
@@ -189,6 +188,7 @@ public class ToolWindowGui {
         content.add(mainPanel, BorderLayout.CENTER);
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
             @Override
+            @NotNull
             protected EditorEx createEditor() {
                 EditorEx ed = super.createEditor();
                 ed.setHorizontalScrollbarVisible(true);
@@ -256,7 +256,7 @@ public class ToolWindowGui {
         caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
 
-        toolWindow.setTitleActions(new AnAction("Scroll from Source") {
+        toolWindow.setTitleActions(List.of(new AnAction("Scroll from Source") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent event) {
                 highlightLocations(caretTracker.getLocations(), false, true);
@@ -266,7 +266,7 @@ public class ToolWindowGui {
                 event.getPresentation().setIcon(AllIcons.General.Locate);
                 event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
             }
-        });
+        }));
 
         maybeShowInitialNotice();
     }

@@ -2,7 +2,6 @@ package com.compilerexplorer.common;
 
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.project.Project;
@@ -21,7 +20,7 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     private Consumer<RefreshSignal> refreshSignalConsumer;
 
     public static CompilerExplorerSettingsProvider getInstance(@NotNull Project project) {
-        return ServiceManager.getService(project, CompilerExplorerSettingsProvider.class);
+        return project.getService(CompilerExplorerSettingsProvider.class);
     }
 
     @SuppressWarnings("WeakerAccess")

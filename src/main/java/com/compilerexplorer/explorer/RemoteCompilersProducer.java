@@ -90,7 +90,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                     httpClient.close();
                     indicator.checkCanceled();
 
-                    JsonArray array = new JsonParser().parse(output).getAsJsonArray();
+                    JsonArray array = JsonParser.parseString(output).getAsJsonArray();
                     Gson gson = new Gson();
                     List<RemoteCompilerInfo> compilers = new ArrayList<>();
                     for (JsonElement elem : array) {

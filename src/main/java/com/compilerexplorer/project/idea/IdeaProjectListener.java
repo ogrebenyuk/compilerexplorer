@@ -27,6 +27,7 @@ public class IdeaProjectListener {
         });
         project.getMessageBus().connect().subscribe(ExecutionTargetManager.TOPIC, e -> changeConsumer.run());
         project.getMessageBus().connect().subscribe(ProjectTopics.MODULES, new ModuleListener() {
+            @Deprecated
             @Override
             public void moduleAdded(@NotNull Project project, @NotNull Module module) {
                 changeConsumer.run();

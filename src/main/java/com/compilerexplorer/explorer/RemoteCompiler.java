@@ -138,7 +138,7 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     response.close();
                     indicator.checkCanceled();
 
-                    JsonObject obj = new JsonParser().parse(output.toString()).getAsJsonObject();
+                    JsonObject obj = JsonParser.parseString(output.toString()).getAsJsonObject();
                     CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
 
                     if (compiledResult.code == 0) {
