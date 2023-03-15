@@ -7,7 +7,11 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.util.List;
 
+import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
+
 public class SourceSettings {
+    @NotNull
+    private final OCResolveConfiguration configuration;
     @NotNull
     private final VirtualFile source;
     @NotNull
@@ -25,7 +29,7 @@ public class SourceSettings {
     @NotNull
     private final List<String> switches;
 
-    public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_) {
+    public SourceSettings(@NotNull OCResolveConfiguration configuration_, @NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_) {
         source = source_;
         sourcePath = sourcePath_;
         sourceName = source.getPresentableName();
@@ -34,7 +38,11 @@ public class SourceSettings {
         compiler = compiler_;
         compilerKind = compilerKind_;
         switches = switches_;
+        configuration = configuration_;
     }
+
+    @NotNull
+    public OCResolveConfiguration getConfiguration() { return configuration; }
 
     @NotNull
     public VirtualFile getSource() {

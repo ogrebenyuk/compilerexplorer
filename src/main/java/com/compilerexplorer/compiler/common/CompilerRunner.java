@@ -1,58 +1,87 @@
 package com.compilerexplorer.compiler.common;
 
-import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.execution.ExecutionException;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
-import java.util.concurrent.TimeUnit;
+import com.intellij.execution.configurations.GeneralCommandLine;
+import com.intellij.execution.process.*;
+import com.intellij.openapi.progress.ProcessCanceledException;
+import com.intellij.openapi.util.ShutDownTracker;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
+import com.jetbrains.cidr.cpp.execution.CMakeAppRunConfiguration;
+import com.jetbrains.cidr.cpp.execution.CMakeBuildProfileExecutionTarget;
+import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
+import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
+import com.jetbrains.cidr.system.HostMachine;
 
 public class CompilerRunner {
-    private static final long WAIT_ITERATION_MILLIS = 100;
     @NotNull
     private final String stdout;
     @NotNull
     private final String stderr;
     private final int exitCode;
 
-    public CompilerRunner(@NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator) throws IOException, InterruptedException {
-        Process process = Runtime.getRuntime().exec(commandArray, null, workingDir);
+    public static HostMachine getHostMachine(@NotNull OCResolveConfiguration configuration_) {
         try {
-            StringBuilder stdoutBuilder = new StringBuilder();
-            StringBuilder stderrBuilder = new StringBuilder();
-            StreamGobbler stdoutGobbler = new StreamGobbler(process.getInputStream(), stdoutBuilder, progressIndicator);
-            StreamGobbler stderrGobbler = new StreamGobbler(process.getErrorStream(), stderrBuilder, progressIndicator);
-            Thread stdoutGobblerThread = new Thread(stdoutGobbler);
-            Thread stderrGobblerThread = new Thread(stderrGobbler);
-            stdoutGobblerThread.start();
-            stderrGobblerThread.start();
+            CMakeAppRunConfiguration runConfiguration = CMakeAppRunConfiguration.getSelectedRunConfiguration(configuration_.getProject());
+            CMakeBuildProfileExecutionTarget executionTarget = CMakeAppRunConfiguration.getSelectedBuildProfile(configuration_.getProject());
+            assert runConfiguration != null;
+            assert executionTarget != null;
+            CMakeAppRunConfiguration.BuildAndRunConfigurations buildAndRunConfiguration = runConfiguration.getBuildAndRunConfigurations(executionTarget);
+            CMakeWorkspace cMakeWorkspace = CMakeWorkspace.getInstance(configuration_.getProject());
+            assert buildAndRunConfiguration != null;
+            final CMakeProfileInfo cMakeProfileInfo = cMakeWorkspace.getProfileInfoFor(buildAndRunConfiguration.buildConfiguration);
+            final CPPEnvironment environment = cMakeProfileInfo.getEnvironment();
+            assert environment != null;
+            return environment.getHostMachine();
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Fatal error");
+        }
+    }
 
-            OutputStream stdinStream = process.getOutputStream();
+    public CompilerRunner(@NotNull OCResolveConfiguration configuration_, @NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin) {
+        ProcessOutput output;
+        try {
+            final HostMachine host = getHostMachine(configuration_);
+
+            GeneralCommandLine cl = new GeneralCommandLine();
+            cl.setExePath(commandArray[0]);
+            cl.setWorkDirectory(workingDir);
+            cl.setRedirectErrorStream(false);
+            for (String parameter : commandArray) {
+                if (parameter.equals(commandArray[0]))
+                    continue;
+                cl.addParameter(parameter);
+            }
+            final BaseProcessHandler<?> process = host.createProcess(cl, false, false);
+            Runnable shutdownHook = () -> host.killProcessTree(process);
+            ShutDownTracker.getInstance().registerShutdownTask(shutdownHook);
+            OutputStream stdinStream = process.getProcess().getOutputStream();
             stdinStream.write(stdin.getBytes());
             stdinStream.flush();
             stdinStream.close();
 
-            while (!process.waitFor(WAIT_ITERATION_MILLIS, TimeUnit.MILLISECONDS)) {
-                progressIndicator.checkCanceled();
-            }
-            exitCode = process.exitValue();
-            stdoutGobblerThread.join();
-            stderrGobblerThread.join();
-
-            if (stdoutGobbler.getException() != null) {
-                throw new InterruptedException(stdoutGobbler.getException().getMessage());
-            }
-            if (stderrGobbler.getException() != null) {
-                throw new InterruptedException(stderrGobbler.getException().getMessage());
+            try {
+                output = host.runProcess(cl, null, 10000);
+                if (output.isCancelled()) {
+                    throw new ProcessCanceledException();
+                }
+            } finally {
+                ShutDownTracker.getInstance().unregisterShutdownTask(shutdownHook);
+                shutdownHook.run();
             }
 
-            progressIndicator.checkCanceled();
-            stdout = stdoutBuilder.toString();
-            stderr = stderrBuilder.toString();
-        } catch (Exception exception) {
-            process.destroyForcibly();
-            throw exception;
+
         }
+        catch (Exception e) {
+            throw(new RuntimeException("Failed to run compiler: "+e.getMessage()));
+        }
+
+        stdout = output.getStdout();
+        stderr = output.getStderr();
+        exitCode = output.isExitCodeSet() ? output.getExitCode() : 0;
     }
 
     @NotNull
@@ -67,49 +96,5 @@ public class CompilerRunner {
 
     public int getExitCode() {
         return exitCode;
-    }
-
-    private static class StreamGobbler implements Runnable {
-        @NotNull
-        private final InputStream inputStream;
-        @NotNull
-        private final StringBuilder stringBuilder;
-        @NotNull
-        private final ProgressIndicator progressIndicator;
-        @Nullable
-        private Exception exception;
-        boolean ignoreLF;
-
-        StreamGobbler(@NotNull InputStream inputStream_, @NotNull StringBuilder stringBuilder_, @NotNull ProgressIndicator progressIndicator_) {
-            inputStream = inputStream_;
-            stringBuilder = stringBuilder_;
-            progressIndicator = progressIndicator_;
-        }
-
-        public void run() {
-            try {
-                int ic;
-                while ((ic = inputStream.read()) != -1) {
-                    char c = (char)ic;
-                    if (c == '\r') {
-                        ignoreLF = true;
-                        stringBuilder.append('\n');
-                    } else {
-                        if (c != '\n' || !ignoreLF) {
-                            stringBuilder.append(c);
-                        }
-                        ignoreLF = false;
-                    }
-                    progressIndicator.checkCanceled();
-                }
-            } catch (IOException x) {
-                exception = x;
-            }
-        }
-
-        @Nullable
-        Exception getException() {
-            return exception;
-        }
     }
 }

@@ -1,16 +1,18 @@
-import static org.apache.tools.ant.taskdefs.condition.Os.*
-
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '0.4.21'
+    id "org.jetbrains.intellij" version '1.12.0'
     id 'de.undercouch.download' version '3.4.2'
 }
 
 group 'com.compilerexplorer'
-version '1.18'
+version '1.19'
 
 patchPluginXml {
-    changeNotes """
+    changeNotes = """
+        1.19:<br/>
+        Remote toolchain support
+        Updated to CLion 2022.3.2
+        ===<br/>
         1.18:<br/>
         Updated to CLion 2021.1.<br/>
         ===<br/>
@@ -67,34 +69,41 @@ patchPluginXml {
     """
 }
 
-sourceCompatibility = 1.8
+sourceCompatibility = 11
 
-def clionVersion = '2021.1'
+def clionVersion = '2022.3.2'
 
 repositories {
-    jcenter()
     mavenCentral()
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
 
 intellij {
-    type = 'CL'
-    version = clionVersion
-    updateSinceUntilBuild = false // Disables updating since-build attribute in plugin.xml
-    setPlugins(
+    type.set('CL')
+    version.set(clionVersion)
+    updateSinceUntilBuild.set(false) // Disables updating since-build attribute in plugin.xml
+    plugins.set([
             "com.intellij.clion",
             "com.intellij.cidr.base",
-            "com.intellij.cidr.lang"
+            "com.intellij.cidr.lang"]
     )
 }
 
 publishPlugin {
-    token intellijPublishToken
+    token.set(System.getenv("ORG_GRADLE_PROJECT_intellijPublishToken"))
 }
-
 runIde {
     jvmArgs = ['-Xms2048m', '-Xmx8192m']
+}
+
+
+allprojects {
+    tasks.withType(JavaCompile).tap {
+        configureEach {
+            options.compilerArgs << "-Xlint:deprecation"
+        }
+    }
 }
