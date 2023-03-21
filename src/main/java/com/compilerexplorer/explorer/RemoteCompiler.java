@@ -145,6 +145,9 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                         normalizePaths(compiledResult.stdout);
                         normalizePaths(compiledResult.stderr);
                         normalizePaths(compiledResult.asm);
+                        if (compiledResult.execResult != null) {
+                            normalizePaths(compiledResult.execResult.stdout);
+                        }
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, compiledResult)));
                     } else {
                         String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));

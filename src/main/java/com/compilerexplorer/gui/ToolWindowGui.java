@@ -229,7 +229,7 @@ public class ToolWindowGui {
 
         addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false);
         addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
-        addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
+        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
         addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
         addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
         actionGroup.add(new Separator());
@@ -611,6 +611,18 @@ public class ToolWindowGui {
                 return;
             }
 
+            if (compiledText.getCompiledResult().execResult != null) {
+                StringBuilder execResultBuilder = new StringBuilder();
+                for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().execResult.stdout) {
+                    if (chunk.text != null) {
+                        execResultBuilder.append(chunk.text);
+                        execResultBuilder.append('\n');
+                    }
+                }
+                showPlainText(execResultBuilder.toString());
+                return;
+            }
+
             SettingsState state = getState();
             boolean shortenTemplates = state.getShortenTemplates();
             List<Range> newHighlighterRanges = new ArrayList<>();
@@ -685,13 +697,17 @@ public class ToolWindowGui {
     }
 
     private void showError(@NotNull String reason) {
+        showPlainText(reason);
+    }
+
+    private void showPlainText(@NotNull String text) {
         ApplicationManager.getApplication().assertIsDispatchThread();
         suppressUpdates = true;
         locationsFromSourceMap.clear();
         locationsToSourceMap.clear();
 
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
-        editor.setText(filterOutTerminalEscapeSequences(reason));
+        editor.setText(filterOutTerminalEscapeSequences(text));
         editor.setEnabled(false);
 
         highlighters.clear();

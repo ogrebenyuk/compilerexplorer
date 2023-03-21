@@ -67,11 +67,32 @@ public class CompiledText {
         }
     }
 
+    public static class ExecResult {
+        public List<CompiledChunk> stdout;
+
+        @Override
+        public int hashCode() {
+            return stdout.hashCode()
+                    ;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof ExecResult other)) {
+                return false;
+            }
+            return stdout.equals(other.stdout)
+                    ;
+        }
+    }
+
     public static class CompiledResult {
         public int code;
         public List<CompiledChunk> stdout;
         public List<CompiledChunk> stderr;
         public List<CompiledChunk> asm;
+        @Nullable
+        public ExecResult execResult;
 
         @SuppressWarnings("WeakerAccess")
         @Override
@@ -80,6 +101,7 @@ public class CompiledText {
                     + stdout.hashCode()
                     + stderr.hashCode()
                     + asm.hashCode()
+                    + (execResult != null ? execResult.hashCode() : 0)
                     ;
         }
 
@@ -93,6 +115,7 @@ public class CompiledText {
                     && stdout.equals(other.stdout)
                     && stderr.equals(other.stderr)
                     && asm.equals(other.asm)
+                    && (execResult == null || execResult.equals(other.execResult))
                     ;
         }
     }
