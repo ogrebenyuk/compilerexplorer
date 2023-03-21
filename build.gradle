@@ -5,10 +5,14 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.19'
+version '1.20'
 
 patchPluginXml {
     changeNotes = """
+        1.20:<br/>
+        Updated to CLion 2022.3.3.<br/>
+        Fixed several small bugs.<br/>
+        ===<br/>
         1.19:<br/>
         Remote toolchain support.<br/>
         Updated to CLion 2022.3.2.<br/>
