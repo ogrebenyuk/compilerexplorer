@@ -23,6 +23,12 @@ public class CompiledText {
             line = line_;
         }
 
+        @Override
+        public String toString()
+        {
+            return (file != null ? file : "") + ":" + line;
+        }
+
         @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
@@ -66,7 +72,7 @@ public class CompiledText {
             }
             return text.equals(other.text)
                     && source.equals(other.source)
-                    && (opcodes == null || opcodes.equals(other.opcodes))
+                    && Objects.equals(opcodes, other.opcodes)
                     ;
         }
     }
@@ -119,7 +125,7 @@ public class CompiledText {
                     && stdout.equals(other.stdout)
                     && stderr.equals(other.stderr)
                     && asm.equals(other.asm)
-                    && (execResult == null || execResult.equals(other.execResult))
+                    && Objects.equals(execResult, other.execResult)
                     ;
         }
     }

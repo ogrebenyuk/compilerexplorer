@@ -44,6 +44,7 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.lang.Error;
 import java.nio.file.Paths;
 import java.util.*;
@@ -639,22 +640,22 @@ public class ToolWindowGui {
             };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
-                    int chunkSize = parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
-                    int nextOffset = currentOffset + chunkSize;
+                    final int chunkSize = parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
                     if (chunk.source != null && chunk.source.file != null) {
-                        if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
+                        String currentChunkFile = PathNormalizer.normalizePath(new File(chunk.source.file).getAbsolutePath());
+                        if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                             }
                             lastRangeBegin = currentOffset;
-                            lastChunk.file = chunk.source.file;
+                            lastChunk.file = currentChunkFile;
                             lastChunk.line = chunk.source.line;
                         }
                     } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                         rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
-                    currentOffset = nextOffset + 1;
+                    currentOffset += chunkSize;
                 }
             }
             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
@@ -729,9 +730,12 @@ public class ToolWindowGui {
     private static int parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
         int length = 0;
         builder.append('#');
+        length++;
         for (String opcode : opcodes) {
             builder.append(' ');
+            length++;
             builder.append(opcode);
+            length += opcode.length();
         }
         builder.append('\n');
         length++;
