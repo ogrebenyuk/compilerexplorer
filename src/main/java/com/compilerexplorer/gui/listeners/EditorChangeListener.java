@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.listeners;
 
+import com.compilerexplorer.common.DisposableParentProjectService;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
@@ -27,7 +28,7 @@ public class EditorChangeListener {
             private Editor[] findEditors(@NotNull Document document) {
                 return EditorFactory.getInstance().getEditors(document, project);
             }
-        });
+        }, DisposableParentProjectService.getInstance(project));
 
     }
 }

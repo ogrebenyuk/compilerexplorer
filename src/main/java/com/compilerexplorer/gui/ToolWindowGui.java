@@ -30,6 +30,7 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.components.JBTextField;
 import org.jetbrains.annotations.NotNull;
@@ -91,7 +92,7 @@ public class ToolWindowGui {
     private final List<RangeHighlighter> highlighters = new ArrayList<>();
     @NotNull
     private final LineMarkerRenderer lineMarkerRenderer = (editor, graphics, rectangle) -> {
-        graphics.setColor(new Color(getState().getHighlightColorRGB()));
+        graphics.setColor(new JBColor(getState().getHighlightColorRGB(), getState().getHighlightColorRGB()));
         int margin = rectangle.width;
         int[] xPoints = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
         int[] yPoints = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
@@ -99,7 +100,7 @@ public class ToolWindowGui {
     };
     private boolean showAnnotations = false;
     @NotNull
-    AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
+    private final AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
         @Override
         public void actionPerformed(@NotNull AnActionEvent event) {
             ShowSettingsUtil.getInstance().showSettingsDialog(project, Constants.PROJECT_TITLE);
@@ -107,6 +108,10 @@ public class ToolWindowGui {
         @Override
         public void update(@NotNull AnActionEvent event) {
             event.getPresentation().setIcon(AllIcons.General.Settings);
+        }
+        @Override
+        public @NotNull ActionUpdateThread getActionUpdateThread() {
+            return ActionUpdateThread.BGT;
         }
     };
 
@@ -249,6 +254,10 @@ public class ToolWindowGui {
             public void update(@NotNull AnActionEvent event) {
                 event.getPresentation().setIcon(AllIcons.Actions.ForceRefresh);
             }
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
         });
 
         toolWindow.setAdditionalGearActions(actionGroup);
@@ -265,6 +274,10 @@ public class ToolWindowGui {
             public void update(@NotNull AnActionEvent event) {
                 event.getPresentation().setIcon(AllIcons.General.Locate);
                 event.getPresentation().setVisible(!getState().getAutoscrollFromSource());
+            }
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
             }
         }));
 
@@ -385,6 +398,10 @@ public class ToolWindowGui {
                 if (reparse) {
                     asCompiledTextConsumer().accept(compiledText);
                 }
+            }
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
             }
         });
     }
@@ -749,9 +766,9 @@ public class ToolWindowGui {
     }
 
     private static boolean isOperator(@NotNull String text, int i) {
-        return ((i >= 8 && text.charAt(i - 1) == 'r' && text.substring(i - 8, i).equals("operator")) ||
+        return ((i >= 8 && text.charAt(i - 1) == 'r' && text.startsWith("operator", i - 8)) ||
                 (i >= 1 && text.charAt(i - 1) == '-') ||
-                (i >= 10 && text.charAt(i - 1) == '=' && text.substring(i - 8, i).equals("operator<="))
+                (i >= 10 && text.charAt(i - 1) == '=' && text.startsWith("operator<=", i - 10))
         );
     }
 
@@ -801,7 +818,7 @@ public class ToolWindowGui {
             if (ranges != null) {
                 for (Range range : ranges) {
                     if (highlight) {
-                        highlightAttributes.setBackgroundColor(new Color(state.getHighlightColorRGB()));
+                        highlightAttributes.setBackgroundColor(new JBColor(state.getHighlightColorRGB(), state.getHighlightColorRGB()));
                         RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
                         highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
                         highlighters.add(highlighter);

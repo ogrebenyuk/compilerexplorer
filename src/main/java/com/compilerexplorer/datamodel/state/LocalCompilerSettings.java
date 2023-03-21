@@ -74,11 +74,10 @@ public class LocalCompilerSettings {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof LocalCompilerSettings)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof LocalCompilerSettings other)) {
             return false;
         }
-        LocalCompilerSettings other = (LocalCompilerSettings)obj;
         return getName().equals(other.getName())
             && getVersion().equals(other.getVersion())
             && getTarget().equals(other.getTarget())

@@ -33,10 +33,9 @@ public class SourceCompilerSettings {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SourceCompilerSettings)) {
+        if (!(obj instanceof SourceCompilerSettings other)) {
             return false;
         }
-        SourceCompilerSettings other = (SourceCompilerSettings)obj;
         return getSourceSettings().equals(other.getSourceSettings())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
                 ;

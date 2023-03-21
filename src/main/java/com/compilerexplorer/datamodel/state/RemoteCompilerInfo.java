@@ -94,11 +94,10 @@ public class RemoteCompilerInfo {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof RemoteCompilerInfo)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof RemoteCompilerInfo other)) {
             return false;
         }
-        RemoteCompilerInfo other = (RemoteCompilerInfo) obj;
         return getId().equals(other.getId())
                 && getName().equals(other.getName())
                 && getLanguage().equals(other.getLanguage())

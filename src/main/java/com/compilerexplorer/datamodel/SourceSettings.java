@@ -97,10 +97,9 @@ public class SourceSettings {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof  SourceSettings)) {
+        if (!(obj instanceof SourceSettings other)) {
             return false;
         }
-        SourceSettings other = (SourceSettings)obj;
         return getSource().getPath().equals(other.getSource().getPath())
                 && getLanguage().equals(other.getLanguage())
                 && getLanguageSwitch().equals(other.getLanguageSwitch())

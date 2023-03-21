@@ -33,10 +33,9 @@ public class SourceRemoteMatched {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SourceRemoteMatched)) {
+        if (!(obj instanceof SourceRemoteMatched other)) {
             return false;
         }
-        SourceRemoteMatched other = (SourceRemoteMatched)obj;
         return getSourceCompilerSettings().equals(other.getSourceCompilerSettings())
                 && getRemoteCompilerMatches().equals(other.getRemoteCompilerMatches())
                 ;

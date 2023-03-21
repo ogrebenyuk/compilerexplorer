@@ -1,7 +1,6 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.compilerexplorer.common.Constants;
-import com.intellij.ui.JBColor;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
@@ -277,11 +276,10 @@ public class SettingsState {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof SettingsState)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof SettingsState other)) {
             return false;
         }
-        SettingsState other = (SettingsState)obj;
         return getEnabled() == other.getEnabled()
                 && getUrl().equals(other.getUrl())
                 && getConnected() == other.getConnected()

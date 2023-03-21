@@ -79,19 +79,11 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
             }
         };
         Consumer<RefreshSignal> refresher = refreshSignal -> {
-            switch(refreshSignal) {
-                case RESET:
-                    projectListener.refresh();
-                    break;
-                case RECONNECT:
-                    remoteCompilersProducer.refresh();
-                    break;
-                case PREPROCESS:
-                    preprocessor.refresh();
-                    break;
-                case COMPILE:
-                    explorer.refresh();
-                    break;
+            switch (refreshSignal) {
+                case RESET -> projectListener.refresh();
+                case RECONNECT -> remoteCompilersProducer.refresh();
+                case PREPROCESS -> preprocessor.refresh();
+                case COMPILE -> explorer.refresh();
             }
         };
         Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {

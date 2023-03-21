@@ -131,11 +131,10 @@ public class Filters {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof Filters)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Filters other)) {
             return false;
         }
-        Filters other = (Filters)obj;
         return getBinary() == other.getBinary()
                 && getExecute() == other.getExecute()
                 && getLabels() == other.getLabels()

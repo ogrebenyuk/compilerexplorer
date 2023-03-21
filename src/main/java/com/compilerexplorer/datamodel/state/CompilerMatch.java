@@ -60,11 +60,10 @@ public class CompilerMatch {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof CompilerMatch)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CompilerMatch other)) {
             return false;
         }
-        CompilerMatch other = (CompilerMatch)obj;
         return getRemoteCompilerInfo().equals(other.getRemoteCompilerInfo())
                 && getCompilerMatchKind().equals(other.getCompilerMatchKind())
                 ;

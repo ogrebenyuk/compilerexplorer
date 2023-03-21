@@ -63,11 +63,10 @@ public class CompilerMatches {
     }
 
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof CompilerMatches)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof CompilerMatches other)) {
             return false;
         }
-        CompilerMatches other = (CompilerMatches)obj;
         return getChosenMatch().equals(other.getChosenMatch())
                 && getOtherMatches().equals(other.getOtherMatches())
                 ;

@@ -25,10 +25,9 @@ public class ProjectSettings {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ProjectSettings)) {
+        if (!(obj instanceof ProjectSettings other)) {
             return false;
         }
-        ProjectSettings other = (ProjectSettings)obj;
         return getSettings().equals(other.getSettings())
                 ;
     }

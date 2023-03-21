@@ -45,11 +45,10 @@ public class LocalCompilerPath {
 
     @SuppressWarnings("unused")
     @Override
-    public boolean equals(@NotNull Object obj) {
-        if (!(obj instanceof LocalCompilerPath)) {
+    public boolean equals(Object obj) {
+        if (!(obj instanceof LocalCompilerPath other)) {
             return false;
         }
-        LocalCompilerPath other = (LocalCompilerPath)obj;
         return getPath().equals(other.getPath());
     }
 }

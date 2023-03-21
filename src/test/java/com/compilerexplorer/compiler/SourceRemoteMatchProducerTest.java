@@ -1,27 +1,27 @@
 package com.compilerexplorer.compiler;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.*;
 
-public class SourceRemoteMatchProducerTest {
+class SourceRemoteMatchProducerTest {
     @Test
-    public void testExactMatch() {
+    void testExactMatch() {
         verifyExactMatch("0", "0");
         verifyExactMatch("0.0", "0.0");
         verifyExactMatch("0.0.0", "0.0.0");
     }
 
     @Test
-    public void testMinorMismatch() {
+    void testMinorMismatch() {
         verifyMinorMismatch("0.1", "0.0");
         verifyMinorMismatch("0.0.1", "0.0.0");
         verifyMinorMismatch("4.6.4", "4.6.0");
     }
 
     @Test
-    public void testNoMatch() {
+    void testNoMatch() {
         verifyNoMatch("", "0");
         verifyNoMatch("", "0.0");
         verifyNoMatch("", "0.0.0");
@@ -46,8 +46,8 @@ public class SourceRemoteMatchProducerTest {
     }
 
     private static void verifyMatch(@NotNull String remoteName, @NotNull String localVersion, boolean tryMinorMismatch, boolean expectedMatch) {
-        assertFalse(SourceRemoteMatchProducer.versionMatches(remoteName, localVersion, tryMinorMismatch));
-        assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName, localVersion, tryMinorMismatch), expectedMatch);
-        assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName + " ", localVersion, tryMinorMismatch), expectedMatch);
+        Assertions.assertFalse(SourceRemoteMatchProducer.versionMatches(remoteName, localVersion, tryMinorMismatch));
+        Assertions.assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName, localVersion, tryMinorMismatch), expectedMatch);
+        Assertions.assertEquals(SourceRemoteMatchProducer.versionMatches(" " + remoteName + " ", localVersion, tryMinorMismatch), expectedMatch);
     }
 }

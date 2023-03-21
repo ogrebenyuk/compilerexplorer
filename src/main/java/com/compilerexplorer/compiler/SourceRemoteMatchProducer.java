@@ -57,7 +57,7 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
                                                                  @NotNull String localTarget,
                                                                  @NotNull String language) {
         return remoteCompilers.stream()
-                .filter(s -> s.getLanguage().toLowerCase().equals(language.toLowerCase()))
+                .filter(s -> s.getLanguage().equalsIgnoreCase(language))
                 .map(s -> findCompilerVersionMatch(s, localName, localVersion, localVersionFull, localTarget))
                 .collect(Collectors.toList());
     }
@@ -109,7 +109,7 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     @NotNull
     private static String stripLastGCCVersionDigitIfNeeded(@NotNull String version) {
         String[] parts = version.split("\\.");
-        if (parts.length == 3 && Long.valueOf(parts[0]) >= 5) {
+        if (parts.length == 3 && Long.parseLong(parts[0]) >= 5) {
             return version.replaceAll("^(.*)\\.[^.]*$", "$1");
         } else {
             return version;

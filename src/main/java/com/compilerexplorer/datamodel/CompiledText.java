@@ -34,10 +34,9 @@ public class CompiledText {
         @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof SourceLocation)) {
+            if (!(obj instanceof SourceLocation other)) {
                 return false;
             }
-            SourceLocation other = (SourceLocation)obj;
             return Objects.equals(file, other.file)
                     && line == other.line
                     ;
@@ -59,10 +58,9 @@ public class CompiledText {
         @SuppressWarnings("unused")
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof CompiledChunk)) {
+            if (!(obj instanceof CompiledChunk other)) {
                 return false;
             }
-            CompiledChunk other = (CompiledChunk)obj;
             return text.equals(other.text)
                     && source.equals(other.source)
                     ;
@@ -88,10 +86,9 @@ public class CompiledText {
         @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
-            if (!(obj instanceof CompiledResult)) {
+            if (!(obj instanceof CompiledResult other)) {
                 return false;
             }
-            CompiledResult other = (CompiledResult)obj;
             return code == other.code
                     && stdout.equals(other.stdout)
                     && stderr.equals(other.stderr)
@@ -132,10 +129,9 @@ public class CompiledText {
     @SuppressWarnings("unused")
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof CompiledText)) {
+        if (!(obj instanceof CompiledText other)) {
             return false;
         }
-        CompiledText other = (CompiledText)obj;
         return getPreprocessedSource().equals(other.getPreprocessedSource())
                 && getCompiledResult().equals(other.getCompiledResult())
                 ;

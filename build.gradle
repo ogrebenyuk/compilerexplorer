@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id "org.jetbrains.intellij" version '1.12.0'
+    id "org.jetbrains.intellij" version '1.13.2'
     id 'de.undercouch.download' version '3.4.2'
 }
 
@@ -70,16 +70,23 @@ patchPluginXml {
     """
 }
 
-sourceCompatibility = 11
+sourceCompatibility = 17
 
-def clionVersion = '2022.3.2'
+def clionVersion = '2022.3.3'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation group: 'junit', name: 'junit', version: '4.12'
+//    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.9.2'
+//    testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.9.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
 }
 
 intellij {

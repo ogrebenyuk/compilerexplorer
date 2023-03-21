@@ -6,6 +6,7 @@ import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.ColorPanel;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
@@ -179,10 +180,10 @@ public class SettingsGui {
     private void populateGuiFromState() {
         urlField.setText(state.getUrl());
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
-        highlightColorChooserPanel.setSelectedColor(new Color(state.getHighlightColorRGB()));
+        highlightColorChooserPanel.setSelectedColor(new JBColor(state.getHighlightColorRGB(), state.getHighlightColorRGB()));
         delayMillisField.setText(String.valueOf(state.getDelayMillis()));
         compilerTimeoutMillisField.setText(String.valueOf(state.getCompilerTimeoutMillis()));
-        ignoreSwitchesField.setText(String.valueOf(state.getIgnoreSwitches()));
+        ignoreSwitchesField.setText(state.getIgnoreSwitches());
     }
 
     private void populateStateFromGui(@NotNull SettingsState state_) {

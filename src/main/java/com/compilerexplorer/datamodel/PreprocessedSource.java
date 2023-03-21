@@ -32,10 +32,9 @@ public class PreprocessedSource {
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof PreprocessedSource)) {
+        if (!(obj instanceof PreprocessedSource other)) {
             return false;
         }
-        PreprocessedSource other = (PreprocessedSource)obj;
         return getSourceRemoteMatched().equals(other.getSourceRemoteMatched())
                 && getPreprocessedText().equals(other.getPreprocessedText())
                 ;

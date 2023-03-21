@@ -1,6 +1,6 @@
 package com.compilerexplorer.gui.listeners;
 
-import com.intellij.openapi.application.ApplicationManager;
+import com.compilerexplorer.common.DisposableParentProjectService;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.CaretEvent;
@@ -44,7 +44,7 @@ public class AllEditorsListener {
     }
 
     private void subscribeToNewEditors() {
-        EditorFactory.getInstance().addEditorFactoryListener(new EditorLifetimeListener(this::addListeners, this::removeListeners), ApplicationManager.getApplication());
+        EditorFactory.getInstance().addEditorFactoryListener(new EditorLifetimeListener(this::addListeners, this::removeListeners), DisposableParentProjectService.getInstance(project));
     }
 
     private void subscribeToSelectedEditorChanges() {

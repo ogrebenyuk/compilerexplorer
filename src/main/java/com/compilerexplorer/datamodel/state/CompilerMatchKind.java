@@ -9,11 +9,11 @@ public enum CompilerMatchKind {
 
     @NotNull
     public static String asString(@NotNull CompilerMatchKind kind) {
-        switch (kind) {
-            case EXACT_MATCH: return "exact match";
-            case MINOR_MISMATCH: return "minor version mismatch";
-        }
-        return "";
+        return switch (kind) {
+            case EXACT_MATCH -> "exact match";
+            case MINOR_MISMATCH -> "minor version mismatch";
+            default -> "";
+        };
     }
 
     @NotNull
