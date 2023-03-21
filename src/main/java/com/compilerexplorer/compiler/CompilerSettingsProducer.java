@@ -14,11 +14,8 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
-
-import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 
 public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
@@ -49,7 +46,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
         }
 
         {
-            LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()));
+            LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.getCompilerPath()));
             if (existingSettings != null) {
                 sourceCompilerSettingsConsumer.accept(new SourceCompilerSettings(sourceSettings, existingSettings));
                 return;
@@ -61,16 +58,12 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
             return;
         }
 
-        File compiler = sourceSettings.getCompiler();
-        File compilerWorkingDir = compiler.getParentFile();
-        OCResolveConfiguration configuration = sourceSettings.getConfiguration();
-
         taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + sourceSettings.getSourceName()) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] versionCommandLine = getVersionCommandLine(sourceSettings);
                 try {
-                    CompilerRunner versionRunner = new CompilerRunner(configuration, versionCommandLine, compilerWorkingDir, "", indicator, state.getCompilerTimeoutMillis());
+                    CompilerRunner versionRunner = new CompilerRunner(sourceSettings.getHost(), versionCommandLine, sourceSettings.getCompilerWorkingDir(), "", indicator, state.getCompilerTimeoutMillis());
                     String versionText = versionRunner.getStderr();
                     if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
                         String compilerVersion = parseCompilerVersion(sourceSettings.getCompilerKind(), versionText);
@@ -78,14 +71,14 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
                         if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
                             LocalCompilerSettings newSettings = new LocalCompilerSettings(sourceSettings.getCompilerKind(), compilerVersion, compilerTarget);
                             ApplicationManager.getApplication().invokeLater(() -> {
-                                state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.getCompiler().getAbsolutePath()), newSettings);
+                                state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.getCompilerPath()), newSettings);
                                 sourceCompilerSettingsConsumer.accept(new SourceCompilerSettings(sourceSettings, newSettings));
                             });
                         } else {
                             errorLater("Cannot parse compiler version:\n" + versionText);
                         }
                     } else {
-                        errorLater("Cannot run compiler:\n" + String.join(" ", versionCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText);
+                        errorLater("Cannot run compiler:\n" + String.join(" ", versionCommandLine) + "\nWorking directory:\n" + sourceSettings.getCompilerWorkingDir() + "\nExit code " + versionRunner.getExitCode() + "\nOutput:\n" + versionRunner.getStdout() + "Errors:\n" + versionText);
                     }
                 } catch (ProcessCanceledException canceledException) {
                     //errorLater("Cannot determine compiler version:\n" + String.join(" ", versionCommandLine) + "\nCanceled");
@@ -107,7 +100,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettings> {
     @NotNull
     private static String[] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
         return Stream.of(
-                sourceSettings.getCompiler().getAbsolutePath(),
+                sourceSettings.getCompilerPath(),
                 "-v"
         ).toArray(String[]::new);
     }

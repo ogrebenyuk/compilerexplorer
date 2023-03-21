@@ -452,7 +452,7 @@ public class ToolWindowGui {
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
         return "File: " + sourceSettings.getSourcePath()
                 + "<br/>Language: " + sourceSettings.getLanguage()
-                + "<br/>Compiler: " + sourceSettings.getCompiler().getAbsolutePath()
+                + "<br/>Compiler: " + sourceSettings.getCompilerPath()
                 + "<br/>Compiler kind: " + sourceSettings.getCompilerKind()
                 + "<br/>Compiler options: " + String.join(" ", sourceSettings.getSwitches());
     }
@@ -491,7 +491,8 @@ public class ToolWindowGui {
                 + "<br/>Language: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
                 + "<br/>Name: " + compilerMatch.getRemoteCompilerInfo().getName()
                 + "<br/>Version: " + compilerMatch.getRemoteCompilerInfo().getVersion()
-                + "<br/>Match kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind());
+                + "<br/>Match kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind())
+                + "<br/>Raw data: " + compilerMatch.getRemoteCompilerInfo().getRawData();
     }
 
     public void setSourceSettingsConsumer(@NotNull Consumer<SourceSettings> sourceSettingsConsumer_) {

@@ -35,7 +35,7 @@ public class SourceRemoteMatchSaver<T> implements Consumer<T> {
             return;
         }
 
-        state.getCompilerMatches().put(new LocalCompilerPath(producer.apply(sourceRemoteMatched).getSourceCompilerSettings().getSourceSettings().getCompiler().getAbsolutePath()), producer.apply(sourceRemoteMatched).getRemoteCompilerMatches());
+        state.getCompilerMatches().put(new LocalCompilerPath(producer.apply(sourceRemoteMatched).getSourceCompilerSettings().getSourceSettings().getCompilerPath()), producer.apply(sourceRemoteMatched).getRemoteCompilerMatches());
         sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
     }
 

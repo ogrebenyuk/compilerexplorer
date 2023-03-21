@@ -32,7 +32,7 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
         }
 
         {
-            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompiler().getAbsolutePath()));
+            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompilerPath()));
             if (existingMatches != null) {
                 sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
                 return;

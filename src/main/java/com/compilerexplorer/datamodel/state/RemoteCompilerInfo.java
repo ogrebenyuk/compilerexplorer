@@ -24,8 +24,10 @@ public class RemoteCompilerInfo {
     private String language = "";
     @Nullable
     @Property
-    @SerializedName("version")
+    @SerializedName("semver")
     private String version = "";
+    @NotNull
+    private String rawData = "";
 
     RemoteCompilerInfo() {
         // empty
@@ -71,6 +73,14 @@ public class RemoteCompilerInfo {
         version = version_;
     }
 
+    @NotNull
+    public String getRawData() {
+        return rawData;
+    }
+
+    public void setRawData(@NotNull String rawData_) {
+        rawData = rawData_;
+    }
 
     @NotNull
     private static String getStringOrEmpty(@Nullable String s) {
@@ -82,6 +92,7 @@ public class RemoteCompilerInfo {
         setName(other.getName());
         setLanguage(other.getLanguage());
         setVersion(other.getVersion());
+        setRawData(other.getRawData());
     }
 
     @Override
@@ -90,6 +101,7 @@ public class RemoteCompilerInfo {
                 + getName().hashCode()
                 + getLanguage().hashCode()
                 + getVersion().hashCode()
+                + getRawData().hashCode()
                 ;
     }
 
@@ -102,6 +114,7 @@ public class RemoteCompilerInfo {
                 && getName().equals(other.getName())
                 && getLanguage().equals(other.getLanguage())
                 && getVersion().equals(other.getVersion())
+                && getRawData().equals(other.getRawData())
                 ;
     }
 }

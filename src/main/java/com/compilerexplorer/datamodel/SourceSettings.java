@@ -2,16 +2,13 @@ package com.compilerexplorer.datamodel;
 
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.jetbrains.cidr.system.HostMachine;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.List;
 
-import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-
 public class SourceSettings {
-    @NotNull
-    private final OCResolveConfiguration configuration;
     @NotNull
     private final VirtualFile source;
     @NotNull
@@ -28,8 +25,10 @@ public class SourceSettings {
     private final String compilerKind;
     @NotNull
     private final List<String> switches;
+    @NotNull
+    private final HostMachine host;
 
-    public SourceSettings(@NotNull OCResolveConfiguration configuration_, @NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_) {
+    public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_, @NotNull HostMachine host_) {
         source = source_;
         sourcePath = sourcePath_;
         sourceName = source.getPresentableName();
@@ -38,11 +37,8 @@ public class SourceSettings {
         compiler = compiler_;
         compilerKind = compilerKind_;
         switches = switches_;
-        configuration = configuration_;
+        host = host_;
     }
-
-    @NotNull
-    public OCResolveConfiguration getConfiguration() { return configuration; }
 
     @NotNull
     public VirtualFile getSource() {
@@ -70,8 +66,19 @@ public class SourceSettings {
     }
 
     @NotNull
-    public File getCompiler() {
+    private File getCompiler() {
         return compiler;
+    }
+
+    @NotNull
+    public File getCompilerWorkingDir() {
+        return compiler.getParentFile();
+    }
+
+    @NotNull
+    public String getCompilerPath()
+    {
+        return host.isRemote() ? compiler.getPath() : compiler.getAbsolutePath();
     }
 
     @NotNull
@@ -84,6 +91,9 @@ public class SourceSettings {
         return switches;
     }
 
+    @NotNull
+    public HostMachine getHost() { return host; }
+
     @Override
     public int hashCode() {
         return getSource().hashCode()
@@ -92,6 +102,7 @@ public class SourceSettings {
                 + FileUtil.fileHashCode(getCompiler())
                 + getCompilerKind().hashCode()
                 + getSwitches().hashCode()
+                + getHost().hashCode()
                 ;
     }
 
@@ -106,6 +117,7 @@ public class SourceSettings {
                 && FileUtil.filesEqual(getCompiler(), other.getCompiler())
                 && getCompilerKind().equals(other.getCompilerKind())
                 && String.join(" ", getSwitches()).equals(String.join(" ", other.getSwitches()))
+                && getHost().equals(other.getHost())
                 ;
     }
 }

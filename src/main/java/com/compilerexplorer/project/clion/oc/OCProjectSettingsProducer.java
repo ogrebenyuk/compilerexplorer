@@ -3,8 +3,14 @@ package com.compilerexplorer.project.clion.oc;
 import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.datamodel.ProjectSettings;
 import com.compilerexplorer.datamodel.SourceSettings;
+import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
+import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
+import com.jetbrains.cidr.cpp.execution.CMakeAppRunConfiguration;
+import com.jetbrains.cidr.cpp.execution.CMakeBuildProfileExecutionTarget;
+import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
@@ -12,6 +18,7 @@ import com.jetbrains.cidr.lang.workspace.OCWorkspaceRunConfigurationListener;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
+import com.jetbrains.cidr.system.HostMachine;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -38,11 +45,11 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
     @NotNull
     private static ProjectSettings collect(@NotNull Project project) {
         OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(project);
-        return (configuration != null) ? collect(configuration) : new ProjectSettings(new Vector<>());
+        return (configuration != null) ? collect(project, configuration) : new ProjectSettings(new Vector<>());
     }
 
     @NotNull
-    private static ProjectSettings collect(@NotNull OCResolveConfiguration configuration) {
+    private static ProjectSettings collect(@NotNull Project project, @NotNull OCResolveConfiguration configuration) {
         return new ProjectSettings(configuration.getSources().stream().sorted(Comparator.comparing(VirtualFile::getName)).map(virtualFile -> {
             OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
             if (language != null) {
@@ -51,10 +58,29 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
                 OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
                 CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
                 if (compiler != null && compilerKind != null && switches != null) {
-                    return new SourceSettings(configuration,  virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW));
+                    return new SourceSettings(virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW), getHostMachine(project));
                 }
             }
             return null;
         }).filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
+    }
+
+    @NotNull
+    private static HostMachine getHostMachine(@NotNull Project project) {
+        try {
+            CMakeAppRunConfiguration runConfiguration = CMakeAppRunConfiguration.getSelectedRunConfiguration(project);
+            CMakeBuildProfileExecutionTarget executionTarget = CMakeAppRunConfiguration.getSelectedBuildProfile(project);
+            assert runConfiguration != null;
+            assert executionTarget != null;
+            CMakeAppRunConfiguration.BuildAndRunConfigurations buildAndRunConfiguration = runConfiguration.getBuildAndRunConfigurations(executionTarget);
+            CMakeWorkspace cMakeWorkspace = CMakeWorkspace.getInstance(project);
+            assert buildAndRunConfiguration != null;
+            final CMakeProfileInfo cMakeProfileInfo = cMakeWorkspace.getProfileInfoFor(buildAndRunConfiguration.buildConfiguration);
+            final CPPEnvironment environment = cMakeProfileInfo.getEnvironment();
+            assert environment != null;
+            return environment.getHostMachine();
+        } catch (ExecutionException e) {
+            throw new RuntimeException("Fatal error");
+        }
     }
 }

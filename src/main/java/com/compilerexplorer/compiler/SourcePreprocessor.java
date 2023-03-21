@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-
 public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
     @NotNull
     private final Project project;
@@ -55,34 +53,31 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         }
 
         SourceSettings sourceSettings = preprocessableSource.getSourceCompilerSettings().getSourceSettings();
-        OCResolveConfiguration configuration = sourceSettings.getConfiguration();
         Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.getSource());
         if (document == null) {
             errorLater("Cannot get document " + sourceSettings.getSourcePath());
             return;
         }
 
-        boolean isRemote = CompilerRunner.getHostMachine(configuration).isRemote();
         String sourceText = "# 1 \"" + sourceSettings.getSourcePath().replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
-        if (isRemote || !state.getPreprocessLocally()) {
+        if (!state.getPreprocessLocally()) {
             preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, sourceText));
             return;
         }
 
         String name = sourceSettings.getSourceName();
-        File compiler = preprocessableSource.getSourceCompilerSettings().getSourceSettings().getCompiler();
-        File compilerWorkingDir = compiler.getParentFile();
         taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + name) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
                 try {
-                    CompilerRunner compilerRunner = new CompilerRunner(configuration, preprocessorCommandLine, compilerWorkingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
+                    File compilerWorkingDir = preprocessableSource.getSourceCompilerSettings().getSourceSettings().getCompilerWorkingDir();
+                    CompilerRunner compilerRunner = new CompilerRunner(sourceSettings.getHost(), preprocessorCommandLine, compilerWorkingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
                     String preprocessedText = compilerRunner.getStdout();
                     if (compilerRunner.getExitCode() == 0 && !preprocessedText.isEmpty()) {
                         ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(new PreprocessedSource(preprocessableSource, preprocessedText)));
                     } else {
-                        errorLater("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir.getAbsolutePath() + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr());
+                        errorLater("Cannot run preprocessor:\n" + String.join(" ", preprocessorCommandLine) + "\nWorking directory:\n" + compilerWorkingDir + "\nExit code " + compilerRunner.getExitCode() + "\nOutput:\n" + preprocessedText + "Errors:\n" + compilerRunner.getStderr());
                     }
                 } catch (ProcessCanceledException canceledException) {
                     //errorLater("Canceled preprocessing " + name + ":\n" + String.join(" ", preprocessorCommandLine));
@@ -98,7 +93,7 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         return Stream.concat(
                 Stream.concat(
                         Stream.concat(
-                                Stream.of(sourceSettings.getCompiler().getAbsolutePath(),
+                                Stream.of(sourceSettings.getCompilerPath(),
                                         "-I" + Paths.get(sourceSettings.getSourcePath()).getParent().toString(),
                                         "-I" + project.getBasePath()
                                 ),

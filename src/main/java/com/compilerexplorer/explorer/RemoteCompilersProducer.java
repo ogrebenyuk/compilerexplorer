@@ -94,7 +94,9 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                     Gson gson = new Gson();
                     List<RemoteCompilerInfo> compilers = new ArrayList<>();
                     for (JsonElement elem : array) {
-                        compilers.add(gson.fromJson(elem, RemoteCompilerInfo.class));
+                        RemoteCompilerInfo info = gson.fromJson(elem, RemoteCompilerInfo.class);
+                        info.setRawData(elem.toString());
+                        compilers.add(info);
                     }
                     indicator.checkCanceled();
                     ApplicationManager.getApplication().invokeLater(() -> {
