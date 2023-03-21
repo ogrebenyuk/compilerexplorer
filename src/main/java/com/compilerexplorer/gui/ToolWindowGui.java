@@ -639,9 +639,8 @@ public class ToolWindowGui {
             };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
-                    int chunkSize = parseChunk(asmBuilder, chunk.text, shortenTemplates);
+                    int chunkSize = parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
                     int nextOffset = currentOffset + chunkSize;
-                    asmBuilder.append('\n');
                     if (chunk.source != null && chunk.source.file != null) {
                         if ((!chunk.source.file.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
@@ -714,13 +713,29 @@ public class ToolWindowGui {
         suppressUpdates = false;
     }
 
-    private static int parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
+    private static int parseChunk(@NotNull StringBuilder builder, @NotNull String text, @Nullable List<String> opcodes, boolean shortenTemplates) {
+        int length = opcodes != null ? parseOpcodes(builder, opcodes) : 0;
         if (shortenTemplates && containsTemplates(text)) {
-            return doShortenTemplates(builder, text);
+            length += doShortenTemplates(builder, text);
         } else {
             builder.append(text);
-            return text.length();
+            length += text.length();
         }
+        builder.append('\n');
+        length++;
+        return length;
+    }
+
+    private static int parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
+        int length = 0;
+        builder.append('#');
+        for (String opcode : opcodes) {
+            builder.append(' ');
+            builder.append(opcode);
+        }
+        builder.append('\n');
+        length++;
+        return length;
     }
 
     private static boolean containsTemplates(@NotNull String text) {

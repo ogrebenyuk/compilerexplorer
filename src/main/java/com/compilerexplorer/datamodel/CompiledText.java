@@ -46,12 +46,15 @@ public class CompiledText {
     public static class CompiledChunk {
         public String text;
         public SourceLocation source;
+        @Nullable
+        public List<String> opcodes;
 
         @SuppressWarnings("unused")
         @Override
         public int hashCode() {
             return text.hashCode()
                     + source.hashCode()
+                    + (opcodes != null ? opcodes.hashCode() : 0)
                     ;
         }
 
@@ -63,6 +66,7 @@ public class CompiledText {
             }
             return text.equals(other.text)
                     && source.equals(other.source)
+                    && (opcodes == null || opcodes.equals(other.opcodes))
                     ;
         }
     }
