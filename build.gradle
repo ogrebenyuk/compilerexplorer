@@ -9,7 +9,7 @@ version '1.21'
 
 patchPluginXml {
     changeNotes = """
-        1.20:<br/>
+        1.21:<br/>
         Added the missing "library functions" filter.<br/>
         Added the missing "link to binary" output toggle.<br/>
         Added the missing "execute the code" functionality.<br/>
