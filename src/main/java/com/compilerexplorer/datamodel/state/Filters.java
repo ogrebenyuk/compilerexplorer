@@ -13,11 +13,17 @@ public class Filters {
     @SerializedName("binary")
     private boolean binary = false;
     @Property
+    @SerializedName("binaryObject")
+    private boolean binaryObject = false;
+    @Property
     @SerializedName("execute")
     private boolean execute = false;
     @Property
     @SerializedName("labels")
     private boolean labels = true;
+    @Property
+    @SerializedName("libraryCode")
+    private boolean libraryCode = true;
     @Property
     @SerializedName("directives")
     private boolean directives = true;
@@ -50,6 +56,14 @@ public class Filters {
         binary = binary_;
     }
 
+    public boolean getBinaryObject() {
+        return binaryObject;
+    }
+
+    public void setBinaryObject(boolean binaryObject_) {
+        binaryObject = binaryObject_;
+    }
+
     public boolean getExecute() {
         return execute;
     }
@@ -64,6 +78,14 @@ public class Filters {
 
     public void setLabels(boolean labels_) {
         labels = labels_;
+    }
+
+    public boolean getLibraryCode() {
+        return libraryCode;
+    }
+
+    public void setLibraryCode(boolean libraryCode_) {
+        libraryCode = libraryCode_;
     }
 
     public boolean getDirectives() {
@@ -108,8 +130,10 @@ public class Filters {
 
     private void copyFrom(@NotNull Filters other) {
         setBinary(other.getBinary());
+        setBinaryObject(other.getBinaryObject());
         setExecute(other.getExecute());
         setLabels(other.getLabels());
+        setLibraryCode(other.getLibraryCode());
         setDirectives(other.getDirectives());
         setCommentOnly(other.getCommentOnly());
         setTrim(other.getTrim());
@@ -120,8 +144,10 @@ public class Filters {
     @Override
     public int hashCode() {
         return (getBinary() ? 1 : 0)
+                + (getBinaryObject() ? 1 : 0)
                 + (getExecute() ? 1 : 0)
                 + (getLabels() ? 1 : 0)
+                + (getLibraryCode() ? 1 : 0)
                 + (getDirectives() ? 1 : 0)
                 + (getCommentOnly() ? 1 : 0)
                 + (getTrim() ? 1 : 0)
@@ -136,8 +162,10 @@ public class Filters {
             return false;
         }
         return getBinary() == other.getBinary()
+                && getBinaryObject() == other.getBinaryObject()
                 && getExecute() == other.getExecute()
                 && getLabels() == other.getLabels()
+                && getLibraryCode() == other.getLibraryCode()
                 && getDirectives() == other.getDirectives()
                 && getCommentOnly() == other.getCommentOnly()
                 && getTrim() == other.getTrim()

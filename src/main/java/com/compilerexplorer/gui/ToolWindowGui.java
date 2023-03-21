@@ -227,14 +227,17 @@ public class ToolWindowGui {
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
 
-        addToggleAction(actionGroup, "Compile to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
+        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false);
+        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
         addToggleAction(actionGroup, "Execute the binary", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
+        actionGroup.add(new Separator());
         addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false);
+        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false);
         addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false);
         addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false);
         addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false);
-        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
-        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
         actionGroup.add(new Separator());
         addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false);
         addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false);

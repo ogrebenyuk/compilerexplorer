@@ -9,6 +9,9 @@ version '1.20'
 
 patchPluginXml {
     changeNotes = """
+        Added the missing "library functions" filter.
+        Added the missing "link to binary" output toggle.
+        ===<br/>
         1.20:<br/>
         Updated to CLion 2022.3.3.<br/>
         Fixed several small bugs.<br/>
@@ -83,8 +86,6 @@ repositories {
 }
 
 dependencies {
-//    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.9.2'
-//    testRuntimeOnly group: 'org.junit.platform', name: 'junit-platform-launcher', version: '1.9.2'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
