@@ -23,7 +23,7 @@ public class Filters {
     private boolean labels = true;
     @Property
     @SerializedName("libraryCode")
-    private boolean libraryCode = true;
+    private boolean libraryCode = false;
     @Property
     @SerializedName("directives")
     private boolean directives = true;
