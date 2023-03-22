@@ -187,7 +187,38 @@ public class ToolWindowGui {
         recompileButton.setIcon(AllIcons.Actions.Refresh);
         recompileButton.setToolTipText("Recompile current source");
         recompileButton.addActionListener(e -> preprocess());
+        Dimension minSquareRecompileSize = new Dimension();
+        minSquareRecompileSize.setSize(recompileButton.getMinimumSize().getHeight(), recompileButton.getMinimumSize().getHeight());
+        recompileButton.setPreferredSize(minSquareRecompileSize);
         headPanel.add(recompileButton);
+
+        DefaultActionGroup actionGroup = new DefaultActionGroup();
+        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false);
+        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
+        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
+        actionGroup.add(new Separator());
+        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false);
+        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false);
+        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false);
+        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false);
+        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false);
+        actionGroup.add(new Separator());
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false);
+        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false);
+        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true);
+        actionGroup.add(showSettingsAction);
+
+        JButton settingsButton = new JButton();
+        settingsButton.setIcon(AllIcons.Actions.More);
+        settingsButton.setToolTipText("Options");
+        settingsButton.addActionListener(e -> ActionManager.getInstance().createActionPopupMenu(ActionPlaces.TOOLWINDOW_POPUP, actionGroup).getComponent().show(settingsButton, 0, settingsButton.getHeight()));
+        Dimension minSquareSettingsSize = new Dimension();
+        minSquareSettingsSize.setSize(settingsButton.getMinimumSize().getHeight(), settingsButton.getMinimumSize().getHeight());
+        settingsButton.setPreferredSize(minSquareSettingsSize);
+        headPanel.add(settingsButton);
 
         content.add(headPanel, BorderLayout.NORTH);
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -225,27 +256,6 @@ public class ToolWindowGui {
                 }
             })
         , () -> this.suppressUpdates);
-
-        DefaultActionGroup actionGroup = new DefaultActionGroup();
-
-        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false);
-        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
-        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
-        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
-        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
-        actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false);
-        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false);
-        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false);
-        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false);
-        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false);
-        actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false);
-        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false);
-        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false);
-        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true);
-
-        actionGroup.add(showSettingsAction);
 
         actionGroup.add(new AnAction("Reset Cache and Reload") {
             @Override
