@@ -650,7 +650,8 @@ public class ToolWindowGui {
             };
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
                 if (chunk.text != null) {
-                    final int chunkSize = parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
+                    final int sizeBeforeChunk = asmBuilder.length();
+                    parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
                     if (chunk.source != null && chunk.source.file != null) {
                         String currentChunkFile = PathNormalizer.normalizePath(new File(chunk.source.file).getAbsolutePath());
                         if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
@@ -665,7 +666,8 @@ public class ToolWindowGui {
                         rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
-                    currentOffset += chunkSize;
+                    final int sizeAfterChunk = asmBuilder.length();
+                    currentOffset += sizeAfterChunk - sizeBeforeChunk;
                 }
             }
             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
@@ -724,101 +726,29 @@ public class ToolWindowGui {
         suppressUpdates = false;
     }
 
-    private static int parseChunk(@NotNull StringBuilder builder, @NotNull String text, @Nullable List<String> opcodes, boolean shortenTemplates) {
-        int length = opcodes != null ? parseOpcodes(builder, opcodes) : 0;
-        if (shortenTemplates && containsTemplates(text)) {
-            length += doShortenTemplates(builder, text);
+    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, @Nullable List<String> opcodes, boolean shortenTemplates) {
+        if (opcodes != null) {
+            parseOpcodes(builder, opcodes);
+        }
+        if (shortenTemplates && possiblyContainsTemplates(text)) {
+            TemplateShortener.shortenTemplates(builder, text);
         } else {
             builder.append(text);
-            length += text.length();
         }
         builder.append('\n');
-        length++;
-        return length;
     }
 
-    private static int parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
-        int length = 0;
+    private static void parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
         builder.append('#');
-        length++;
         for (String opcode : opcodes) {
             builder.append(' ');
-            length++;
             builder.append(opcode);
-            length += opcode.length();
         }
         builder.append('\n');
-        length++;
-        return length;
     }
 
-    private static boolean containsTemplates(@NotNull String text) {
+    private static boolean possiblyContainsTemplates(@NotNull String text) {
         return text.indexOf('<') >= 0;
-    }
-
-    private static int doShortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
-        int length = text.length();
-        int depth = 0;
-        int count = 0;
-        for (int i = 0; i < length; ++i) {
-            char c = text.charAt(i);
-            if (c == '<') {
-                if (isOperator(text, i)) {
-                    if (depth == 0) {
-                        builder.append(c);
-                        ++count;
-                    }
-                    if (i + 1 < length && text.charAt(i + 1) == c) {
-                        if (depth == 0) {
-                            builder.append(c);
-                            ++count;
-                        }
-                        ++i;
-                    }
-                } else {
-                    if (depth == 0) {
-                        builder.append(c);
-                        ++count;
-                        builder.append("...");
-                        count += 3;
-                    }
-                    depth++;
-                }
-            } else if (c == '>') {
-                if (isOperator(text, i)) {
-                    if (depth == 0) {
-                        builder.append(c);
-                        ++count;
-                    }
-                    if (i + 1 < length && text.charAt(i + 1) == c) {
-                        if (depth == 0) {
-                            builder.append(c);
-                            ++count;
-                        }
-                        ++i;
-                    }
-                } else {
-                    depth--;
-                    if (depth == 0) {
-                        builder.append(c);
-                        ++count;
-                    }
-                }
-            } else {
-                if (depth == 0) {
-                    builder.append(c);
-                    ++count;
-                }
-            }
-        }
-        return count;
-    }
-
-    private static boolean isOperator(@NotNull String text, int i) {
-        return ((i >= 8 && text.charAt(i - 1) == 'r' && text.startsWith("operator", i - 8)) ||
-                (i >= 1 && text.charAt(i - 1) == '-') ||
-                (i >= 10 && text.charAt(i - 1) == '=' && text.startsWith("operator<=", i - 10))
-        );
     }
 
     @NotNull
