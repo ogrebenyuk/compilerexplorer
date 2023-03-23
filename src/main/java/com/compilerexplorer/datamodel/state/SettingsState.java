@@ -65,6 +65,10 @@ public class SettingsState {
     @Property
     private boolean shortenTemplates = false;
     @Property
+    private boolean showLineNumbers = false;
+    private boolean showByteOffsets = false;
+    private boolean showSourceAnnotations = false;
+    @Property
     private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
@@ -199,6 +203,30 @@ public class SettingsState {
         shortenTemplates = shortenTemplates_;
     }
 
+    public boolean getShowLineNumbers() {
+        return showLineNumbers;
+    }
+
+    public void setShowLineNumbers(boolean showLineNumbers_) {
+        showLineNumbers = showLineNumbers_;
+    }
+
+    public boolean getShowByteOffsets() {
+        return showByteOffsets;
+    }
+
+    public void setShowByteOffsets(boolean showByteOffsets_) {
+        showByteOffsets = showByteOffsets_;
+    }
+
+    public boolean getShowSourceAnnotations() {
+        return showSourceAnnotations;
+    }
+
+    public void setShowSourceAnnotations(boolean showSourceAnnotations_) {
+        showSourceAnnotations = showSourceAnnotations_;
+    }
+
     public int getHighlightColorRGB() {
         return highlightColorRGB;
     }
@@ -246,6 +274,9 @@ public class SettingsState {
         setAutoscrollToSource(other.getAutoscrollToSource());
         setAutoupdateFromSource(other.getAutoupdateFromSource());
         setShortenTemplates(other.getShortenTemplates());
+        setShowLineNumbers(other.getShowLineNumbers());
+        setShowByteOffsets(other.getShowByteOffsets());
+        setShowSourceAnnotations(other.getShowSourceAnnotations());
         setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
         setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
@@ -268,6 +299,9 @@ public class SettingsState {
                 + (getAutoscrollToSource() ? 1 : 0)
                 + (getAutoupdateFromSource() ? 1 : 0)
                 + (getShortenTemplates() ? 1 : 0)
+                + (getShowLineNumbers() ? 1 : 0)
+                + (getShowByteOffsets() ? 1 : 0)
+                + (getShowSourceAnnotations() ? 1 : 0)
                 + getHighlightColorRGB()
                 + ((int) getDelayMillis())
                 + getCompilerTimeoutMillis()
@@ -294,6 +328,9 @@ public class SettingsState {
                 && getAutoscrollToSource() == (other.getAutoscrollToSource())
                 && getAutoupdateFromSource() == (other.getAutoupdateFromSource())
                 && getShortenTemplates() == (other.getShortenTemplates())
+                && getShowLineNumbers() == (other.getShowLineNumbers())
+                && getShowByteOffsets() == (other.getShowByteOffsets())
+                && getShowSourceAnnotations() == (other.getShowSourceAnnotations())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
                 && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()

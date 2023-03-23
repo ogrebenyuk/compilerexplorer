@@ -9,6 +9,8 @@ version '1.21'
 
 patchPluginXml {
     changeNotes = """
+        Added the ability to show line numbers and byte offsets.<br/>
+        ===<br/>
         1.21:<br/>
         Added the missing "library functions" filter.<br/>
         Added the missing "link to binary" output toggle.<br/>

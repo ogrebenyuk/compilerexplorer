@@ -13,6 +13,7 @@ import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.ColorKey;
+import com.intellij.openapi.editor.colors.EditorColors;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
@@ -42,8 +43,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.lang.Error;
 import java.nio.file.Paths;
@@ -99,7 +100,10 @@ public class ToolWindowGui {
         int[] yPoints = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
         graphics.fillPolygon(xPoints, yPoints, 4);
     };
-    private boolean showAnnotations = false;
+    @NotNull
+    private final DefaultActionGroup gutterActions = new DefaultActionGroup();
+    @NotNull
+    private final Map<Integer, Integer> lineNumberToByteOffsetMap = new HashMap<>();
     @NotNull
     private final AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
         @Override
@@ -193,22 +197,30 @@ public class ToolWindowGui {
         headPanel.add(recompileButton);
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
-        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false);
-        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false);
-        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false);
-        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false);
-        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false);
-        actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false);
-        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false);
-        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false);
-        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false);
-        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false);
-        actionGroup.add(new Separator());
-        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false);
-        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false);
-        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false);
-        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true);
+        actionGroup.add(Separator.create("Output"));
+        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false, false);
+        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false, false);
+        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false, false);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false, false);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false, false);
+        actionGroup.add(Separator.create());
+        actionGroup.add(Separator.create("Filter"));
+        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false, false);
+        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false, false);
+        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false, false);
+        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false, false);
+        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false, false);
+        actionGroup.add(Separator.create());
+        actionGroup.add(Separator.create("Appearance"));
+        addToggleAction(actionGroup, "Show line numbers", this::getState, SettingsState::getShowLineNumbers, SettingsState::setShowLineNumbers, false, false, true);
+        addToggleAction(actionGroup, "Show byte offsets in disassembled output", this::getState, SettingsState::getShowByteOffsets, SettingsState::setShowByteOffsets, false, false, true);
+        addToggleAction(actionGroup, "Show source location", this::getState, SettingsState::getShowSourceAnnotations, SettingsState::setShowSourceAnnotations, false, false, true);
+        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true, false);
+        actionGroup.add(Separator.create());
+        actionGroup.add(Separator.create("Behavior"));
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false, false);
+        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false, false);
         actionGroup.add(showSettingsAction);
 
         JButton settingsButton = new JButton();
@@ -241,7 +253,8 @@ public class ToolWindowGui {
                         }
                     }
                 });
-                setupAnnotations(ed);
+                setupGutterAnnotations(ed);
+                updateGutterAnnotations(ed);
                 return ed;
             }
         };
@@ -298,95 +311,146 @@ public class ToolWindowGui {
         maybeShowInitialNotice();
     }
 
-    private void setupAnnotations(@NotNull EditorEx ed) {
-        showAnnotations = false;
+    private void setupGutterAnnotations(@NotNull EditorEx ed) {
+        ed.getGutterComponentEx().setPaintBackground(true);
+        ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 4);
+        ed.getGutterComponentEx().setGutterPopupGroup(null);
         ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
-        ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 2);
-        DefaultActionGroup gutterGroup = new DefaultActionGroup();
-        gutterGroup.add(new AnAction("Annotate") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent event) {
-                showAnnotations(ed);
-                ed.getGutterComponentEx().setGutterPopupGroup(null);
-            }
-        });
-        ed.getGutterComponentEx().setGutterPopupGroup(gutterGroup);
-        ed.getGutterComponentEx().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(@NotNull MouseEvent e) {
-                scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
-            }
+
+        ed.getGutterComponentEx().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(@NotNull MouseEvent e) {
-                // empty
+                maybeShowPopupMenu(e);
             }
             @Override
             public void mouseReleased(@NotNull MouseEvent e) {
-                // empty
+                maybeShowPopupMenu(e);
+                if (!e.isConsumed()) {
+                    scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
+                }
             }
-            @Override
-            public void mouseEntered(@NotNull MouseEvent e) {
-                // empty
-            }
-            @Override
-            public void mouseExited(@NotNull MouseEvent e) {
-                // empty
+            private void maybeShowPopupMenu(@NotNull MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    ActionManager.getInstance().createActionPopupMenu(ActionPlaces.POPUP, gutterActions).getComponent().show(ed.getGutterComponentEx(), e.getX(), e.getY());
+                    e.consume();
+                }
             }
         });
     }
 
-    private void showAnnotations(@NotNull EditorEx ed_) {
-        showAnnotations = true;
-        ed_.getGutter().registerTextAnnotation(new TextAnnotationGutterProvider() {
-            @Override
-            @Nullable
-            public String getLineText(int line, @Nullable Editor ed) {
-                CompiledText.SourceLocation source = findSource(line, ed);
-                return source != null ? getLineText(source) : null;
-            }
-            @Override
-            @Nullable
-            public String getToolTip(int line, @Nullable Editor ed) {
-                CompiledText.SourceLocation source = findSource(line, ed);
-                return source != null ? getTooltipText(source) : null;
-            }
-            @Override
-            @NotNull
-            public EditorFontType getStyle(int line, @Nullable Editor ed) {
-                return EditorFontType.ITALIC;
-            }
-            @Override
-            @Nullable
-            public ColorKey getColor(int line, @Nullable Editor ed) {
-                return null;
-            }
-            @Override
-            @Nullable
-            public Color getBgColor(int line, @Nullable Editor ed) {
-                return null;
-            }
-            @Override
-            @Nullable
-            public List<AnAction> getPopupActions(int line, @Nullable Editor ed) {
-                return null;
-            }
-            @Override
-            public void gutterClosed() {
-                setupAnnotations(ed_);
-            }
-            @Nullable
-            private CompiledText.SourceLocation findSource(int line, @Nullable Editor ed) {
-                return (ed != null) ? findSourceLocationFromOffset(ed.logicalPositionToOffset(new LogicalPosition(line, 0))) : null;
-            }
-            @NotNull
-            private String getLineText(@NotNull CompiledText.SourceLocation source) {
-                return source.file != null ? (Paths.get(source.file).getFileName().toString() + ":" + source.line) : "";
-            }
-            @NotNull
-            private String getTooltipText(@NotNull CompiledText.SourceLocation source) {
-                return source.file != null ? (source.file + ":" + source.line) : "";
-            }
-        });
+    static private abstract class BaseTextAnnotationGutterProvider implements TextAnnotationGutterProvider {
+        @Override
+        @Nullable
+        public String getToolTip(int line, @Nullable Editor ed) {
+            return null;
+        }
+        @Override
+        @NotNull
+        public EditorFontType getStyle(int line, @Nullable Editor ed) {
+            return EditorFontType.PLAIN;
+        }
+        @Override
+        @Nullable
+        public ColorKey getColor(int line, @Nullable Editor ed) {
+            return EditorColors.LINE_NUMBERS_COLOR;
+        }
+        @Override
+        @Nullable
+        public Color getBgColor(int line, @Nullable Editor ed) {
+            return null;
+        }
+        @Override
+        @Nullable
+        public List<AnAction> getPopupActions(int line, @Nullable Editor ed) {
+            return null;
+        }
+        @Override
+        public void gutterClosed() {
+        }
+    }
+
+    private void updateGutterAnnotations(@NotNull EditorEx ed_) {
+        ed_.getGutterComponentEx().closeAllAnnotations();
+
+        SettingsState state = getState();
+        boolean showAnyAnnotations = editor.getFileType() != PlainTextFileType.INSTANCE;
+        boolean isDisassembled = state.getFilters().getBinary() || state.getFilters().getBinaryObject();
+
+        if (showAnyAnnotations && !isDisassembled && state.getShowLineNumbers()) {
+            ed_.getGutterComponentEx().registerTextAnnotation(new BaseTextAnnotationGutterProvider() {
+                @Override
+                @NotNull
+                public String getLineText(int line, @Nullable Editor ed) {
+                    return String.valueOf(line + 1);
+                }
+            });
+        }
+
+        if (showAnyAnnotations && isDisassembled && state.getShowByteOffsets()) {
+            ed_.getGutterComponentEx().registerTextAnnotation(new BaseTextAnnotationGutterProvider() {
+                @Override
+                @Nullable
+                public String getLineText(int line, @Nullable Editor ed) {
+                    Integer byteOffset = lineNumberToByteOffsetMap.get(line);
+                    return byteOffset != null ? getLineText(byteOffset) : null;
+                }
+                @Override
+                @Nullable
+                public String getToolTip(int line, @Nullable Editor ed) {
+                    Integer byteOffset = lineNumberToByteOffsetMap.get(line);
+                    return byteOffset != null ? getTooltipText(byteOffset) : null;
+                }
+
+                @NotNull
+                private String getLineText(@NotNull Integer byteOffset) {
+                    return Integer.toHexString(byteOffset);
+                }
+
+                @NotNull
+                private String getTooltipText(@NotNull Integer byteOffset) {
+                    return "Byte offset " + byteOffset + ", hex 0x" + Integer.toHexString(byteOffset);
+                }
+            });
+        }
+
+        if (showAnyAnnotations && state.getShowSourceAnnotations()) {
+            ed_.getGutterComponentEx().registerTextAnnotation(new BaseTextAnnotationGutterProvider() {
+                @Override
+                @Nullable
+                public String getLineText(int line, @Nullable Editor ed) {
+                    CompiledText.SourceLocation source = findSource(line, ed);
+                    return source != null ? getLineText(source) : null;
+                }
+
+                @Override
+                @Nullable
+                public String getToolTip(int line, @Nullable Editor ed) {
+                    CompiledText.SourceLocation source = findSource(line, ed);
+                    return source != null ? getTooltipText(source) : null;
+                }
+
+                @Override
+                @NotNull
+                public EditorFontType getStyle(int line, @Nullable Editor ed) {
+                    return EditorFontType.ITALIC;
+                }
+
+                @Nullable
+                private CompiledText.SourceLocation findSource(int line, @Nullable Editor ed) {
+                    return (ed != null) ? findSourceLocationFromOffset(ed.logicalPositionToOffset(new LogicalPosition(line, 0))) : null;
+                }
+
+                @NotNull
+                private String getLineText(@NotNull CompiledText.SourceLocation source) {
+                    return source.file != null ? (Paths.get(source.file).getFileName().toString() + ":" + source.line) : "";
+                }
+
+                @NotNull
+                private String getTooltipText(@NotNull CompiledText.SourceLocation source) {
+                    return source.file != null ? (source.file + ":" + source.line) : "";
+                }
+            });
+        }
     }
 
     private <T> void addToggleAction(
@@ -396,9 +460,10 @@ public class ToolWindowGui {
             @NotNull Function<T, Boolean> getter,
             @NotNull BiConsumer<T, Boolean> setter,
             boolean recompile,
-            boolean reparse
+            boolean reparse,
+            boolean updateGutter
     ) {
-        actionGroup.add(new ToggleAction(text) {
+        AnAction action = new ToggleAction(text) {
             @Override
             public boolean isSelected(@NotNull AnActionEvent event) {
                 return getter.apply(supplier.get());
@@ -412,12 +477,19 @@ public class ToolWindowGui {
                 if (reparse) {
                     asCompiledTextConsumer().accept(compiledText);
                 }
+                if (updateGutter && editor.getEditor() != null) {
+                    updateGutterAnnotations((EditorEx) editor.getEditor());
+                }
             }
             @Override
             public @NotNull ActionUpdateThread getActionUpdateThread() {
                 return ActionUpdateThread.BGT;
             }
-        });
+        };
+        actionGroup.add(action);
+        if (updateGutter) {
+            gutterActions.add(action);
+        }
     }
 
     private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
@@ -639,6 +711,7 @@ public class ToolWindowGui {
             List<Range> newHighlighterRanges = new ArrayList<>();
             locationsFromSourceMap.clear();
             locationsToSourceMap.clear();
+            lineNumberToByteOffsetMap.clear();
             StringBuilder asmBuilder = new StringBuilder();
             int currentOffset = 0;
             CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
@@ -648,10 +721,19 @@ public class ToolWindowGui {
                 locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
                 locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
             };
+            int line = 0;
             for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
+                final int sizeBeforeChunk = asmBuilder.length();
+                if (chunk.opcodes != null) {
+                    parseOpcodes(asmBuilder, chunk.opcodes);
+                    ++line;
+                }
+                if (chunk.address != CompiledText.CompiledChunk.NO_ADDRESS) {
+                    lineNumberToByteOffsetMap.put(line, chunk.address);
+                }
                 if (chunk.text != null) {
-                    final int sizeBeforeChunk = asmBuilder.length();
-                    parseChunk(asmBuilder, chunk.text, chunk.opcodes, shortenTemplates);
+                    parseChunk(asmBuilder, chunk.text, shortenTemplates);
+                    ++line;
                     if (chunk.source != null && chunk.source.file != null) {
                         String currentChunkFile = PathNormalizer.normalizePath(new File(chunk.source.file).getAbsolutePath());
                         if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
@@ -666,16 +748,15 @@ public class ToolWindowGui {
                         rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
                         lastChunk.file = "";
                     }
-                    final int sizeAfterChunk = asmBuilder.length();
-                    currentOffset += sizeAfterChunk - sizeBeforeChunk;
                 }
+                final int sizeAfterChunk = asmBuilder.length();
+                currentOffset += sizeAfterChunk - sizeBeforeChunk;
             }
             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
             }
 
             int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
-            boolean oldShowAnnotations = showAnnotations;
 
             editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
             editor.setText(asmBuilder.toString());
@@ -693,12 +774,7 @@ public class ToolWindowGui {
                 scrollToPosition(editor.getEditor(), oldScrollPosition);
                 highlightLocations(caretTracker.getLocations(), true, false);
             }
-            if (oldShowAnnotations) {
-                EditorEx ed = (EditorEx) editor.getEditor();
-                if (ed != null) {
-                    showAnnotations(ed);
-                }
-            }
+
             suppressUpdates = false;
         };
     }
@@ -717,6 +793,7 @@ public class ToolWindowGui {
         suppressUpdates = true;
         locationsFromSourceMap.clear();
         locationsToSourceMap.clear();
+        lineNumberToByteOffsetMap.clear();
 
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText(filterOutTerminalEscapeSequences(text));
@@ -726,10 +803,7 @@ public class ToolWindowGui {
         suppressUpdates = false;
     }
 
-    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, @Nullable List<String> opcodes, boolean shortenTemplates) {
-        if (opcodes != null) {
-            parseOpcodes(builder, opcodes);
-        }
+    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
         if (shortenTemplates && possiblyContainsTemplates(text)) {
             TemplateShortener.shortenTemplates(builder, text);
         } else {

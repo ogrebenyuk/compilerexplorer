@@ -50,10 +50,13 @@ public class CompiledText {
     }
 
     public static class CompiledChunk {
+        public final static int NO_ADDRESS = -1;
+
         public String text;
         public SourceLocation source;
         @Nullable
         public List<String> opcodes;
+        public int address = NO_ADDRESS;
 
         @SuppressWarnings("unused")
         @Override
@@ -61,6 +64,7 @@ public class CompiledText {
             return text.hashCode()
                     + source.hashCode()
                     + (opcodes != null ? opcodes.hashCode() : 0)
+                    + address
                     ;
         }
 
@@ -73,6 +77,7 @@ public class CompiledText {
             return text.equals(other.text)
                     && source.equals(other.source)
                     && Objects.equals(opcodes, other.opcodes)
+                    && address == other.address
                     ;
         }
     }
