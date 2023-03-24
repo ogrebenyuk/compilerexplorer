@@ -1,0 +1,10 @@
+{
+  "icons": {
+    "expUi": {
+      "toolwindow": {
+        "toolWindow.svg": "icons/toolWindow.svg",
+        "toolWindow_dark.svg": "icons/toolWindow_dark.svg"
+      }
+    }
+  }
+}

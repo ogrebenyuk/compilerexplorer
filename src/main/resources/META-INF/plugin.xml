@@ -18,5 +18,6 @@
         <projectService serviceImplementation="com.compilerexplorer.common.CompilerExplorerSettingsProvider"/>
         <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="/icons/toolWindow.svg"/>
         <notificationGroup id="Compiler Explorer" displayType="BALLOON"/>
+        <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
     </extensions>
 </idea-plugin>
