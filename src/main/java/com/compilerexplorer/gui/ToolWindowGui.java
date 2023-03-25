@@ -42,9 +42,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.lang.Error;
 import java.nio.file.Paths;
@@ -316,8 +314,17 @@ public class ToolWindowGui {
         ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 4);
         ed.getGutterComponentEx().setGutterPopupGroup(null);
         ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
+        ed.getGutterComponentEx().setCanCloseAnnotations(false);
 
         ed.getGutterComponentEx().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(@NotNull MouseEvent e) {
+                maybeShowPopupMenu(e);
+                if (!e.isConsumed()) {
+                    scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
+                    e.consume();
+                }
+            }
             @Override
             public void mousePressed(@NotNull MouseEvent e) {
                 maybeShowPopupMenu(e);
@@ -325,13 +332,10 @@ public class ToolWindowGui {
             @Override
             public void mouseReleased(@NotNull MouseEvent e) {
                 maybeShowPopupMenu(e);
-                if (!e.isConsumed()) {
-                    scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(ed.xyToLogicalPosition(e.getPoint()))));
-                }
             }
             private void maybeShowPopupMenu(@NotNull MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    ActionManager.getInstance().createActionPopupMenu(ActionPlaces.POPUP, gutterActions).getComponent().show(ed.getGutterComponentEx(), e.getX(), e.getY());
+                    ActionManager.getInstance().createActionPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, gutterActions).getComponent().show(ed.getGutterComponentEx(), e.getX(), e.getY());
                     e.consume();
                 }
             }
@@ -370,7 +374,9 @@ public class ToolWindowGui {
     }
 
     private void updateGutterAnnotations(@NotNull EditorEx ed_) {
+        ed_.getGutterComponentEx().setCanCloseAnnotations(true);
         ed_.getGutterComponentEx().closeAllAnnotations();
+        ed_.getGutterComponentEx().setCanCloseAnnotations(false);
 
         SettingsState state = getState();
         boolean showAnyAnnotations = editor.getFileType() != PlainTextFileType.INSTANCE;
