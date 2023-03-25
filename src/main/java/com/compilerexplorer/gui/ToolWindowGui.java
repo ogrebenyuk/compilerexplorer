@@ -226,20 +226,10 @@ public class ToolWindowGui {
         addToggleAction(actionGroup, "Show source location", this::getState, SettingsState::getShowSourceAnnotations, SettingsState::setShowSourceAnnotations, false, false, true, false);
         addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true, false, false);
         addToggleAction(actionGroup, "Enable folding", this::getState, SettingsState::getEnableFolding, SettingsState::setEnableFolding, false, false, false, true);
-        AnAction expandAllAction = new AnAction("Expand all folding") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent e) {
-                expandAllFolding(true);
-            }
-        };
+        AnAction expandAllAction = createExpandAllFoldingAction("Expand all folding", true);
         actionGroup.add(expandAllAction);
         gutterActions.add(expandAllAction);
-        AnAction collapseAllAction = new AnAction("Collapse all folding") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent e) {
-                expandAllFolding(false);
-            }
-        };
+        AnAction collapseAllAction = createExpandAllFoldingAction("Collapse all folding", false);
         actionGroup.add(collapseAllAction);
         gutterActions.add(collapseAllAction);
         actionGroup.add(Separator.create());
@@ -785,9 +775,11 @@ public class ToolWindowGui {
                 locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
                 locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
             };
+            int [] chunkToOffset = new int[compiledText.getCompiledResult().asm.size() + 1];
             int line = 0;
-            for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().asm) {
-                final int sizeBeforeChunk = asmBuilder.length();
+            for (int i = 0; i < compiledText.getCompiledResult().asm.size(); ++i) {
+                CompiledText.CompiledChunk chunk = compiledText.getCompiledResult().asm.get(i);
+                chunkToOffset[i] = currentOffset;
                 if (chunk.opcodes != null) {
                     parseOpcodes(asmBuilder, chunk.opcodes);
                     ++line;
@@ -813,11 +805,24 @@ public class ToolWindowGui {
                         lastChunk.file = "";
                     }
                 }
-                final int sizeAfterChunk = asmBuilder.length();
-                currentOffset += sizeAfterChunk - sizeBeforeChunk;
+                currentOffset = asmBuilder.length();
             }
             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+            }
+            chunkToOffset[compiledText.getCompiledResult().asm.size()] = currentOffset;
+
+            List<Pair<String, Range>> labels = new ArrayList<>();
+            if (state.getEnableFolding() && compiledText.getCompiledResult().labelDefinitions != null) {
+                List<Pair<Integer, String>> labelEntries = compiledText.getCompiledResult().labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
+                for (int i = 0; i < labelEntries.size(); ++i) {
+                    Pair<Integer, String> entry = labelEntries.get(i);
+                    int beginOffset = chunkToOffset[entry.getFirst() - 1];
+                    int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
+                    if (beginOffset < endOffset) {
+                        labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
+                    }
+                }
             }
 
             EditorEx oldEd = (EditorEx) editor.getEditor();
@@ -830,21 +835,6 @@ public class ToolWindowGui {
             highlighters.clear();
             EditorEx ed = (EditorEx) editor.getEditor();
             if (ed != null) {
-                List<Pair<String, Range>> labels = new ArrayList<>();
-                if (state.getEnableFolding() && compiledText.getCompiledResult().labelDefinitions != null) {
-                    List<Pair<Integer, String>> labelEntries = compiledText.getCompiledResult().labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
-                    for (int i = 0; i < labelEntries.size(); ++i) {
-                        Pair<Integer, String> entry = labelEntries.get(i);
-                        int beginLine = entry.getFirst() - 1;
-                        int endLine = (i + 1 < labelEntries.size() ? labelEntries.get(i + 1).getFirst() : ed.getDocument().getLineCount()) - 1;
-                        int beginOffset = ed.logicalPositionToOffset(new LogicalPosition(beginLine, 0));
-                        int endOffset = ed.logicalPositionToOffset(new LogicalPosition(endLine, 0)) - 1;
-                        if (beginOffset < endOffset) {
-                            labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
-                        }
-                    }
-                }
-
                 MarkupModelEx markupModel = ed.getMarkupModel();
                 markupModel.removeAllHighlighters();
                 newHighlighterRanges.forEach(range -> {
@@ -1020,13 +1010,33 @@ public class ToolWindowGui {
 
     private void expandAllFolding(boolean isExpanded) {
         EditorEx ed = (EditorEx) editor.getEditor();
-        if (ed != null) {
+        if (ed != null && getState().getEnableFolding()) {
             FoldingModelEx foldingModel = ed.getFoldingModel();
-            for (FoldRegion region : foldingModel.getAllFoldRegions()) {
-                region.setExpanded(isExpanded);
-            }
+            foldingModel.runBatchFoldingOperation(() -> {
+                for (FoldRegion region : foldingModel.getAllFoldRegions()) {
+                    region.setExpanded(isExpanded);
+                }
+            });
             reparse();
         }
+    }
+
+    @NotNull
+    AnAction createExpandAllFoldingAction(@NotNull String text, boolean isExpanded) {
+        return new AnAction(text) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                expandAllFolding(isExpanded);
+            }
+            @Override
+            public void update(@NotNull AnActionEvent event) {
+                event.getPresentation().setEnabled(getState().getEnableFolding());
+            }
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
+        };
     }
 
     private static int findCurrentScrollPosition(@NotNull Editor ed) {

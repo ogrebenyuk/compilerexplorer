@@ -69,7 +69,7 @@ public class SettingsState {
     @Property
     private boolean showSourceAnnotations = false;
     @Property
-    private boolean enableFolding = true;
+    private boolean enableFolding = false;
     @NotNull
     @Property
     private Set<String> foldedLabels = new HashSet<>();
