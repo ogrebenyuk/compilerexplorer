@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class CompiledText {
@@ -107,6 +108,8 @@ public class CompiledText {
         public List<CompiledChunk> stderr;
         public List<CompiledChunk> asm;
         @Nullable
+        public Map<String, Integer> labelDefinitions;
+        @Nullable
         public ExecResult execResult;
 
         @SuppressWarnings("WeakerAccess")
@@ -116,6 +119,7 @@ public class CompiledText {
                     + stdout.hashCode()
                     + stderr.hashCode()
                     + asm.hashCode()
+                    + (labelDefinitions != null ? labelDefinitions.hashCode() : 0)
                     + (execResult != null ? execResult.hashCode() : 0)
                     ;
         }
@@ -130,6 +134,7 @@ public class CompiledText {
                     && stdout.equals(other.stdout)
                     && stderr.equals(other.stderr)
                     && asm.equals(other.asm)
+                    && Objects.equals(labelDefinitions, other.labelDefinitions)
                     && Objects.equals(execResult, other.execResult)
                     ;
         }

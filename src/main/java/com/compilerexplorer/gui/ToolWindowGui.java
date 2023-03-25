@@ -15,9 +15,7 @@ import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.*;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
-import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.editor.ex.EditorMarkupModel;
-import com.intellij.openapi.editor.ex.MarkupModelEx;
+import com.intellij.openapi.editor.ex.*;
 import com.intellij.openapi.editor.markup.*;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -25,6 +23,7 @@ import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
@@ -77,6 +76,7 @@ public class ToolWindowGui {
     @NotNull
     private final TimerScheduler timerScheduler = new TimerScheduler();
     private boolean suppressUpdates = false;
+    private boolean suppressFoldingUpdates = false;
     @NotNull
     private final Map<CompiledText.SourceLocation, List<Range>> locationsFromSourceMap = new HashMap<>();
     @NotNull
@@ -207,29 +207,46 @@ public class ToolWindowGui {
 
         DefaultActionGroup actionGroup = new DefaultActionGroup();
         actionGroup.add(Separator.create("Output"));
-        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false, false);
-        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false, false);
-        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false, false);
-        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false, false);
-        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false, false);
+        addToggleAction(actionGroup, "Compile to binary object and disassemble the output", this::getFilters, Filters::getBinaryObject, Filters::setBinaryObject, true, false, false, false);
+        addToggleAction(actionGroup, "Link to binary and disassemble the output", this::getFilters, Filters::getBinary, Filters::setBinary, true, false, false, false);
+        addToggleAction(actionGroup, "Execute code and show its output", this::getFilters, Filters::getExecute, Filters::setExecute, true, false, false, false);
+        addToggleAction(actionGroup, "Output disassembly in Intel syntax", this::getFilters, Filters::getIntel, Filters::setIntel, true, false, false, false);
+        addToggleAction(actionGroup, "Demangle output", this::getFilters, Filters::getDemangle, Filters::setDemangle, true, false, false, false);
         actionGroup.add(Separator.create());
         actionGroup.add(Separator.create("Filter"));
-        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false, false);
-        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false, false);
-        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false, false);
-        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false, false);
-        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false, false);
+        addToggleAction(actionGroup, "Filter unused labels from the output", this::getFilters, Filters::getLabels, Filters::setLabels, true, false, false, false);
+        addToggleAction(actionGroup, "Filter functions from other libraries from the output", this::getFilters, Filters::getLibraryCode, Filters::setLibraryCode, true, false, false, false);
+        addToggleAction(actionGroup, "Filter all assembler directives from the output", this::getFilters, Filters::getDirectives, Filters::setDirectives, true, false, false, false);
+        addToggleAction(actionGroup, "Remove all lines which are only comments from the output", this::getFilters, Filters::getCommentOnly, Filters::setCommentOnly, true, false, false, false);
+        addToggleAction(actionGroup, "Trim intra-line whitespace", this::getFilters, Filters::getTrim, Filters::setTrim, true, false, false, false);
         actionGroup.add(Separator.create());
         actionGroup.add(Separator.create("Appearance"));
-        addToggleAction(actionGroup, "Show line numbers", this::getState, SettingsState::getShowLineNumbers, SettingsState::setShowLineNumbers, false, false, true);
-        addToggleAction(actionGroup, "Show byte offsets in disassembled output", this::getState, SettingsState::getShowByteOffsets, SettingsState::setShowByteOffsets, false, false, true);
-        addToggleAction(actionGroup, "Show source location", this::getState, SettingsState::getShowSourceAnnotations, SettingsState::setShowSourceAnnotations, false, false, true);
-        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true, false);
+        addToggleAction(actionGroup, "Show line numbers", this::getState, SettingsState::getShowLineNumbers, SettingsState::setShowLineNumbers, false, false, true, false);
+        addToggleAction(actionGroup, "Show byte offsets in disassembled output", this::getState, SettingsState::getShowByteOffsets, SettingsState::setShowByteOffsets, false, false, true, false);
+        addToggleAction(actionGroup, "Show source location", this::getState, SettingsState::getShowSourceAnnotations, SettingsState::setShowSourceAnnotations, false, false, true, false);
+        addToggleAction(actionGroup, "Shorten Templates", this::getState, SettingsState::getShortenTemplates, SettingsState::setShortenTemplates, false, true, false, false);
+        addToggleAction(actionGroup, "Enable folding", this::getState, SettingsState::getEnableFolding, SettingsState::setEnableFolding, false, false, false, true);
+        AnAction expandAllAction = new AnAction("Expand all folding") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                expandAllFolding(true);
+            }
+        };
+        actionGroup.add(expandAllAction);
+        gutterActions.add(expandAllAction);
+        AnAction collapseAllAction = new AnAction("Collapse all folding") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                expandAllFolding(false);
+            }
+        };
+        actionGroup.add(collapseAllAction);
+        gutterActions.add(collapseAllAction);
         actionGroup.add(Separator.create());
         actionGroup.add(Separator.create("Behavior"));
-        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false, false);
-        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false, false);
-        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false, false);
+        addToggleAction(actionGroup, "Autoscroll to Source", this::getState, SettingsState::getAutoscrollToSource, SettingsState::setAutoscrollToSource, false, false, false, false);
+        addToggleAction(actionGroup, "Autoscroll from Source", this::getState, SettingsState::getAutoscrollFromSource, SettingsState::setAutoscrollFromSource, false, false, false, false);
+        addToggleAction(actionGroup, "Autoupdate from Source", this::getState, SettingsState::getAutoupdateFromSource, SettingsState::setAutoupdateFromSource, false, false, false, false);
         actionGroup.add(showSettingsAction);
 
         JButton settingsButton = new JButton();
@@ -264,7 +281,20 @@ public class ToolWindowGui {
                 });
                 setupGutterAnnotations(ed);
                 updateGutterAnnotations(ed);
-
+                updateFolding(ed);
+                ed.getFoldingModel().addListener(new FoldingListener() {
+                    @Override
+                    public void onFoldRegionStateChange(@NotNull FoldRegion region) {
+                        FoldingListener.super.onFoldRegionStateChange(region);
+                        if (!suppressFoldingUpdates) {
+                            if (region.isExpanded()) {
+                                getState().getFoldedLabels().remove(region.getPlaceholderText());
+                            } else {
+                                getState().getFoldedLabels().add(region.getPlaceholderText());
+                            }
+                        }
+                    }
+                }, DisposableParentProjectService.getInstance(project));
                 project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, (EditorColorsListener) s -> applyThemeColors());
                 return ed;
             }
@@ -472,6 +502,12 @@ public class ToolWindowGui {
         }
     }
 
+    private void updateFolding(@NotNull EditorEx ed) {
+        boolean enableFolding = getState().getEnableFolding();
+        ed.getFoldingModel().setFoldingEnabled(enableFolding);
+        ed.getSettings().setFoldingOutlineShown(enableFolding);
+    }
+
     private <T> void addToggleAction(
             @NotNull DefaultActionGroup actionGroup,
             @NotNull String text,
@@ -480,7 +516,8 @@ public class ToolWindowGui {
             @NotNull BiConsumer<T, Boolean> setter,
             boolean recompile,
             boolean reparse,
-            boolean updateGutter
+            boolean updateGutter,
+            boolean updateFolding
     ) {
         AnAction action = new ToggleAction(text) {
             @Override
@@ -494,10 +531,14 @@ public class ToolWindowGui {
                     refreshSignalConsumer.accept(RefreshSignal.COMPILE);
                 }
                 if (reparse) {
-                    asCompiledTextConsumer().accept(compiledText);
+                    reparse();
                 }
-                if (updateGutter && editor.getEditor() != null) {
-                    updateGutterAnnotations((EditorEx) editor.getEditor());
+                EditorEx ed = (EditorEx) editor.getEditor();
+                if (updateGutter && ed != null) {
+                    updateGutterAnnotations(ed);
+                }
+                if (updateFolding && ed != null) {
+                    updateFolding(ed);
                 }
             }
             @Override
@@ -506,9 +547,13 @@ public class ToolWindowGui {
             }
         };
         actionGroup.add(action);
-        if (updateGutter) {
+        if (updateGutter || updateFolding) {
             gutterActions.add(action);
         }
+    }
+
+    private void reparse() {
+        asCompiledTextConsumer().accept(compiledText);
     }
 
     private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
@@ -775,24 +820,43 @@ public class ToolWindowGui {
                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
             }
 
-            int oldScrollPosition = (editor.getEditor() != null) ? findCurrentScrollPosition(editor.getEditor()) : 0;
+            EditorEx oldEd = (EditorEx) editor.getEditor();
+            int oldScrollPosition = (oldEd != null) ? findCurrentScrollPosition(oldEd) : 0;
 
             editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
             editor.setText(asmBuilder.toString());
             editor.setEnabled(true);
 
             highlighters.clear();
-            if (editor.getEditor() != null) {
-                MarkupModelEx markupModel = (MarkupModelEx) editor.getEditor().getMarkupModel();
+            EditorEx ed = (EditorEx) editor.getEditor();
+            if (ed != null) {
+                List<Pair<String, Range>> labels = new ArrayList<>();
+                if (state.getEnableFolding() && compiledText.getCompiledResult().labelDefinitions != null) {
+                    List<Pair<Integer, String>> labelEntries = compiledText.getCompiledResult().labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
+                    for (int i = 0; i < labelEntries.size(); ++i) {
+                        Pair<Integer, String> entry = labelEntries.get(i);
+                        int beginLine = entry.getFirst() - 1;
+                        int endLine = (i + 1 < labelEntries.size() ? labelEntries.get(i + 1).getFirst() : ed.getDocument().getLineCount()) - 1;
+                        int beginOffset = ed.logicalPositionToOffset(new LogicalPosition(beginLine, 0));
+                        int endOffset = ed.logicalPositionToOffset(new LogicalPosition(endLine, 0)) - 1;
+                        if (beginOffset < endOffset) {
+                            labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
+                        }
+                    }
+                }
+
+                MarkupModelEx markupModel = ed.getMarkupModel();
                 markupModel.removeAllHighlighters();
                 newHighlighterRanges.forEach(range -> {
-                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+                    RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
                     highlighter.setLineMarkerRenderer(lineMarkerRenderer);
                 });
 
-                scrollToPosition(editor.getEditor(), oldScrollPosition);
+                scrollToPosition(ed, oldScrollPosition);
+
                 highlightLocations(caretTracker.getLocations(), true, false);
-                applyThemeColors();
+
+                addFolding(ed, labels, state.getFoldedLabels());
             }
 
             suppressUpdates = false;
@@ -924,9 +988,44 @@ public class ToolWindowGui {
                 }
             }
         }
+        if (highlight) {
+            applyThemeColors();
+        }
 
         if (scroll && (closestPosition >= 0)) {
             scrollToPosition(ed, closestPosition - (ed.getScrollingModel().getVisibleAreaOnScrollingFinished().height / 2));
+        }
+    }
+
+    private void addFolding(@NotNull EditorEx ed, @NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
+        removeObsoleteFoldedLabels(labels, foldedLabels);
+        FoldingModelEx foldingModel = ed.getFoldingModel();
+        foldingModel.runBatchFoldingOperation(() -> {
+            suppressFoldingUpdates = true;
+            foldingModel.clearFoldRegions();
+            for (Pair<String, Range> label : labels) {
+                @Nullable FoldRegion region = foldingModel.addFoldRegion(label.getSecond().begin, label.getSecond().end, label.getFirst());
+                if (region != null) {
+                    region.setExpanded(!foldedLabels.contains(label.getFirst()));
+                }
+            }
+            suppressFoldingUpdates = false;
+        });
+    }
+
+    private void removeObsoleteFoldedLabels(@NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
+        Set<String> existingLabels = labels.stream().map(p -> p.getFirst()).collect(Collectors.toSet());
+        foldedLabels.stream().filter(l -> !existingLabels.contains(l)).collect(Collectors.toSet()).forEach(foldedLabels::remove);
+    }
+
+    private void expandAllFolding(boolean isExpanded) {
+        EditorEx ed = (EditorEx) editor.getEditor();
+        if (ed != null) {
+            FoldingModelEx foldingModel = ed.getFoldingModel();
+            for (FoldRegion region : foldingModel.getAllFoldRegions()) {
+                region.setExpanded(isExpanded);
+            }
+            reparse();
         }
     }
 

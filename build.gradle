@@ -12,6 +12,7 @@ patchPluginXml {
         Added the ability to show line numbers and byte offsets.<br/>
         Updated tool window icons to conform to IntelliJ UI guidelines.<br/>
         Moved highlight color setting to editor color scheme.<br/>
+        Implemented code folding.<br/>
         ===<br/>
         1.21:<br/>
         Added the missing "library functions" filter.<br/>

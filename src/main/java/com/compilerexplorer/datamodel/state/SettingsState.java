@@ -69,6 +69,11 @@ public class SettingsState {
     @Property
     private boolean showSourceAnnotations = false;
     @Property
+    private boolean enableFolding = true;
+    @NotNull
+    @Property
+    private Set<String> foldedLabels = new HashSet<>();
+    @Property
     private int highlightColorRGB = NO_SAVED_COLOR;
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
@@ -227,6 +232,24 @@ public class SettingsState {
         showSourceAnnotations = showSourceAnnotations_;
     }
 
+    public boolean getEnableFolding() {
+        return enableFolding;
+    }
+
+    public void setEnableFolding(boolean enableFolding_) {
+        enableFolding = enableFolding_;
+    }
+
+    @NotNull
+    public Set<String> getFoldedLabels() {
+        return foldedLabels;
+    }
+
+    public void setFoldedLabels(@NotNull Set<String> foldedLabels_) {
+        foldedLabels = new HashSet<>();
+        foldedLabels.addAll(foldedLabels_);
+    }
+
     public int getHighlightColorRGB() {
         return highlightColorRGB;
     }
@@ -277,6 +300,8 @@ public class SettingsState {
         setShowLineNumbers(other.getShowLineNumbers());
         setShowByteOffsets(other.getShowByteOffsets());
         setShowSourceAnnotations(other.getShowSourceAnnotations());
+        setEnableFolding(other.getEnableFolding());
+        setFoldedLabels(other.getFoldedLabels());
         setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
         setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
@@ -302,6 +327,8 @@ public class SettingsState {
                 + (getShowLineNumbers() ? 1 : 0)
                 + (getShowByteOffsets() ? 1 : 0)
                 + (getShowSourceAnnotations() ? 1 : 0)
+                + (getEnableFolding() ? 1 : 0)
+                + getFoldedLabels().hashCode()
                 + getHighlightColorRGB()
                 + ((int) getDelayMillis())
                 + getCompilerTimeoutMillis()
@@ -331,6 +358,8 @@ public class SettingsState {
                 && getShowLineNumbers() == (other.getShowLineNumbers())
                 && getShowByteOffsets() == (other.getShowByteOffsets())
                 && getShowSourceAnnotations() == (other.getShowSourceAnnotations())
+                && getEnableFolding() == (other.getEnableFolding())
+                && getFoldedLabels() == (other.getFoldedLabels())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
                 && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()
