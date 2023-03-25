@@ -12,9 +12,7 @@ import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
-import com.intellij.openapi.editor.colors.ColorKey;
-import com.intellij.openapi.editor.colors.EditorColors;
-import com.intellij.openapi.editor.colors.EditorFontType;
+import com.intellij.openapi.editor.colors.*;
 import com.intellij.openapi.editor.event.CaretEvent;
 import com.intellij.openapi.editor.event.CaretListener;
 import com.intellij.openapi.editor.ex.EditorEx;
@@ -31,7 +29,6 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.ui.components.JBTextField;
 import org.jetbrains.annotations.NotNull;
@@ -85,28 +82,40 @@ public class ToolWindowGui {
     @NotNull
     private final SortedMap<Integer, EndAndSource> locationsToSourceMap = new TreeMap<>();
     @NotNull
-    private final TextAttributes highlightAttributes = new TextAttributes();
-    @NotNull
     private final CaretTracker caretTracker;
     @NotNull
     private final List<RangeHighlighter> highlighters = new ArrayList<>();
+    private static class ColoredLineMarkerRenderer implements LineMarkerRenderer {
+        @Nullable
+        private Color color;
+
+        void setColor(@Nullable Color newColor) {
+            color = newColor;
+        }
+
+        @Override
+        public void paint(@NotNull Editor editor, @NotNull Graphics graphics, @NotNull Rectangle rectangle) {
+            if (color == null) {
+                return;
+            }
+            graphics.setColor(color);
+            int margin = rectangle.width;
+            int[] xPoints = {rectangle.x + margin, rectangle.x, rectangle.x, rectangle.x + margin};
+            int[] yPoints = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
+            graphics.fillPolygon(xPoints, yPoints, 4);
+        }
+    }
     @NotNull
-    private final LineMarkerRenderer lineMarkerRenderer = (editor, graphics, rectangle) -> {
-        graphics.setColor(new JBColor(getState().getHighlightColorRGB(), getState().getHighlightColorRGB()));
-        int margin = rectangle.width;
-        int[] xPoints = {rectangle.x + rectangle.width, rectangle.x, rectangle.x, rectangle.x + rectangle.width};
-        int[] yPoints = {rectangle.y, rectangle.y + margin, rectangle.y + rectangle.height - margin, rectangle.y + rectangle.height};
-        graphics.fillPolygon(xPoints, yPoints, 4);
-    };
+    private final ColoredLineMarkerRenderer lineMarkerRenderer = new ColoredLineMarkerRenderer();
     @NotNull
     private final DefaultActionGroup gutterActions = new DefaultActionGroup();
     @NotNull
     private final Map<Integer, Integer> lineNumberToByteOffsetMap = new HashMap<>();
     @NotNull
-    private final AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
+    private static final AnAction showSettingsAction = new AnAction(Constants.PROJECT_TITLE + " Settings...") {
         @Override
         public void actionPerformed(@NotNull AnActionEvent event) {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, Constants.PROJECT_TITLE);
+            ShowSettingsUtil.getInstance().showSettingsDialog(event.getProject(), Constants.PROJECT_TITLE);
         }
         @Override
         public void update(@NotNull AnActionEvent event) {
@@ -121,6 +130,8 @@ public class ToolWindowGui {
     public ToolWindowGui(@NotNull Project project_, @NotNull ToolWindowEx toolWindow) {
         project = project_;
         content = new JPanel(new BorderLayout());
+
+        maybeMigrateColorSettings();
 
         JPanel headPanel = new JPanel();
         headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
@@ -253,6 +264,8 @@ public class ToolWindowGui {
                 });
                 setupGutterAnnotations(ed);
                 updateGutterAnnotations(ed);
+
+                project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, (EditorColorsListener) s -> applyThemeColors());
                 return ed;
             }
         };
@@ -779,6 +792,7 @@ public class ToolWindowGui {
 
                 scrollToPosition(editor.getEditor(), oldScrollPosition);
                 highlightLocations(caretTracker.getLocations(), true, false);
+                applyThemeColors();
             }
 
             suppressUpdates = false;
@@ -846,6 +860,19 @@ public class ToolWindowGui {
         return getState().getFilters();
     }
 
+    @Nullable
+    private Color getCurrentThemeHighlightColor() {
+        return EditorColorsManager.getInstance().getGlobalScheme().getAttributes(Constants.HIGHLIGHT_COLOR).getBackgroundColor();
+    }
+
+    private void applyThemeColors() {
+        Color highlightColor = getCurrentThemeHighlightColor();
+        lineMarkerRenderer.setColor(highlightColor);
+        for (RangeHighlighter highlighter : highlighters) {
+            highlighter.setErrorStripeMarkColor(highlightColor);
+        }
+    }
+
     private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
         highlightLocations(locations, true, false);
     }
@@ -877,9 +904,7 @@ public class ToolWindowGui {
             if (ranges != null) {
                 for (Range range : ranges) {
                     if (highlight) {
-                        highlightAttributes.setBackgroundColor(new JBColor(state.getHighlightColorRGB(), state.getHighlightColorRGB()));
-                        RangeHighlighter highlighter = markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, highlightAttributes, HighlighterTargetArea.LINES_IN_RANGE);
-                        highlighter.setErrorStripeMarkColor(highlightAttributes.getBackgroundColor());
+                        RangeHighlighter highlighter = markupModel.addRangeHighlighter(Constants.HIGHLIGHT_COLOR, range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, HighlighterTargetArea.LINES_IN_RANGE);
                         highlighters.add(highlighter);
                     }
                     if (scroll) {
@@ -958,5 +983,19 @@ public class ToolWindowGui {
 
     private void showInitialNotice() {
         Notifications.Bus.notify(Constants.NOTIFICATION_GROUP.createNotification(Constants.INITIAL_NOTICE, NotificationType.INFORMATION).addAction(showSettingsAction), project);
+    }
+
+    private void maybeMigrateColorSettings() {
+        if (getState().getHighlightColorRGB() != SettingsState.NO_SAVED_COLOR) {
+            migrateColorSettings();
+            getState().setHighlightColorRGB(SettingsState.NO_SAVED_COLOR);
+        }
+    }
+
+    private void migrateColorSettings() {
+        TextAttributes migrated = new TextAttributes();
+        migrated.copyFrom(EditorColorsManager.getInstance().getGlobalScheme().getAttributes(Constants.HIGHLIGHT_COLOR));
+        migrated.setBackgroundColor(new Color(getState().getHighlightColorRGB()));
+        EditorColorsManager.getInstance().getGlobalScheme().setAttributes(Constants.HIGHLIGHT_COLOR, migrated);
     }
 }

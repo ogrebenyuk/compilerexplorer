@@ -7,9 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class SettingsState {
@@ -21,10 +19,10 @@ public class SettingsState {
     private static final String DEFAULT_ADDITIONAL_SWITCHES = Constants.DEFAULT_ADDITIONAL_SWITCHES;
     @NotNull
     private static final String DEFAULT_IGNORE_SWITCHES = Constants.DEFAULT_IGNORE_SWITCHES;
-    @NotNull
-    private static final Color DEFAULT_HIGHLIGHT_COLOR = Constants.DEFAULT_HIGHLIGHT_COLOR;
     private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
     private static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = Constants.DEFAULT_COMPILER_TIMEOUT_MILLIS;
+
+    public static final int NO_SAVED_COLOR = -1;
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -66,10 +64,12 @@ public class SettingsState {
     private boolean shortenTemplates = false;
     @Property
     private boolean showLineNumbers = false;
+    @Property
     private boolean showByteOffsets = false;
+    @Property
     private boolean showSourceAnnotations = false;
     @Property
-    private int highlightColorRGB = DEFAULT_HIGHLIGHT_COLOR.getRGB();
+    private int highlightColorRGB = NO_SAVED_COLOR;
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
     @Property

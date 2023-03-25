@@ -4,9 +4,13 @@ import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.ColorPanel;
-import com.intellij.ui.JBColor;
+import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
@@ -31,8 +35,6 @@ public class SettingsGui {
     @NotNull
     private final JCheckBox preprocessCheckbox;
     private boolean ignoreUpdates;
-    @NotNull
-    private final ColorPanel highlightColorChooserPanel;
     @NotNull
     private final JTextField delayMillisField;
     @NotNull
@@ -126,16 +128,6 @@ public class SettingsGui {
 
         content.add(preprocessPanel, VerticalLayout.TOP);
 
-        JPanel highlightColorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
-        JLabel highlightColorLabel = new JLabel();
-        highlightColorLabel.setVisible(true);
-        highlightColorLabel.setText("Highlight color: ");
-        highlightColorPanel.add(highlightColorLabel);
-        highlightColorChooserPanel = new ColorPanel();
-        highlightColorPanel.add(highlightColorChooserPanel);
-
-        content.add(highlightColorPanel, VerticalLayout.TOP);
-
         JPanel delayMillisPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
         JLabel delayMillisLabel = new JLabel();
         delayMillisLabel.setVisible(true);
@@ -155,6 +147,25 @@ public class SettingsGui {
         compilerTimeoutMillisPanel.add(compilerTimeoutMillisField);
 
         content.add(compilerTimeoutMillisPanel, VerticalLayout.TOP);
+
+        JPanel colorsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
+        AnActionLink colorsLink = new AnActionLink(Constants.COLOR_SETTINGS_TITLE, new AnAction() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent event) {
+                ShowSettingsUtil.getInstance().showSettingsDialog(event.getProject(), Constants.COLOR_SETTINGS_TITLE);
+            }
+            @Override
+            public void update(@NotNull AnActionEvent event) {
+                event.getPresentation().setIcon(AllIcons.General.Settings);
+            }
+            @Override
+            public @NotNull ActionUpdateThread getActionUpdateThread() {
+                return ActionUpdateThread.BGT;
+            }
+        });
+        colorsPanel.add(colorsLink);
+
+        content.add(colorsPanel, VerticalLayout.TOP);
 
         ignoreUpdates = false;
     }
@@ -180,7 +191,6 @@ public class SettingsGui {
     private void populateGuiFromState() {
         urlField.setText(state.getUrl());
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
-        highlightColorChooserPanel.setSelectedColor(new JBColor(state.getHighlightColorRGB(), state.getHighlightColorRGB()));
         delayMillisField.setText(String.valueOf(state.getDelayMillis()));
         compilerTimeoutMillisField.setText(String.valueOf(state.getCompilerTimeoutMillis()));
         ignoreSwitchesField.setText(state.getIgnoreSwitches());
@@ -189,10 +199,6 @@ public class SettingsGui {
     private void populateStateFromGui(@NotNull SettingsState state_) {
         state_.setUrl(urlField.getText());
         state_.setPreprocessLocally(preprocessCheckbox.isSelected());
-        Color highlightColor = highlightColorChooserPanel.getSelectedColor();
-        if (highlightColor != null) {
-            state_.setHighlightColorRGB(highlightColor.getRGB());
-        }
         try {
             state_.setDelayMillis(Long.parseLong(delayMillisField.getText()));
         } catch (Exception exception) {

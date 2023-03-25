@@ -16,8 +16,10 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>
         <projectService serviceImplementation="com.compilerexplorer.common.CompilerExplorerSettingsProvider"/>
-        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="/icons/toolWindow.svg"/>
+        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="CompilerExplorerIcons.ToolWindow"/>
         <notificationGroup id="Compiler Explorer" displayType="BALLOON"/>
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
+        <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
+        <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
     </extensions>
 </idea-plugin>

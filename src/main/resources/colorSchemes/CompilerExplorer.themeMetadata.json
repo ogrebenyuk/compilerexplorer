@@ -1,0 +1,11 @@
+{
+  "name": "Compiler Explorer",
+  "fixed": false,
+  "ui": [
+    {
+      "key": "Editor.compilerExplorerHighlightBackground",
+      "description": "Highlight background color.",
+      "source": "com.compilerexplorer.gui.ToolWindowGui"
+    }
+  ]
+}
