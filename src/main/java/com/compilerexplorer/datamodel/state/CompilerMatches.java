@@ -1,5 +1,6 @@
 package com.compilerexplorer.datamodel.state;
 
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,6 +54,11 @@ public class CompilerMatches {
     private void copyFrom(@NotNull CompilerMatches other) {
         setChosenMatch(other.getChosenMatch());
         setOtherMatches(other.getOtherMatches());
+    }
+
+    @NotNull
+    public CompilerMatches withChosenMatch(CompilerMatch newChosenMatch) {
+        return new CompilerMatches(newChosenMatch, otherMatches);
     }
 
     @Override

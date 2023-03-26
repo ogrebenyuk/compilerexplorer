@@ -1,5 +1,6 @@
 package com.compilerexplorer;
 
+import com.compilerexplorer.common.LaterRunnableOnFlagChange;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.TaskRunner;
@@ -13,18 +14,17 @@ import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
 import com.compilerexplorer.explorer.RemoteCompiler;
 import com.compilerexplorer.compiler.SourcePreprocessor;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
-import com.compilerexplorer.gui.FormAncestorListener;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -39,7 +39,9 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         TaskRunner taskRunner = new TaskRunner();
 
-        ToolWindowGui form = new ToolWindowGui(project, (ToolWindowEx)toolWindow);
+        ToolWindowGui form = new ToolWindowGui(project);
+        toolWindow.setAdditionalGearActions(form.getSettingsActions());
+        toolWindow.setTitleActions(List.of(form.getScrollFromSourceAction()));
 
         ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
 
@@ -96,26 +98,12 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
 
         refresher.accept(RefreshSignal.RESET);
 
-        new FormAncestorListener(form.getContent(), new Runnable() {
-            private boolean lastEnabled = toolWindow.isVisible();
-            @Override
-            public void run() {
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    try {
-                        boolean enabled = toolWindow.isVisible();
-                        if (enabled != lastEnabled) {
-                            lastEnabled = enabled;
-                            state.setEnabled(enabled);
-                            if (enabled) {
-                                refresher.accept(RefreshSignal.RESET);
-                            }
-                        }
-                    } catch (Exception e) {
-                        // empty
-                    }
-                });
+        new FormAncestorListener(form.getContent(), new LaterRunnableOnFlagChange(toolWindow::isVisible, visible -> {
+            state.setEnabled(visible);
+            if (visible) {
+                refresher.accept(RefreshSignal.RESET);
             }
-        });
+        }));
 
         return form.getContent();
     }

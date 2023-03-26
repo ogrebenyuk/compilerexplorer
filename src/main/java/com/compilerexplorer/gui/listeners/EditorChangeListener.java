@@ -9,14 +9,12 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Supplier;
-
 public class EditorChangeListener {
-    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer, @NotNull Supplier<Boolean> suppressUpdatesProducer) {
+    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer) {
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
             public void documentChanged(@NotNull DocumentEvent event) {
-                if (!suppressUpdatesProducer.get() && belongsToProject(event.getDocument())) {
+                if (belongsToProject(event.getDocument())) {
                     consumer.run();
                 }
             }

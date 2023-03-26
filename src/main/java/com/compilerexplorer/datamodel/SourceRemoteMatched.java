@@ -1,5 +1,6 @@
 package com.compilerexplorer.datamodel;
 
+import com.compilerexplorer.datamodel.state.CompilerMatch;
 import com.compilerexplorer.datamodel.state.CompilerMatches;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +23,11 @@ public class SourceRemoteMatched {
     @NotNull
     public CompilerMatches getRemoteCompilerMatches() {
         return remoteCompilerMatches;
+    }
+
+    @NotNull
+    public SourceRemoteMatched withChosenMatch(@NotNull CompilerMatch chosenMatch) {
+        return new SourceRemoteMatched(sourceCompilerSettings, remoteCompilerMatches.withChosenMatch(chosenMatch));
     }
 
     @Override

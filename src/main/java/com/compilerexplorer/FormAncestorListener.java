@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer;
 
 import org.jetbrains.annotations.NotNull;
 
