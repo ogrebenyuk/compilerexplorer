@@ -58,7 +58,7 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     @Override
     public void disposeUIResources() {
         if (form != null) {
-            form.reset();
+            form.dispose();
         }
         form = null;
     }

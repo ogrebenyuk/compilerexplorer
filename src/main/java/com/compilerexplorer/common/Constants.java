@@ -6,9 +6,13 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ResourceBundle;
+
 public class Constants {
     @NotNull
-    public static final String PROJECT_TITLE = "Compiler Explorer";
+    public static final ResourceBundle BUNDLE = ResourceBundle.getBundle("messages.compilerexplorerBundle");
+    @NotNull
+    public static final String PROJECT_TITLE = BUNDLE.getString("toolwindow.stripe.compilerexplorer");
     @NotNull
     public static final String DEFAULT_URL = "http://localhost:10240";
     @NotNull

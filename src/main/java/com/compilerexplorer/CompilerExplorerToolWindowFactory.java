@@ -16,6 +16,8 @@ import com.compilerexplorer.compiler.SourcePreprocessor;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
@@ -40,8 +42,8 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
         TaskRunner taskRunner = new TaskRunner();
 
         ToolWindowGui form = new ToolWindowGui(project);
-        toolWindow.setAdditionalGearActions(form.getSettingsActions());
-        toolWindow.setTitleActions(List.of(form.getScrollFromSourceAction()));
+        toolWindow.setAdditionalGearActions(new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.ToolbarSettingsGroup")));
+        toolWindow.setTitleActions(List.of(ActionManager.getInstance().getAction("compilerexplorer.ScrollFromSource")));
 
         ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
 

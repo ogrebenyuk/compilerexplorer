@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui.listeners;
+package com.compilerexplorer.common;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -7,13 +7,13 @@ import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
 import java.util.function.Consumer;
 
-public class AdditionalSwitchesListener implements DocumentListener {
+public class TextChangeListener implements DocumentListener {
     @NotNull
     private final JTextComponent component;
     @NotNull
     private final Consumer<String> consumer;
 
-    public AdditionalSwitchesListener(@NotNull JTextComponent component_, @NotNull Consumer<String> consumer_) {
+    public TextChangeListener(@NotNull JTextComponent component_, @NotNull Consumer<String> consumer_) {
         component = component_;
         consumer = consumer_;
     }

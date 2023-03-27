@@ -17,6 +17,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -36,6 +37,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class EditorGui implements Consumer<CompiledText> {
+    public static final Key<EditorGui> KEY = Key.create(Constants.PROJECT_TITLE + " EditorGui");
+
     @NotNull
     private final JPanel mainPanel;
     @NotNull
@@ -59,7 +62,7 @@ public class EditorGui implements Consumer<CompiledText> {
     @NotNull
     private final ColoredLineMarkerRenderer lineMarkerRenderer = new ColoredLineMarkerRenderer();
     @NotNull
-    private final DefaultActionGroup gutterActions;
+    private static final DefaultActionGroup gutterActions = new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.AppearanceGroup"));
     @NotNull
     private final Map<Integer, Integer> lineNumberToByteOffsetMap = new HashMap<>();
     @NotNull
@@ -67,10 +70,9 @@ public class EditorGui implements Consumer<CompiledText> {
     @NotNull
     private final FoldingChangeListener foldingChangeListener;
 
-    public EditorGui(@NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_, @NotNull DefaultActionGroup gutterActions_) {
+    public EditorGui(@NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_) {
         project = project_;
         suppressUpdates = suppressUpdates_;
-        gutterActions = gutterActions_;
 
         mainPanel = new JPanel(new BorderLayout());
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
@@ -262,7 +264,7 @@ public class EditorGui implements Consumer<CompiledText> {
             for (int i = 0; i < compiledText.getCompiledResult().asm.size(); ++i) {
                 CompiledText.CompiledChunk chunk = compiledText.getCompiledResult().asm.get(i);
                 chunkToOffset[i] = currentOffset;
-                if (chunk.opcodes != null) {
+                if (chunk.opcodes != null && state.getShowOpcodes()) {
                     parseOpcodes(asmBuilder, chunk.opcodes);
                     ++line;
                 }

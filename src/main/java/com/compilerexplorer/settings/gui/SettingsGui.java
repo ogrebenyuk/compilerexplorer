@@ -2,26 +2,24 @@ package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.TaskRunner;
+import com.compilerexplorer.common.TextChangeListener;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.actionSystem.ActionUpdateThread;
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Key;
 import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.stream.Collectors;
 
 public class SettingsGui {
+    public static final Key<SettingsGui> KEY = Key.create(Constants.PROJECT_TITLE + " SettingsGui");
     private static final int GAP = 2;
 
     @NotNull
@@ -32,6 +30,8 @@ public class SettingsGui {
     private final JPanel content;
     @NotNull
     private final JTextField urlField;
+    @NotNull
+    private final JLabel testResultLabel;
     @NotNull
     private final JCheckBox preprocessCheckbox;
     private boolean ignoreUpdates;
@@ -45,9 +45,12 @@ public class SettingsGui {
     private final TaskRunner taskRunner;
 
     public SettingsGui(@NotNull Project project_) {
+        project = project_;
+
+        project.putUserData(KEY, this);
+
         taskRunner = new TaskRunner();
         ignoreUpdates = true;
-        project = project_;
         state = new SettingsState();
         content = new JPanel(new VerticalLayout(GAP));
         JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
@@ -56,55 +59,26 @@ public class SettingsGui {
         urlLabel.setText(Constants.PROJECT_TITLE + " URL: ");
         urlPanel.add(urlLabel, BorderLayout.WEST);
         urlField = new JTextField();
-        urlField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                // empty
+        urlField.getDocument().addDocumentListener(new TextChangeListener(urlField, text -> {
+            if (!ignoreUpdates) {
+                state.setConnected(false);
             }
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                update();
-            }
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                update();
-            }
-            private void update() {
-                if (!ignoreUpdates) {
-                    state.setConnected(false);
-                }
-            }
-        });
+        }));
         urlPanel.add(urlField, BorderLayout.CENTER);
 
-        JLabel testResultLabel = new JLabel();
-
+        AnAction testConnectionAction = ActionManager.getInstance().getAction("compilerexplorer.TestConnection");
         JButton connectButton = new JButton();
         connectButton.setText("Test connection");
-        connectButton.addActionListener(e -> {
-            SettingsState testState = new SettingsState();
-            populateStateFromGui(testState);
-            testState.setEnabled(true);
-            testState.setConnected(false);
-            (new RemoteCompilersProducer<Boolean>(
-                    project,
-                    testState,
-                    unused -> {
-                        testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
-                        testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("<br/>")));
-                    },
-                    error  -> {
-                        testResultLabel.setText("Error: " + error.getMessage());
-                        testResultLabel.setToolTipText("");
-                    },
-                    taskRunner
-            )).accept(false);
-        });
+        connectButton.setText(testConnectionAction.getTemplatePresentation().getText());
+        connectButton.setToolTipText(testConnectionAction.getTemplatePresentation().getDescription());
+        connectButton.setIcon(testConnectionAction.getTemplatePresentation().getIcon());
+        connectButton.addActionListener(e -> testConnectionAction.actionPerformed(AnActionEvent.createFromAnAction(testConnectionAction, null, ActionPlaces.UNKNOWN, DataManager.getInstance().getDataContext(connectButton))));
         urlPanel.add(connectButton, BorderLayout.EAST);
 
         content.add(urlPanel, VerticalLayout.TOP);
 
         JPanel testResultPanel = new JPanel(new BorderLayout(GAP, GAP));
+        testResultLabel = new JLabel();
         testResultLabel.setVisible(true);
         testResultLabel.setText("");
         testResultPanel.add(testResultLabel, BorderLayout.CENTER);
@@ -149,20 +123,7 @@ public class SettingsGui {
         content.add(compilerTimeoutMillisPanel, VerticalLayout.TOP);
 
         JPanel colorsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
-        AnActionLink colorsLink = new AnActionLink(Constants.COLOR_SETTINGS_TITLE, new AnAction() {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent event) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(event.getProject(), Constants.COLOR_SETTINGS_TITLE);
-            }
-            @Override
-            public void update(@NotNull AnActionEvent event) {
-                event.getPresentation().setIcon(AllIcons.General.Settings);
-            }
-            @Override
-            public @NotNull ActionUpdateThread getActionUpdateThread() {
-                return ActionUpdateThread.BGT;
-            }
-        });
+        AnActionLink colorsLink = new AnActionLink(Constants.COLOR_SETTINGS_TITLE, ActionManager.getInstance().getAction("compilerexplorer.ShowColorSettings"));
         colorsPanel.add(colorsLink);
 
         content.add(colorsPanel, VerticalLayout.TOP);
@@ -212,7 +173,33 @@ public class SettingsGui {
         state_.setIgnoreSwitches(ignoreSwitchesField.getText());
     }
 
-    public void reset() {
+    public void dispose() {
         taskRunner.reset();
+
+        project.putUserData(KEY, null);
+    }
+
+    public static boolean isSettingsGuiActive(@NotNull Project project) {
+        return project.getUserData(KEY) != null;
+    }
+
+    public void testConnection() {
+        SettingsState testState = new SettingsState();
+        populateStateFromGui(testState);
+        testState.setEnabled(true);
+        testState.setConnected(false);
+        (new RemoteCompilersProducer<Boolean>(
+                project,
+                testState,
+                unused -> {
+                    testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
+                    testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("<br/>")));
+                },
+                error  -> {
+                    testResultLabel.setText("Error: " + error.getMessage());
+                    testResultLabel.setToolTipText("");
+                },
+                taskRunner
+        )).accept(false);
     }
 }

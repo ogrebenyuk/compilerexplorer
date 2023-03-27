@@ -1,6 +1,5 @@
 package com.compilerexplorer.datamodel.state;
 
-import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
 

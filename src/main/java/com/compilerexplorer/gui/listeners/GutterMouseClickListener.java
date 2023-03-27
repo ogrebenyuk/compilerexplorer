@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseWheelEvent;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -21,25 +22,25 @@ public class GutterMouseClickListener extends MouseAdapter {
 
     @Override
     public void mouseClicked(@NotNull MouseEvent e) {
-        if (!maybePopup(e)) {
-            regularClickConsumer.accept(e.getPoint());
-            e.consume();
-        }
+        maybePopup(e);
+        regularClickConsumer.accept(e.getPoint());
+        e.consume();
     }
+
     @Override
     public void mousePressed(@NotNull MouseEvent e) {
         maybePopup(e);
     }
+
     @Override
     public void mouseReleased(@NotNull MouseEvent e) {
         maybePopup(e);
     }
-    private boolean maybePopup(@NotNull MouseEvent e) {
-        boolean isPopup = e.isPopupTrigger();
-        if (isPopup) {
+
+    private void maybePopup(@NotNull MouseEvent e) {
+        if (e.isPopupTrigger()) {
             popupClickConsumer.accept(e.getX(), e.getY());
             e.consume();
         }
-        return isPopup;
     }
 }

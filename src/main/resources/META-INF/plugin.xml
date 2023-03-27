@@ -14,12 +14,128 @@
     <depends>com.intellij.modules.cidr.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectConfigurable groupId="build" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" displayName="Compiler Explorer"/>
+        <projectConfigurable groupId="tools" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" key="toolwindow.stripe.compilerexplorer"/>
         <projectService serviceImplementation="com.compilerexplorer.common.CompilerExplorerSettingsProvider"/>
-        <toolWindow id="Compiler Explorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="CompilerExplorerIcons.ToolWindow"/>
-        <notificationGroup id="Compiler Explorer" displayType="BALLOON"/>
+        <toolWindow id="compilerexplorer" anchor="right" secondary="true" factoryClass="com.compilerexplorer.CompilerExplorerToolWindowFactory" icon="CompilerExplorerIcons.ToolWindow"/>
+        <notificationGroup id="compilerexplorer" displayType="BALLOON" key="toolwindow.stripe.compilerexplorer"/>
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
         <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
     </extensions>
+
+    <resource-bundle>messages.compilerexplorerBundle</resource-bundle>
+
+    <actions>
+        <action id="compilerexplorer.CompileToBinaryToggle" class="com.compilerexplorer.actions.output.CompileToBinaryToggle"/>
+        <action id="compilerexplorer.LinkToBinaryToggle" class="com.compilerexplorer.actions.output.LinkToBinaryToggle"/>
+        <action id="compilerexplorer.ExecuteCodeToggle" class="com.compilerexplorer.actions.output.ExecuteCodeToggle"/>
+        <action id="compilerexplorer.IntelAsmSyntaxToggle" class="com.compilerexplorer.actions.output.IntelAsmSyntaxToggle"/>
+        <action id="compilerexplorer.DemangleToggle" class="com.compilerexplorer.actions.output.DemangleToggle"/>
+
+        <action id="compilerexplorer.UnusedLabelsToggle" class="com.compilerexplorer.actions.filter.UnusedLabelsToggle"/>
+        <action id="compilerexplorer.LibraryFunctionsToggle" class="com.compilerexplorer.actions.filter.LibraryFunctionsToggle"/>
+        <action id="compilerexplorer.DirectivesToggle" class="com.compilerexplorer.actions.filter.DirectivesToggle"/>
+        <action id="compilerexplorer.CommentOnlyToggle" class="com.compilerexplorer.actions.filter.CommentOnlyToggle"/>
+        <action id="compilerexplorer.HorizontalWhitespaceToggle" class="com.compilerexplorer.actions.filter.HorizontalWhitespaceToggle"/>
+
+        <action id="compilerexplorer.ShowLineNumbersToggle" class="com.compilerexplorer.actions.appearance.ShowLineNumbersToggle"/>
+        <action id="compilerexplorer.ShowByteOffsetsToggle" class="com.compilerexplorer.actions.appearance.ShowByteOffsetsToggle"/>
+        <action id="compilerexplorer.ShowSourceAnnotationsToggle" class="com.compilerexplorer.actions.appearance.ShowSourceAnnotationsToggle"/>
+        <action id="compilerexplorer.ShowOpcodesToggle" class="com.compilerexplorer.actions.appearance.ShowOpcodesToggle"/>
+        <action id="compilerexplorer.ShortenTemplatesToggle" class="com.compilerexplorer.actions.appearance.ShortenTemplatesToggle"/>
+        <action id="compilerexplorer.EnableFoldingToggle" class="com.compilerexplorer.actions.appearance.EnableFoldingToggle"/>
+        <action id="compilerexplorer.ExpandAllFoldingToggle" class="com.compilerexplorer.actions.appearance.ExpandAllFoldingToggle"/>
+        <action id="compilerexplorer.CollapseAllFoldingToggle" class="com.compilerexplorer.actions.appearance.CollapseAllFoldingToggle"/>
+
+        <action id="compilerexplorer.AutoscrollToSourceToggle" class="com.compilerexplorer.actions.behavior.AutoscrollToSourceToggle"/>
+        <action id="compilerexplorer.AutoscrollFromSourceToggle" class="com.compilerexplorer.actions.behavior.AutoscrollFromSourceToggle"/>
+        <action id="compilerexplorer.ScrollFromSource" class="com.compilerexplorer.actions.behavior.ScrollFromSource" icon="AllIcons.General.Locate"/>
+        <action id="compilerexplorer.AutoupdateFromSourceToggle" class="com.compilerexplorer.actions.behavior.AutoupdateFromSourceToggle"/>
+        <action id="compilerexplorer.RecompileCurrentSource" class="com.compilerexplorer.actions.behavior.RecompileCurrentSource" icon="AllIcons.Actions.Refresh"/>
+        <action id="compilerexplorer.ShowSettings" class="com.compilerexplorer.actions.behavior.ShowSettings" icon="AllIcons.General.Settings"/>
+        <action id="compilerexplorer.ShowColorSettings" class="com.compilerexplorer.actions.behavior.ShowColorSettings" icon="AllIcons.Actions.Colors"/>
+        <action id="compilerexplorer.ResetCacheAndReload" class="com.compilerexplorer.actions.behavior.ResetCacheAndReload" icon="AllIcons.Actions.ForceRefresh"/>
+        <action id="compilerexplorer.TestConnection" class="com.compilerexplorer.actions.behavior.TestConnection"/>
+
+        <group id="compilerexplorer.OutputGroup" popup="false">
+            <reference ref="compilerexplorer.CompileToBinaryToggle"/>
+            <reference ref="compilerexplorer.LinkToBinaryToggle"/>
+            <reference ref="compilerexplorer.ExecuteCodeToggle"/>
+            <reference ref="compilerexplorer.IntelAsmSyntaxToggle"/>
+            <reference ref="compilerexplorer.DemangleToggle"/>
+        </group>
+
+        <group id="compilerexplorer.OutputPopupGroup" popup="true">
+            <reference ref="compilerexplorer.OutputGroup"/>
+        </group>
+
+        <group id="compilerexplorer.FilterGroup" popup="false">
+            <reference ref="compilerexplorer.UnusedLabelsToggle"/>
+            <reference ref="compilerexplorer.LibraryFunctionsToggle"/>
+            <reference ref="compilerexplorer.DirectivesToggle"/>
+            <reference ref="compilerexplorer.CommentOnlyToggle"/>
+            <reference ref="compilerexplorer.HorizontalWhitespaceToggle"/>
+        </group>
+
+        <group id="compilerexplorer.FilterPopupGroup" popup="true">
+            <reference ref="compilerexplorer.FilterGroup"/>
+        </group>
+
+        <group id="compilerexplorer.AppearanceGroup" popup="false">
+            <reference ref="compilerexplorer.ShowLineNumbersToggle"/>
+            <reference ref="compilerexplorer.ShowByteOffsetsToggle"/>
+            <reference ref="compilerexplorer.ShowSourceAnnotationsToggle"/>
+            <reference ref="compilerexplorer.ShowOpcodesToggle"/>
+            <reference ref="compilerexplorer.ShortenTemplatesToggle"/>
+            <reference ref="compilerexplorer.EnableFoldingToggle"/>
+            <reference ref="compilerexplorer.ExpandAllFoldingToggle"/>
+            <reference ref="compilerexplorer.CollapseAllFoldingToggle"/>
+        </group>
+
+        <group id="compilerexplorer.AppearancePopupGroup" popup="true">
+            <reference ref="compilerexplorer.AppearanceGroup"/>
+        </group>
+
+        <group id="compilerexplorer.BehaviorGroup" popup="false">
+            <reference ref="compilerexplorer.AutoscrollToSourceToggle"/>
+            <reference ref="compilerexplorer.AutoscrollFromSourceToggle"/>
+            <reference ref="compilerexplorer.ScrollFromSource"/>
+            <reference ref="compilerexplorer.AutoupdateFromSourceToggle"/>
+            <reference ref="compilerexplorer.RecompileCurrentSource"/>
+            <reference ref="compilerexplorer.ShowSettings"/>
+            <reference ref="compilerexplorer.ShowColorSettings"/>
+            <reference ref="compilerexplorer.ResetCacheAndReload"/>
+        </group>
+
+        <group id="compilerexplorer.BehaviorPopupGroup" popup="true">
+            <reference ref="compilerexplorer.BehaviorGroup"/>
+        </group>
+
+        <group id="compilerexplorer.ToolbarSettingsGroup" icon="AllIcons.Actions.More" popup="true">
+            <separator key="compilerexplorer.OutputGroupTitle"/>
+            <reference ref="compilerexplorer.OutputGroup"/>
+            <separator/>
+            <separator key="compilerexplorer.FilterGroupTitle"/>
+            <reference ref="compilerexplorer.FilterGroup"/>
+            <separator/>
+            <separator key="compilerexplorer.AppearanceGroupTitle"/>
+            <reference ref="compilerexplorer.AppearanceGroup"/>
+            <separator/>
+            <separator key="compilerexplorer.BehaviorGroupTitle"/>
+            <reference ref="compilerexplorer.BehaviorGroup"/>
+        </group>
+
+        <group id="compilerexplorer.ToolbarGroup">
+            <reference ref="compilerexplorer.RecompileCurrentSource"/>
+            <reference ref="compilerexplorer.ToolbarSettingsGroup"/>
+        </group>
+
+        <group id="compilerexplorer.ToolsMenuGroup" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <reference ref="compilerexplorer.OutputPopupGroup"/>
+            <reference ref="compilerexplorer.FilterPopupGroup"/>
+            <reference ref="compilerexplorer.AppearancePopupGroup"/>
+            <reference ref="compilerexplorer.BehaviorPopupGroup"/>
+        </group>
+    </actions>
 </idea-plugin>

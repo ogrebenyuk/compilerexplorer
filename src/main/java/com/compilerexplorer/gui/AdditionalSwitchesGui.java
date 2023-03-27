@@ -1,6 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.gui.listeners.AdditionalSwitchesListener;
+import com.compilerexplorer.common.TextChangeListener;
 import com.intellij.ui.components.JBTextField;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +14,7 @@ public class AdditionalSwitchesGui {
     public AdditionalSwitchesGui(@NotNull String initialText, @NotNull Consumer<String> consumer) {
         textField = new JBTextField(initialText);
         textField.setToolTipText("Additional compiler switches");
-        textField.getDocument().addDocumentListener(new AdditionalSwitchesListener(textField, consumer));
+        textField.getDocument().addDocumentListener(new TextChangeListener(textField, consumer));
     }
 
     @NotNull

@@ -69,6 +69,8 @@ public class SettingsState {
     @Property
     private boolean showSourceAnnotations = false;
     @Property
+    private boolean showOpcodes = true;
+    @Property
     private boolean enableFolding = false;
     @NotNull
     @Property
@@ -232,6 +234,14 @@ public class SettingsState {
         showSourceAnnotations = showSourceAnnotations_;
     }
 
+    public boolean getShowOpcodes() {
+        return showOpcodes;
+    }
+
+    public void setShowOpcodes(boolean showOpcodes_) {
+        showOpcodes = showOpcodes_;
+    }
+
     public boolean getEnableFolding() {
         return enableFolding;
     }
@@ -300,6 +310,7 @@ public class SettingsState {
         setShowLineNumbers(other.getShowLineNumbers());
         setShowByteOffsets(other.getShowByteOffsets());
         setShowSourceAnnotations(other.getShowSourceAnnotations());
+        setShowOpcodes(other.getShowOpcodes());
         setEnableFolding(other.getEnableFolding());
         setFoldedLabels(other.getFoldedLabels());
         setHighlightColorRGB(other.getHighlightColorRGB());
@@ -327,6 +338,7 @@ public class SettingsState {
                 + (getShowLineNumbers() ? 1 : 0)
                 + (getShowByteOffsets() ? 1 : 0)
                 + (getShowSourceAnnotations() ? 1 : 0)
+                + (getShowOpcodes() ? 1 : 0)
                 + (getEnableFolding() ? 1 : 0)
                 + getFoldedLabels().hashCode()
                 + getHighlightColorRGB()
@@ -358,6 +370,7 @@ public class SettingsState {
                 && getShowLineNumbers() == (other.getShowLineNumbers())
                 && getShowByteOffsets() == (other.getShowByteOffsets())
                 && getShowSourceAnnotations() == (other.getShowSourceAnnotations())
+                && getShowOpcodes() == (other.getShowOpcodes())
                 && getEnableFolding() == (other.getEnableFolding())
                 && getFoldedLabels() == (other.getFoldedLabels())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
