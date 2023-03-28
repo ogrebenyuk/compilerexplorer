@@ -15,6 +15,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.jetbrains.cidr.system.HostMachine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.function.Consumer;
@@ -142,11 +144,14 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
 
                     if (compiledResult.code == 0) {
-                        normalizePaths(compiledResult.stdout);
-                        normalizePaths(compiledResult.stderr);
-                        normalizePaths(compiledResult.asm);
+                        HostMachine host = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getHost();
+                        @Nullable File compilerDir = new File(preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getCompilerPath()).getParentFile();
+                        @Nullable String compilerInstallPath = compilerDir != null ? compilerDir.getParent() : null;
+                        normalizePaths(compiledResult.stdout, host, compilerInstallPath);
+                        normalizePaths(compiledResult.stderr, host, compilerInstallPath);
+                        normalizePaths(compiledResult.asm, host, compilerInstallPath);
                         if (compiledResult.execResult != null) {
-                            normalizePaths(compiledResult.execResult.stdout);
+                            normalizePaths(compiledResult.execResult.stdout, host, compilerInstallPath);
                         }
                         ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, compiledResult)));
                     } else {
@@ -195,20 +200,22 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         }
     }
 
-    private void normalizePaths(@NotNull List<CompiledText.CompiledChunk> chunks) {
+    private void normalizePaths(@NotNull List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
         chunks.forEach(chunk -> {
             if (chunk.source != null) {
-                chunk.source.file = tryNormalizePath(chunk.source.file);
+                chunk.source.file = tryNormalizePath(chunk.source.file, host, compilerInstallPath);
             }
         });
     }
 
     @Nullable
-    private String tryNormalizePath(@Nullable String path) {
+    private String tryNormalizePath(@Nullable String path, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
         if (path == null) {
             return null;
         }
-        return normalizedPathMap.computeIfAbsent(path, PathNormalizer::normalizePath);
+        return normalizedPathMap.computeIfAbsent(path, p ->
+                PathNormalizer.resolvePathFromCompilerHostToLocal(p, host, project.getBasePath(), compilerInstallPath)
+        );
     }
 
     @NotNull

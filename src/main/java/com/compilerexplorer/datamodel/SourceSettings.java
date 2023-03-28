@@ -78,7 +78,7 @@ public class SourceSettings {
     @NotNull
     public String getCompilerPath()
     {
-        return host.isRemote() ? compiler.getPath() : compiler.getAbsolutePath();
+        return compiler.getPath();
     }
 
     @NotNull

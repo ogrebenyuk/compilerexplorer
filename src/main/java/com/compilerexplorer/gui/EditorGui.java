@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.File;
 import java.util.List;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -275,7 +274,7 @@ public class EditorGui implements Consumer<CompiledText> {
                     parseChunk(asmBuilder, chunk.text, shortenTemplates);
                     ++line;
                     if (chunk.source != null && chunk.source.file != null) {
-                        String currentChunkFile = PathNormalizer.normalizePath(new File(chunk.source.file).getAbsolutePath());
+                        String currentChunkFile = chunk.source.file;
                         if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                             if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
                                 rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));

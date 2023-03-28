@@ -18,6 +18,7 @@ import java.io.File;
 import java.lang.Error;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -93,9 +94,11 @@ public class SourcePreprocessor implements Consumer<SourceRemoteMatched> {
         return Stream.concat(
                 Stream.concat(
                         Stream.concat(
-                                Stream.of(sourceSettings.getCompilerPath(),
-                                        "-I" + Paths.get(sourceSettings.getSourcePath()).getParent().toString(),
-                                        "-I" + project.getBasePath()
+                                Stream.concat(Stream.of(sourceSettings.getCompilerPath()),
+                                    Stream.of(
+                                            Paths.get(sourceSettings.getSourcePath()).getParent().toString(),
+                                            project.getBasePath() != null ? project.getBasePath() : null
+                                    ).filter(Objects::nonNull).distinct().map(path -> PathNormalizer.resolvePathFromLocalToCompilerHost(path, sourceSettings.getHost())).map(path -> "-I" + path)
                                 ),
                                 Stream.concat(
                                         sourceSettings.getSwitches().stream(),
