@@ -144,15 +144,20 @@ public class EditorGui implements Consumer<CompiledText> {
         ));
     }
 
+    @Nullable
+    private EditorEx getEditor() {
+        return editor.getEditor(false);
+    }
+
     private void withEditor(@NotNull Consumer<EditorEx> consumer) {
-        @Nullable EditorEx ed = editor.getEditor(false);
+        @Nullable EditorEx ed = getEditor();
         if (ed != null) {
             consumer.accept(ed);
         }
     }
 
     private <ReturnType> ReturnType withEditor(@NotNull Function<EditorEx, ReturnType> consumer, ReturnType defaultValue) {
-        @Nullable EditorEx ed = editor.getEditor(false);
+        @Nullable EditorEx ed = getEditor();
         return ed != null ? consumer.apply(ed) : defaultValue;
     }
 
@@ -183,7 +188,8 @@ public class EditorGui implements Consumer<CompiledText> {
         }
 
         if (showAnyAnnotations && state.getShowSourceAnnotations()) {
-            gutter.registerTextAnnotation(new SourceAnnotationProvider(this::findSourceLocationFromOffset));
+            SourceAnnotationProvider provider = new SourceAnnotationProvider(this::findSourceLocationFromOffset);
+            gutter.registerTextAnnotation(provider, new SourceAnnotationGutterAction(provider, this::getEditor));
         }
     }
 
