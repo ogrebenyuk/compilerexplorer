@@ -212,11 +212,6 @@ public class ToolWindowGui {
         return CompilerExplorerSettingsProvider.getInstance(project).getState();
     }
 
-    @NotNull
-    private Filters getFilters() {
-        return getState().getFilters();
-    }
-
     private void unlessUpdatesSuppressed(Runnable runnable) {
         suppressUpdates.unlessApplied(runnable);
     }

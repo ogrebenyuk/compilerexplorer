@@ -2,28 +2,21 @@ package com.compilerexplorer.gui.listeners;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
-public class GutterMouseClickListener extends MouseAdapter {
-    @NotNull
-    private final Consumer<Point> regularClickConsumer;
+public class GutterMousePopupClickListener extends MouseAdapter {
     @NotNull
     private final BiConsumer<Integer, Integer> popupClickConsumer;
 
-    public GutterMouseClickListener(@NotNull Consumer<Point> regularClickConsumer_, @NotNull BiConsumer<Integer, Integer> popupClickConsumer_) {
-        regularClickConsumer = regularClickConsumer_;
+    public GutterMousePopupClickListener(@NotNull BiConsumer<Integer, Integer> popupClickConsumer_) {
         popupClickConsumer = popupClickConsumer_;
     }
 
     @Override
     public void mouseClicked(@NotNull MouseEvent e) {
         maybePopup(e);
-        regularClickConsumer.accept(e.getPoint());
-        e.consume();
     }
 
     @Override

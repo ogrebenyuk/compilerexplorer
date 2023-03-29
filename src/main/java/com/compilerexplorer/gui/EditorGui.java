@@ -138,8 +138,7 @@ public class EditorGui implements Consumer<CompiledText> {
         ed.getGutterComponentEx().setGutterPopupGroup(null);
         ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
         ed.getGutterComponentEx().setCanCloseAnnotations(false);
-        ed.getGutterComponentEx().addMouseListener(new GutterMouseClickListener(
-            point -> withEditor(ed_ -> scrollToSource(findSourceLocationFromOffset(ed_.logicalPositionToOffset(ed_.xyToLogicalPosition(point))))),
+        ed.getGutterComponentEx().addMouseListener(new GutterMousePopupClickListener(
             (x, y) -> withEditor(ed_ -> showGutterPopupMenu(ed_.getGutterComponentEx(), x, y))
         ));
     }
@@ -189,7 +188,9 @@ public class EditorGui implements Consumer<CompiledText> {
 
         if (showAnyAnnotations && state.getShowSourceAnnotations()) {
             SourceAnnotationProvider provider = new SourceAnnotationProvider(this::findSourceLocationFromOffset);
-            gutter.registerTextAnnotation(provider, new SourceAnnotationGutterAction(provider, this::getEditor));
+            gutter.registerTextAnnotation(provider, new SourceAnnotationGutterAction(provider, this::getEditor,
+                line -> withEditor(ed_ -> scrollToSource(findSourceLocationFromOffset(ed_.logicalPositionToOffset(new LogicalPosition(line, 0)))))
+            ));
         }
     }
 
