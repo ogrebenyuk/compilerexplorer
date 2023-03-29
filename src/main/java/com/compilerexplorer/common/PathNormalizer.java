@@ -1,5 +1,6 @@
 package com.compilerexplorer.common;
 
+import com.intellij.openapi.util.SystemInfo;
 import com.jetbrains.cidr.system.HostMachine;
 import com.jetbrains.cidr.system.MappedHost;
 import org.jetbrains.annotations.NotNull;
@@ -46,8 +47,17 @@ public class PathNormalizer {
                 return mappedHost.getPathMapper().convertToLocal(normalisedRemotePath);
             }
         }
-        if (projectBasePath != null && normalisedRemotePath.startsWith(normalizePath(projectBasePath))) {
-            return normalisedRemotePath;
+        if (projectBasePath != null) {
+            String normalizedProjectPath = normalizePath(projectBasePath);
+            if (normalisedRemotePath.startsWith(normalizedProjectPath)) {
+                return normalisedRemotePath;
+            }
+            if (SystemInfo.isWindows && isWindowsPath(normalizedProjectPath) && !isWindowsPath(normalisedRemotePath)) {
+                String fixed = normalizedProjectPath.substring(0, 2) + normalisedRemotePath;
+                if (fixed.startsWith(normalizedProjectPath)) {
+                    return fixed;
+                }
+            }
         }
         try {
             String resolved = host.resolveAndCache(List.of(remotePath)).get(0);
