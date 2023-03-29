@@ -53,9 +53,11 @@
         <action id="compilerexplorer.AutoupdateFromSourceToggle" class="com.compilerexplorer.actions.behavior.AutoupdateFromSourceToggle"/>
         <action id="compilerexplorer.RecompileCurrentSource" class="com.compilerexplorer.actions.behavior.RecompileCurrentSource" icon="AllIcons.Actions.Refresh"/>
         <action id="compilerexplorer.ShowSettings" class="com.compilerexplorer.actions.behavior.ShowSettings" icon="AllIcons.General.Settings"/>
+        <action id="compilerexplorer.ShowUrlHistoryInSettings" class="com.compilerexplorer.actions.behavior.ShowUrlHistoryInSettings" icon="AllIcons.General.Settings"/>
         <action id="compilerexplorer.ShowColorSettings" class="com.compilerexplorer.actions.behavior.ShowColorSettings" icon="AllIcons.Actions.Colors"/>
         <action id="compilerexplorer.ResetCacheAndReload" class="com.compilerexplorer.actions.behavior.ResetCacheAndReload" icon="AllIcons.Actions.ForceRefresh"/>
         <action id="compilerexplorer.TestConnection" class="com.compilerexplorer.actions.behavior.TestConnection"/>
+        <action id="compilerexplorer.ClearUrlHistory" class="com.compilerexplorer.actions.behavior.ClearUrlHistory"/>
 
         <group id="compilerexplorer.OutputGroup" popup="false">
             <reference ref="compilerexplorer.CompileToBinaryToggle"/>
@@ -96,7 +98,16 @@
             <reference ref="compilerexplorer.AppearanceGroup"/>
         </group>
 
-        <group id="compilerexplorer.BehaviorGroup" popup="false">
+        <group id="compilerexplorer.ShortBehaviorGroup" popup="false">
+            <reference ref="compilerexplorer.AutoscrollToSourceToggle"/>
+            <reference ref="compilerexplorer.AutoscrollFromSourceToggle"/>
+            <reference ref="compilerexplorer.ScrollFromSource"/>
+            <reference ref="compilerexplorer.AutoupdateFromSourceToggle"/>
+            <reference ref="compilerexplorer.ShowSettings"/>
+            <reference ref="compilerexplorer.ResetCacheAndReload"/>
+        </group>
+
+        <group id="compilerexplorer.FullBehaviorGroup" popup="false">
             <reference ref="compilerexplorer.AutoscrollToSourceToggle"/>
             <reference ref="compilerexplorer.AutoscrollFromSourceToggle"/>
             <reference ref="compilerexplorer.ScrollFromSource"/>
@@ -107,8 +118,8 @@
             <reference ref="compilerexplorer.ResetCacheAndReload"/>
         </group>
 
-        <group id="compilerexplorer.BehaviorPopupGroup" popup="true">
-            <reference ref="compilerexplorer.BehaviorGroup"/>
+        <group id="compilerexplorer.FullBehaviorPopupGroup" popup="true">
+            <reference ref="compilerexplorer.FullBehaviorGroup"/>
         </group>
 
         <group id="compilerexplorer.ToolbarSettingsGroup" icon="AllIcons.Actions.More" popup="true">
@@ -122,7 +133,7 @@
             <reference ref="compilerexplorer.AppearanceGroup"/>
             <separator/>
             <separator key="compilerexplorer.BehaviorGroupTitle"/>
-            <reference ref="compilerexplorer.BehaviorGroup"/>
+            <reference ref="compilerexplorer.ShortBehaviorGroup"/>
         </group>
 
         <group id="compilerexplorer.ToolbarGroup">
@@ -135,7 +146,7 @@
             <reference ref="compilerexplorer.OutputPopupGroup"/>
             <reference ref="compilerexplorer.FilterPopupGroup"/>
             <reference ref="compilerexplorer.AppearancePopupGroup"/>
-            <reference ref="compilerexplorer.BehaviorPopupGroup"/>
+            <reference ref="compilerexplorer.FullBehaviorPopupGroup"/>
         </group>
     </actions>
 </idea-plugin>

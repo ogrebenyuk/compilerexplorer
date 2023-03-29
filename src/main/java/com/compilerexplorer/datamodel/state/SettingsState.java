@@ -21,6 +21,8 @@ public class SettingsState {
     private static final String DEFAULT_IGNORE_SWITCHES = Constants.DEFAULT_IGNORE_SWITCHES;
     private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
     private static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = Constants.DEFAULT_COMPILER_TIMEOUT_MILLIS;
+    @NotNull
+    private static final List<String> EMPTY_URL_HISTORY = new ArrayList<>();
 
     public static final int NO_SAVED_COLOR = -1;
 
@@ -32,6 +34,9 @@ public class SettingsState {
     @NotNull
     @Property
     private String url = DEFAULT_URL;
+    @NotNull
+    @Property
+    private List<String> urlHistory = EMPTY_URL_HISTORY;
     @Property
     private boolean connected = DEFAULT_CONNECTED;
     @NotNull
@@ -103,6 +108,26 @@ public class SettingsState {
 
     public void setUrl(@NotNull String url_) {
         url = url_;
+    }
+
+    @NotNull
+    public List<String> getUrlHistory() {
+        return urlHistory;
+    }
+
+    public void setUrlHistory(@NotNull List<String> urlHistory_) {
+        urlHistory = new ArrayList<>();
+        urlHistory.addAll(urlHistory_);
+    }
+
+    public void addToUrlHistory(@NotNull String url_) {
+        if (!Constants.DEFAULT_URLS.containsKey(url_) && !urlHistory.contains(url_)) {
+            urlHistory.add(url_);
+        }
+    }
+
+    public void clearUrlHistory() {
+        urlHistory = EMPTY_URL_HISTORY;
     }
 
     public boolean getConnected() {
@@ -295,6 +320,7 @@ public class SettingsState {
     public void copyFrom(@NotNull SettingsState other) {
         setEnabled(other.getEnabled());
         setUrl(other.getUrl());
+        setUrlHistory(other.getUrlHistory());
         setConnected(other.getConnected());
         setRemoteCompilers(other.getRemoteCompilers());
         setLocalCompilerSettings(other.getLocalCompilerSettings());
@@ -323,6 +349,7 @@ public class SettingsState {
     public int hashCode() {
         return (getEnabled() ? 1 : 0)
                 + getUrl().hashCode()
+                + getUrlHistory().hashCode()
                 + (getConnected() ? 1 : 0)
                 + getRemoteCompilers().hashCode()
                 + getLocalCompilerSettings().hashCode()
@@ -355,6 +382,7 @@ public class SettingsState {
         }
         return getEnabled() == other.getEnabled()
                 && getUrl().equals(other.getUrl())
+                && getUrlHistory().equals(other.getUrlHistory())
                 && getConnected() == other.getConnected()
                 && getRemoteCompilers().equals(other.getRemoteCompilers())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())

@@ -48,7 +48,7 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
         ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
 
         SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(project, form.asSourceRemoteMatchedConsumer());
-        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, state, sourceRemoteMatchProducer, form.asErrorConsumer(), taskRunner);
+        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, state, sourceRemoteMatchProducer, form.asErrorConsumer(), state::addToUrlHistory, taskRunner);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, remoteCompilersProducer, form.asErrorConsumer(), taskRunner);
 
         form.setSourceSettingsConsumer(compilerSettingsProducer);

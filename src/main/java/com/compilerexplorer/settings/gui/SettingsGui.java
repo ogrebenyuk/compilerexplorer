@@ -2,19 +2,21 @@ package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.common.TextChangeListener;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.ui.AncestorListenerAdapter;
 import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.VerticalLayout;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.AncestorEvent;
 import java.awt.*;
 import java.util.stream.Collectors;
 
@@ -29,12 +31,11 @@ public class SettingsGui {
     @NotNull
     private final JPanel content;
     @NotNull
-    private final JTextField urlField;
+    private final UrlGui urlGui;
     @NotNull
     private final JLabel testResultLabel;
     @NotNull
     private final JCheckBox preprocessCheckbox;
-    private boolean ignoreUpdates;
     @NotNull
     private final JTextField delayMillisField;
     @NotNull
@@ -44,13 +45,12 @@ public class SettingsGui {
     @NotNull
     private final TaskRunner taskRunner;
 
-    public SettingsGui(@NotNull Project project_) {
+    public SettingsGui(@NotNull Project project_, boolean showUrlHistoryOnStart) {
         project = project_;
 
         project.putUserData(KEY, this);
 
         taskRunner = new TaskRunner();
-        ignoreUpdates = true;
         state = new SettingsState();
         content = new JPanel(new VerticalLayout(GAP));
         JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
@@ -58,13 +58,9 @@ public class SettingsGui {
         urlLabel.setVisible(true);
         urlLabel.setText(Constants.PROJECT_TITLE + " URL: ");
         urlPanel.add(urlLabel, BorderLayout.WEST);
-        urlField = new JTextField();
-        urlField.getDocument().addDocumentListener(new TextChangeListener(urlField, text -> {
-            if (!ignoreUpdates) {
-                state.setConnected(false);
-            }
-        }));
-        urlPanel.add(urlField, BorderLayout.CENTER);
+
+        urlGui = new UrlGui();
+        urlPanel.add(urlGui.getComponent(), BorderLayout.CENTER);
 
         AnAction testConnectionAction = ActionManager.getInstance().getAction("compilerexplorer.TestConnection");
         JButton connectButton = new JButton();
@@ -123,19 +119,25 @@ public class SettingsGui {
         content.add(compilerTimeoutMillisPanel, VerticalLayout.TOP);
 
         JPanel colorsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
-        AnActionLink colorsLink = new AnActionLink(Constants.COLOR_SETTINGS_TITLE, ActionManager.getInstance().getAction("compilerexplorer.ShowColorSettings"));
+        AnAction colorsAction = ActionManager.getInstance().getAction("compilerexplorer.ShowColorSettings");
+        AnActionLink colorsLink = new AnActionLink(colorsAction.getTemplateText() != null ? colorsAction.getTemplateText() : "", colorsAction);
         colorsPanel.add(colorsLink);
 
         content.add(colorsPanel, VerticalLayout.TOP);
 
-        ignoreUpdates = false;
+        content.addAncestorListener(new AncestorListenerAdapter() {
+            @Override
+            public void ancestorAdded(AncestorEvent event) {
+                if (showUrlHistoryOnStart) {
+                    ApplicationManager.getApplication().invokeLater(urlGui::showUrlHistory);
+                }
+            }
+        });
     }
 
     public void copyFrom(@NotNull SettingsState state_) {
-        ignoreUpdates = true;
         state.copyFrom(state_);
         populateGuiFromState();
-        ignoreUpdates = false;
     }
 
     @NotNull
@@ -150,7 +152,9 @@ public class SettingsGui {
     }
 
     private void populateGuiFromState() {
-        urlField.setText(state.getUrl());
+        urlGui.setUrl(state.getUrl());
+        refreshUrlHistoryInGui();
+
         preprocessCheckbox.setSelected(state.getPreprocessLocally());
         delayMillisField.setText(String.valueOf(state.getDelayMillis()));
         compilerTimeoutMillisField.setText(String.valueOf(state.getCompilerTimeoutMillis()));
@@ -158,7 +162,12 @@ public class SettingsGui {
     }
 
     private void populateStateFromGui(@NotNull SettingsState state_) {
-        state_.setUrl(urlField.getText());
+        String currentUrl = urlGui.getUrl();
+        if (!state_.getUrl().equals(currentUrl)) {
+            state_.setConnected(false);
+        }
+        state_.setUrl(currentUrl);
+        state_.setUrlHistory(urlGui.getUrlHistory());
         state_.setPreprocessLocally(preprocessCheckbox.isSelected());
         try {
             state_.setDelayMillis(Long.parseLong(delayMillisField.getText()));
@@ -199,7 +208,15 @@ public class SettingsGui {
                     testResultLabel.setText("Error: " + error.getMessage());
                     testResultLabel.setToolTipText("");
                 },
+                url -> {
+                    state.addToUrlHistory(url);
+                    refreshUrlHistoryInGui();
+                },
                 taskRunner
         )).accept(false);
+    }
+
+    public void refreshUrlHistoryInGui() {
+        urlGui.setUrlHistory(state.getUrlHistory());
     }
 }

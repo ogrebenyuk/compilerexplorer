@@ -15,9 +15,14 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     private final CompilerExplorerSettingsProvider provider;
     @Nullable
     private SettingsGui form;
+    private boolean showUrlHistoryOnStart;
 
     CompilerExplorerSettingsConfigurable(@NotNull Project project_) {
         provider = CompilerExplorerSettingsProvider.getInstance(project_);
+    }
+
+    public void showUrlHistoryOnStart(boolean show) {
+        showUrlHistoryOnStart = show;
     }
 
     @Override
@@ -30,7 +35,7 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     @NotNull
     public JComponent createComponent() {
         if (form == null) {
-            form = new SettingsGui(provider.getProject());
+            form = new SettingsGui(provider.getProject(), showUrlHistoryOnStart);
         }
         reset();
         return form.getContent();

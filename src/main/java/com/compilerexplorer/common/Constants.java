@@ -1,11 +1,13 @@
 package com.compilerexplorer.common;
 
+import com.google.common.collect.ImmutableMap;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Map;
 import java.util.ResourceBundle;
 
 public class Constants {
@@ -15,6 +17,21 @@ public class Constants {
     public static final String PROJECT_TITLE = BUNDLE.getString("toolwindow.stripe.compilerexplorer");
     @NotNull
     public static final String DEFAULT_URL = "http://localhost:10240";
+    @NotNull
+    public static final String DEFAULT_URL_DESCRIPTION = BUNDLE.getString("compilerexplorer.LocalUrlDescription");
+    @NotNull
+    public static final String PUBLIC_URL = "https://godbolt.org";
+    @NotNull
+    public static final String PUBLIC_URL_DESCRIPTION = BUNDLE.getString("compilerexplorer.PublicUrlDescription");
+    @NotNull
+    public static final String PUBLIC_URL2 = "https://compiler-explorer.org";
+    @NotNull
+    public static final String PUBLIC_URL2_DESCRIPTION = BUNDLE.getString("compilerexplorer.PublicUrlDescription2");
+    @NotNull
+    public static final Map<String, String> DEFAULT_URLS = ImmutableMap.of(
+            DEFAULT_URL, DEFAULT_URL_DESCRIPTION,
+            PUBLIC_URL, PUBLIC_URL_DESCRIPTION,
+            PUBLIC_URL2, PUBLIC_URL2_DESCRIPTION);
     @NotNull
     public static final String DEFAULT_ADDITIONAL_SWITCHES = "-fverbose-asm";
     @NotNull
@@ -30,7 +47,7 @@ public class Constants {
     public static final long DEFAULT_DELAY_MILLIS = 1000;
     public static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = 60000;
     @NotNull
-    public static final String NOTIFICATION_GROUP_NAME = PROJECT_TITLE;
+    public static final String NOTIFICATION_GROUP_NAME = "compilerexplorer";
     @NotNull
     public static final String INITIAL_NOTICE = "Default " + PROJECT_TITLE + " URL is set to \"" + DEFAULT_URL + "\" for privacy and can be changed on the settings page.";
 

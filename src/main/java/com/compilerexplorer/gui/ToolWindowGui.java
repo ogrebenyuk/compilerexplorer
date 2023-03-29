@@ -5,7 +5,6 @@ import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.*;
 import com.compilerexplorer.gui.listeners.*;
 import com.intellij.notification.NotificationType;
-import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.*;
@@ -230,7 +229,10 @@ public class ToolWindowGui {
     }
 
     private void showInitialNotice() {
-        Notifications.Bus.notify(Constants.NOTIFICATION_GROUP.createNotification(Constants.INITIAL_NOTICE, NotificationType.INFORMATION).addAction(ActionManager.getInstance().getAction("compilerexplorer.ShowSettings")), project);
+        Constants.NOTIFICATION_GROUP
+                .createNotification(Constants.INITIAL_NOTICE, NotificationType.INFORMATION)
+                .addAction(ActionManager.getInstance().getAction("compilerexplorer.ShowUrlHistoryInSettings"))
+                .notify(project);
     }
 
     private void maybeMigrateColorSettings() {

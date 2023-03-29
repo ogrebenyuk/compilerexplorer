@@ -16,6 +16,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.system.HostMachine;
+import org.apache.http.Header;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
@@ -28,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -100,7 +102,20 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
                     Exception[] exceptions = {null};
                     Thread thread = new Thread(() -> {
                         try {
-                            responses[0] = httpClient.execute(postRequest);
+                            while (true) {
+                                responses[0] = httpClient.execute(postRequest);
+
+                                boolean isRedirected = responses[0].getStatusLine().getStatusCode() / 100 == 3;
+                                if (isRedirected) {
+                                    Header[] headers = responses[0].getHeaders("Location");
+                                    if (headers != null && headers.length > 0) {
+                                        postRequest.setURI(new URI(headers[0].getValue()));
+                                        continue;
+                                    }
+                                }
+
+                                break;
+                            }
                         } catch (Exception exception) {
                             exceptions[0] = exception;
                         }

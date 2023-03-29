@@ -47,7 +47,7 @@ public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable
     @Override
     @NotNull
     public String getDisplayName() {
-        return Constants.PROJECT_TITLE + " Colors";
+        return Constants.COLOR_SETTINGS_TITLE;
     }
 
     @Override

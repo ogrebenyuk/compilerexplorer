@@ -37,6 +37,8 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
     @NotNull
     private final Consumer<Error> errorConsumer;
     @NotNull
+    private final Consumer<String> successfulUrlConsumer;
+    @NotNull
     private final TaskRunner taskRunner;
     @Nullable
     private T lastT;
@@ -45,11 +47,13 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                                    @NotNull SettingsState state_,
                                    @NotNull Consumer<T> consumer_,
                                    @NotNull Consumer<Error> errorConsumer_,
+                                   @NotNull Consumer<String> successfulUrlConsumer_,
                                    @NotNull TaskRunner taskRunner_) {
         project = project_;
         state = state_;
         consumer = consumer_;
         errorConsumer = errorConsumer_;
+        successfulUrlConsumer = successfulUrlConsumer_;
         taskRunner = taskRunner_;
     }
 
@@ -102,6 +106,7 @@ public class RemoteCompilersProducer<T> implements Consumer<T> {
                     ApplicationManager.getApplication().invokeLater(() -> {
                         state.setRemoteCompilers(compilers);
                         state.setConnected(true);
+                        successfulUrlConsumer.accept(url);
                         consumer.accept(t);
                     });
                 } catch (ProcessCanceledException canceledException) {

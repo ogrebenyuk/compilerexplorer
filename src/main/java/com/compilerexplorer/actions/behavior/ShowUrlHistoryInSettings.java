@@ -6,9 +6,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import org.jetbrains.annotations.NotNull;
 
-public class ShowSettings extends BaseAction {
+public class ShowUrlHistoryInSettings extends BaseAction {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        withProject(event, project -> ShowSettingsUtil.getInstance().showSettingsDialog(project, CompilerExplorerSettingsConfigurable.class));
+        withProject(event, project -> ShowSettingsUtil.getInstance().showSettingsDialog(project, CompilerExplorerSettingsConfigurable.class,
+                configurable -> configurable.showUrlHistoryOnStart(true)
+        ));
     }
 }
