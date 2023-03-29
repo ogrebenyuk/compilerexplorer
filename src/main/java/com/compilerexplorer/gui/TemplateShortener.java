@@ -14,6 +14,10 @@ class TemplateShortener {
             "<__static_initialization_and_destruction_0(int, int)>",
             "<_GLOBAL__sub_I_main>"
     );
+    @NotNull
+    private static final List<String> ADDRESS_SUFFIXES = ImmutableList.of(
+            "@plt"
+    );
 
     static void shortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
         int length = text.length();
@@ -97,6 +101,9 @@ class TemplateShortener {
     private static boolean isAddress(@NotNull String text, int openingBracket) {
         if (openingBracket >= 2) {
             int closingBracket = findClosingBracket(text, openingBracket);
+            if (isAddressSuffix(text, closingBracket)) {
+                return true;
+            }
             if (closingBracket >= openingBracket + 5) {
                 int intPos1 = openingBracket - 2;
                 int intPos2 = closingBracket - 1;
@@ -119,6 +126,10 @@ class TemplateShortener {
             }
         }
         return false;
+    }
+
+    private static boolean isAddressSuffix(@NotNull String text, int closingBracket) {
+        return ADDRESS_SUFFIXES.stream().anyMatch(suffix -> text.startsWith(suffix, closingBracket - suffix.length()));
     }
 
     private static boolean isHexChar(char c) {

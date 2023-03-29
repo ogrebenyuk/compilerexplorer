@@ -145,6 +145,16 @@ class TemplateShortenerTest {
         verifyExceptionNotShortened("<_GLOBAL__sub_I_main>");
     }
 
+    @Test
+    void verifyAddressesWithKnownSuffixesNotShortened() {
+        verifyNotShortened("0 <printf@plt>");
+    }
+
+    @Test
+    void verifyTemplatesInAddressesWithKnownSuffixesShortened() {
+        verifyShortened("0 <f<g>@plt>", "0 <f<...>@plt>");
+    }
+
     private void verifyExceptionNotShortened(@NotNull String exception) {
         verifyNotShortened(exception);
         verifyNotShortened(" " + exception);
