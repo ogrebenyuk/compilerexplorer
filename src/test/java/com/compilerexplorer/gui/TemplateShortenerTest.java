@@ -131,6 +131,28 @@ class TemplateShortenerTest {
         verifyShortened("g<x>1f <a+0x1f>h<x>1f <a<x>+0x1f>j<x>", "g<...>1f <a+0x1f>h<...>1f <a<...>+0x1f>j<...>");
     }
 
+    @Test
+    void verifyRelaxedAddressesNotShortened() {
+        verifyNotShortened("111 <a+0x0>");
+        verifyNotShortened("111 <a-0x0>");
+    }
+
+    @Test
+    void verifyExceptionsNotShortened() {
+        verifyExceptionNotShortened("<built-in>");
+        verifyExceptionNotShortened("<command-line>");
+        verifyExceptionNotShortened("<__static_initialization_and_destruction_0(int, int)>");
+        verifyExceptionNotShortened("<_GLOBAL__sub_I_main>");
+    }
+
+    private void verifyExceptionNotShortened(@NotNull String exception) {
+        verifyNotShortened(exception);
+        verifyNotShortened(" " + exception);
+        verifyNotShortened("abc" + exception);
+        verifyNotShortened(exception + " ");
+        verifyNotShortened(exception + "abc");
+    }
+
     private void verifyShortened(@NotNull String fullText, @NotNull String expectedShortenedText) {
         StringBuilder builder = new StringBuilder();
         TemplateShortener.shortenTemplates(builder, fullText);

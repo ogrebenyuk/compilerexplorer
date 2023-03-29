@@ -1,8 +1,20 @@
 package com.compilerexplorer.gui;
 
+import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 class TemplateShortener {
+    @NotNull
+    private static final List<String> EXCEPTIONS = ImmutableList.of(
+            "<built-in>",
+            "<command-line>",
+            "<__static_initialization_and_destruction_0(int, int)>",
+            "<_GLOBAL__sub_I_main>"
+    );
+
     static void shortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
         int length = text.length();
         int depth = 0;
@@ -11,7 +23,11 @@ class TemplateShortener {
             char c = text.charAt(i);
             boolean isMinDepth = isMinDepth(depth, isAddress);
             if (c == '<') {
-                if (isOperator(text, i)) {
+                String exception = isException(text, i);
+                if (exception != null) {
+                    builder.append(exception);
+                    i += exception.length() - 1;
+                } else if (isOperator(text, i)) {
                     if (isMinDepth) {
                         builder.append(c);
                     }
@@ -62,6 +78,11 @@ class TemplateShortener {
         }
     }
 
+    @Nullable
+    private static String isException(@NotNull String text, int i) {
+        return EXCEPTIONS.stream().filter(exception -> text.startsWith(exception, i)).findFirst().orElse(null);
+    }
+
     private static boolean isOperator(@NotNull String text, int i) {
         return ((i >= 8 && text.charAt(i - 1) == 'r' && text.startsWith("operator", i - 8)) ||
                 (i >= 1 && text.charAt(i - 1) == '-') ||
@@ -83,7 +104,7 @@ class TemplateShortener {
                     return false;
                 }
                 while (text.charAt(intPos2) != 'x') {
-                    if ((intPos1 < 0) || (intPos2 <= openingBracket + 1) || (text.charAt(intPos1) != text.charAt(intPos2))) {
+                    if ((intPos1 < 0) || (intPos2 <= openingBracket + 1) || !isHexChar(text.charAt(intPos1))) {
                         return false;
                     }
                     --intPos1;
@@ -98,6 +119,10 @@ class TemplateShortener {
             }
         }
         return false;
+    }
+
+    private static boolean isHexChar(char c) {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
     static int findClosingBracket(@NotNull String text, int openingBracket) {
