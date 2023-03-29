@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;

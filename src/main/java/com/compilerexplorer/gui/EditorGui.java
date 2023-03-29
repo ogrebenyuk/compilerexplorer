@@ -4,39 +4,53 @@ import com.compilerexplorer.common.*;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.listeners.*;
+import com.compilerexplorer.gui.tabs.*;
 import com.compilerexplorer.gui.tracker.CaretTracker;
+import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.ex.*;
-import com.intellij.openapi.editor.markup.HighlighterLayer;
-import com.intellij.openapi.editor.markup.HighlighterTargetArea;
-import com.intellij.openapi.editor.markup.RangeHighlighter;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.Pair;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.EditorTextField;
-import com.jetbrains.cidr.lang.asm.AsmFileType;
+import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.List;
-import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class EditorGui implements Consumer<CompiledText> {
-    public static final Key<EditorGui> KEY = Key.create(Constants.PROJECT_TITLE + " EditorGui");
+public class EditorGui extends RefreshableComponent<CompiledText> {
+    public static final Key<EditorGui> KEY = Key.create(Constants.PROJECT_TITLE + ".EditorGui");
+
+    @NotNull
+    private static List<TabProvider> allTabs(@NotNull Project project) {
+        return ImmutableList.of(
+                new ProjectInfoTabProvider(project),
+                new PreprocessorVersionStdoutTabProvider(project),
+                new PreprocessorVersionStderrTabProvider(project),
+                new PreprocessorVersionOutputTabProvider(project),
+                new PreprocessorStdoutTabProvider(project),
+                new PreprocessorStderrTabProvider(project),
+                new PreprocessorOutputTabProvider(project),
+                new SourceInfoTabProvider(project),
+                new ExplorerSiteInfoTabProvider(project),
+                new ExplorerSiteRawOutputTabProvider(project),
+                new ExplorerRawInputTabProvider(project),
+                new ExplorerRawOutputTabProvider(project),
+                new ExplorerStdoutTabProvider(project),
+                new ExplorerStderrTabProvider(project),
+                new ExplorerOutputTabProvider(project),
+                new ExplorerExecResultTabProvider(project)
+        );
+    }
 
     @NotNull
     private final JPanel mainPanel;
@@ -44,34 +58,28 @@ public class EditorGui implements Consumer<CompiledText> {
     private final Project project;
     @NotNull
     private final EditorTextField editor;
-    @Nullable
-    private CompiledText compiledText;
     @NotNull
     private final SuppressionFlag suppressUpdates;
     @NotNull
-    private final SuppressionFlag suppressFoldingUpdates = new SuppressionFlag();
-    @NotNull
-    private final Map<CompiledText.SourceLocation, List<Range>> locationsFromSourceMap = new HashMap<>();
-    @NotNull
-    private final SortedMap<Integer, EndAndSource> locationsToSourceMap = new TreeMap<>();
+    private final SuppressionFlag suppressRefresh = new SuppressionFlag();
     @NotNull
     private final CaretTracker caretTracker;
     @NotNull
-    private final List<RangeHighlighter> highlighters = new ArrayList<>();
+    private final TabsComboBox tabsCombobox = new TabsComboBox();
     @NotNull
-    private final ColoredLineMarkerRenderer lineMarkerRenderer = new ColoredLineMarkerRenderer();
-    @NotNull
-    private static final DefaultActionGroup gutterActions = new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.AppearanceGroup"));
-    @NotNull
-    private final Map<Integer, Integer> lineNumberToByteOffsetMap = new HashMap<>();
-    @NotNull
-    private final CaretPositionChangeListener caretPositionChangeListener;
-    @NotNull
-    private final FoldingChangeListener foldingChangeListener;
+    private final List<TabProvider> tabs;
+    @Nullable
+    private Tabs currentTab;
+    @Nullable
+    private Tabs requestedTab;
+    @Nullable
+    private Tabs selectedTab;
 
-    public EditorGui(@NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_) {
+    public EditorGui(@NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_, @NotNull Runnable notifyWhenEditorReady) {
         project = project_;
         suppressUpdates = suppressUpdates_;
+
+        project.putUserData(EditorGui.KEY, this);
 
         mainPanel = new JPanel(new BorderLayout());
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
@@ -83,36 +91,35 @@ public class EditorGui implements Consumer<CompiledText> {
                 ed.setVerticalScrollbarVisible(true);
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
-                ed.getSettings().setLineMarkerAreaShown(true);
-                ed.getCaretModel().addCaretListener(caretPositionChangeListener);
-                setupGutterAnnotations(ed);
-                updateGutterAnnotations(ed);
-                updateFolding(ed);
-                ed.getFoldingModel().addListener(foldingChangeListener, DisposableParentProjectService.getInstance(project));
+                setupTabs(ed);
+                notifyWhenEditorReady.run();
                 return ed;
             }
         };
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
-        caretPositionChangeListener = new CaretPositionChangeListener(newCaretPosition -> withEditor(ed -> unlessUpdatesSuppressed(() -> {
-            if (getState().getAutoscrollToSource()) {
-                scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
-            }
-        })));
-
-        foldingChangeListener = new FoldingChangeListener((label, isExpanded) -> unlessFoldingUpdatesSuppressed(() -> {
-            if (isExpanded) {
-                getState().getFoldedLabels().remove(label);
-            } else {
-                getState().getFoldedLabels().add(label);
+        caretTracker = new CaretTracker(locations -> withEditor(ed -> {
+            withCurrentTabProvider(provider -> provider.highlightLocations(ed, locations));
+            if (getState().getAutoscrollFromSource()) {
+                scrollToClosestLocation(locations);
             }
         }));
-
-        caretTracker = new CaretTracker(this::highlightLocations);
         new AllEditorsListener(project, caretTracker::update);
 
+        tabs = allTabs(project);
+
         project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, new EditorColorsThemeChangeListener(this::applyThemeColors));
+    }
+
+    public void applyThemeColors() {
+        withCurrentTabProvider(TabProvider::applyThemeColors);
+        tabsCombobox.applyThemeColors();
+    }
+
+    @NotNull
+    private static AnAction findAction(@NotNull String id) {
+        return ActionManager.getInstance().getAction(id);
     }
 
     @NotNull
@@ -121,30 +128,15 @@ public class EditorGui implements Consumer<CompiledText> {
     }
 
     public void scrollFromSource() {
-        highlightLocations(caretTracker.getLocations(), false, true);
+        scrollToClosestLocation(caretTracker.getLocations());
     }
 
-    public static void showPopupMenu(@NotNull String place, @NotNull ActionGroup actionsGroup, @NotNull Component component, int x, int y) {
-        ActionManager.getInstance().createActionPopupMenu(place, actionsGroup).getComponent().show(component, x, y);
-    }
-
-    private void showGutterPopupMenu(Component gutter, int x, int y) {
-        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, gutterActions, gutter, x, y);
-    }
-
-    private void setupGutterAnnotations(@NotNull EditorEx ed) {
-        ed.getGutterComponentEx().setPaintBackground(true);
-        ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 4);
-        ed.getGutterComponentEx().setGutterPopupGroup(null);
-        ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
-        ed.getGutterComponentEx().setCanCloseAnnotations(false);
-        ed.getGutterComponentEx().addMouseListener(new GutterMousePopupClickListener(
-            (x, y) -> withEditor(ed_ -> showGutterPopupMenu(ed_.getGutterComponentEx(), x, y))
-        ));
+    private void setupTabs(@NotNull EditorEx ed) {
+        ((JBScrollPane) ed.getScrollPane()).setStatusComponent(tabsCombobox);
     }
 
     @Nullable
-    private EditorEx getEditor() {
+    public EditorEx getEditor() {
         return editor.getEditor(false);
     }
 
@@ -161,227 +153,141 @@ public class EditorGui implements Consumer<CompiledText> {
     }
 
     public void updateGutter() {
-        withEditor(this::updateGutterAnnotations);
+        withEditor(ed -> withCurrentTabProvider(provider -> provider.updateGutter(ed)));
     }
 
     public void updateFolding() {
-        withEditor(this::updateFolding);
+        withEditor(ed -> withCurrentTabProvider(provider -> provider.updateFolding(ed)));
     }
 
-    private void updateGutterAnnotations(@NotNull EditorEx ed) {
-        EditorGutterComponentEx gutter = ed.getGutterComponentEx();
-        gutter.setCanCloseAnnotations(true);
-        gutter.closeAllAnnotations();
-        gutter.setCanCloseAnnotations(false);
+    @Override
+    public void accept(@NotNull CompiledText compiledText_) {
+        suppressUpdates.apply(() -> {
+            super.accept(compiledText_);
+            ApplicationManager.getApplication().assertIsDispatchThread();
 
-        SettingsState state = getState();
-        boolean showAnyAnnotations = editor.getFileType() != PlainTextFileType.INSTANCE;
-        boolean isDisassembled = state.getFilters().getBinary() || state.getFilters().getBinaryObject();
+            List<TabProvider> visibleTabs = tabs.stream()
+                    .filter(factory -> getState().getShowAllTabs() || factory.isEnabled(compiledText_))
+                    .toList();
 
-        if (showAnyAnnotations && !isDisassembled && state.getShowLineNumbers()) {
-            gutter.registerTextAnnotation(new LineNumberAnnotationProvider());
-        }
+            @Nullable Tabs newSelectedTab = null;
 
-        if (showAnyAnnotations && isDisassembled && state.getShowByteOffsets()) {
-            gutter.registerTextAnnotation(new ByteOffsetAnnotationProvider(lineNumberToByteOffsetMap::get));
-        }
-
-        if (showAnyAnnotations && state.getShowSourceAnnotations()) {
-            SourceAnnotationProvider provider = new SourceAnnotationProvider(this::findSourceLocationFromOffset);
-            gutter.registerTextAnnotation(provider, new SourceAnnotationGutterAction(provider, this::getEditor,
-                line -> withEditor(ed_ -> scrollToSource(findSourceLocationFromOffset(ed_.logicalPositionToOffset(new LogicalPosition(line, 0)))))
-            ));
-        }
-    }
-
-    private void updateFolding(@NotNull EditorEx ed) {
-        boolean enableFolding = getState().getEnableFolding();
-        ed.getFoldingModel().setFoldingEnabled(enableFolding);
-        ed.getSettings().setFoldingOutlineShown(enableFolding);
-    }
-
-    public void reparse() {
-        accept(compiledText);
-    }
-
-    private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
-        if (source != null && source.file != null) {
-            try {
-                VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);
-                if (file != null) {
-                    FileEditorManager.getInstance(project).openFile(file, true);
-                    Arrays.stream(EditorFactory.getInstance().getAllEditors())
-                            .filter(editor -> {
-                                if (editor.getProject() == project) {
-                                    VirtualFile f = FileDocumentManager.getInstance().getFile(editor.getDocument());
-                                    return f != null && PathNormalizer.normalizePath(file.getPath()).equals(PathNormalizer.normalizePath(f.getPath()));
-                                }
-                                return false;
-                            })
-                            .forEach(editor -> {
-                                editor.getCaretModel().moveToLogicalPosition(new LogicalPosition(source.line - 1, 0));
-                                editor.getScrollingModel().scrollToCaret(ScrollType.CENTER);
-                            });
+            if (selectedTab != null) {
+                newSelectedTab = selectedTab;
+                requestedTab = null;
+            }
+            if (newSelectedTab == null) {
+                @Nullable TabProvider firstErrorTab = tabs.stream()
+                        .filter(factory -> factory.isEnabled(compiledText_) && factory.isError(compiledText_))
+                        .findFirst()
+                        .orElse(null);
+                if (firstErrorTab != null) {
+                    newSelectedTab = firstErrorTab.getTab();
+                    if (requestedTab == null) {
+                        requestedTab = currentTab;
+                    }
                 }
-            } catch (Exception e) {
-                // empty
+            }
+            if (newSelectedTab == null) {
+                boolean requestedTabExists = visibleTabs.stream()
+                        .anyMatch(provider -> provider.getTab() == requestedTab);
+                if (requestedTabExists) {
+                    newSelectedTab = requestedTab;
+                    requestedTab = null;
+                }
+            }
+            if (newSelectedTab == null) {
+                boolean currentTabExists = visibleTabs.stream()
+                        .anyMatch(provider -> provider.getTab() == currentTab);
+                if (currentTabExists) {
+                    newSelectedTab = currentTab;
+                }
+            }
+            if (newSelectedTab == null) {
+                @Nullable TabProvider lastEnabledTab = tabs.stream()
+                        .filter(factory -> factory.isEnabled(compiledText_))
+                        .reduce((first, second) -> second)
+                        .orElse(null);
+                if (lastEnabledTab != null) {
+                    newSelectedTab = lastEnabledTab.getTab();
+                }
+            }
+
+            List<AnAction> tabActions = visibleTabs.stream()
+                    .map(provider -> findAction(provider.actionId()))
+                    .toList();
+            @Nullable AnAction newSelectedTabAction = newSelectedTab != null ? findTabAction(newSelectedTab) : null;
+            tabsCombobox.refreshModel(tabActions, newSelectedTabAction);
+            if (newSelectedTab != null) {
+                showTab(newSelectedTab, true);
+            } else {
+                currentTab = null;
+                clearEditor();
+            }
+        });
+    }
+
+    public void showTab(@NotNull Tabs tab) {
+        selectedTab = tab;
+        showTab(tab, false);
+        selectedTab = null;
+    }
+
+    private void showTab(@NotNull Tabs tab, boolean forceRefresh) {
+        tabsCombobox.selectAction(findTabAction(tab), true);
+        if (currentTab != tab || forceRefresh) {
+            if (currentTab != null && currentTab != tab) {
+                int scrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
+                getState().getScrollPositions().put(currentTab, scrollPosition);
+            }
+            currentTab = tab;
+            refresh();
+            if (currentTab != null) {
+                int scrollPosition = getState().getScrollPositions().getOrDefault(currentTab, 0);
+                withEditor(ed -> scrollToPosition(ed, scrollPosition));
             }
         }
     }
 
     @Override
-    public void accept(CompiledText compiledText_) {
-        withUpdatesSuppressed(() -> {
-            ApplicationManager.getApplication().assertIsDispatchThread();
-            compiledText = compiledText_;
-            if (compiledText == null) {
-                return;
-            }
+    public void refresh() {
+        suppressRefresh.unlessApplied(() ->
+            suppressRefresh.apply(() -> {
+                suppressUpdates.unlessApplied(super::refresh);
+                if (lastT != null) {
+                    withCurrentTabProvider(provider -> {
+                        FileType fileType = provider.getFileType(lastT);
+                        Boolean[] provided = new Boolean[]{false};
+                        provider.provide(lastT, text -> {
+                            final int oldScrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
 
-            if (compiledText.getCompiledResult().execResult != null) {
-                StringBuilder execResultBuilder = new StringBuilder();
-                for (CompiledText.CompiledChunk chunk : compiledText.getCompiledResult().execResult.stdout) {
-                    if (chunk.text != null) {
-                        execResultBuilder.append(chunk.text);
-                        execResultBuilder.append('\n');
-                    }
-                }
-                showPlainText(execResultBuilder.toString());
-                return;
-            }
+                            editor.setNewDocumentAndFileType(fileType, editor.getDocument());
+                            editor.setText(fileType == PlainTextFileType.INSTANCE ? filterOutTerminalEscapeSequences(text) : text);
+                            editor.setEnabled(true);
 
-            SettingsState state = getState();
-            boolean shortenTemplates = state.getShortenTemplates();
-            List<Range> newHighlighterRanges = new ArrayList<>();
-            locationsFromSourceMap.clear();
-            locationsToSourceMap.clear();
-            lineNumberToByteOffsetMap.clear();
-            StringBuilder asmBuilder = new StringBuilder();
-            int currentOffset = 0;
-            CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
-            int lastRangeBegin = 0;
-            BiConsumer<CompiledText.SourceLocation, Range> rangeAdder = (source, range) -> {
-                newHighlighterRanges.add(range);
-                locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
-                locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
-            };
-            int [] chunkToOffset = new int[compiledText.getCompiledResult().asm.size() + 1];
-            int line = 0;
-            for (int i = 0; i < compiledText.getCompiledResult().asm.size(); ++i) {
-                CompiledText.CompiledChunk chunk = compiledText.getCompiledResult().asm.get(i);
-                chunkToOffset[i] = currentOffset;
-                if (chunk.opcodes != null && state.getShowOpcodes()) {
-                    parseOpcodes(asmBuilder, chunk.opcodes);
-                    ++line;
-                }
-                if (chunk.address != CompiledText.CompiledChunk.NO_ADDRESS) {
-                    lineNumberToByteOffsetMap.put(line, chunk.address);
-                }
-                if (chunk.text != null) {
-                    parseChunk(asmBuilder, chunk.text, shortenTemplates);
-                    ++line;
-                    if (chunk.source != null && chunk.source.file != null) {
-                        String currentChunkFile = chunk.source.file;
-                        if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
-                            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
-                            }
-                            lastRangeBegin = currentOffset;
-                            lastChunk.file = currentChunkFile;
-                            lastChunk.line = chunk.source.line;
+                            withEditor(ed -> scrollToPosition(ed, oldScrollPosition));
+                            provided[0] = true;
+                            return editor.getEditor(false);
+                        });
+                        if (provided[0]) {
+                            withEditor(ed -> provider.highlightLocations(ed, caretTracker.getLocations()));
+                        } else {
+                            clearEditor();
                         }
-                    } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                        rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
-                        lastChunk.file = "";
-                    }
+                    });
                 }
-                currentOffset = asmBuilder.length();
-            }
-            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
-            }
-            chunkToOffset[compiledText.getCompiledResult().asm.size()] = currentOffset;
-
-            List<Pair<String, Range>> labels = new ArrayList<>();
-            if (state.getEnableFolding() && compiledText.getCompiledResult().labelDefinitions != null) {
-                List<Pair<Integer, String>> labelEntries = compiledText.getCompiledResult().labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
-                for (int i = 0; i < labelEntries.size(); ++i) {
-                    Pair<Integer, String> entry = labelEntries.get(i);
-                    int beginOffset = chunkToOffset[entry.getFirst() - 1];
-                    int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
-                    if (beginOffset < endOffset) {
-                        labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
-                    }
-                }
-            }
-
-            int oldScrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
-
-            editor.setNewDocumentAndFileType(AsmFileType.INSTANCE, editor.getDocument());
-            editor.setText(asmBuilder.toString());
-            editor.setEnabled(true);
-
-            highlighters.clear();
-            withEditor(ed -> {
-                MarkupModelEx markupModel = ed.getMarkupModel();
-                markupModel.removeAllHighlighters();
-                newHighlighterRanges.forEach(range -> {
-                    RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
-                    highlighter.setLineMarkerRenderer(lineMarkerRenderer);
-                });
-
-                scrollToPosition(ed, oldScrollPosition);
-
-                highlightLocations(caretTracker.getLocations(), true, false);
-
-                addFolding(ed, labels, state.getFoldedLabels());
-            });
-        });
+            })
+        );
     }
 
-    public void clearCompiledText() {
-        compiledText = null;
+    public void requestTab(@NotNull Tabs tab) {
+        requestedTab = tab;
     }
 
-    public void showError(@NotNull String reason) {
-        showPlainText(reason);
-    }
-
-    private void showPlainText(@NotNull String text) {
-        ApplicationManager.getApplication().assertIsDispatchThread();
-        withUpdatesSuppressed(() -> {
-            locationsFromSourceMap.clear();
-            locationsToSourceMap.clear();
-            lineNumberToByteOffsetMap.clear();
-
-            editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
-            editor.setText(filterOutTerminalEscapeSequences(text));
-            editor.setEnabled(false);
-
-            highlighters.clear();
-        });
-    }
-
-    private static void parseChunk(@NotNull StringBuilder builder, @NotNull String text, boolean shortenTemplates) {
-        if (shortenTemplates && possiblyContainsTemplates(text)) {
-            TemplateShortener.shortenTemplates(builder, text);
-        } else {
-            builder.append(text);
-        }
-        builder.append('\n');
-    }
-
-    private static void parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
-        builder.append('#');
-        for (String opcode : opcodes) {
-            builder.append(' ');
-            builder.append(opcode);
-        }
-        builder.append('\n');
-    }
-
-    private static boolean possiblyContainsTemplates(@NotNull String text) {
-        return text.indexOf('<') >= 0;
+    private void clearEditor() {
+        editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
+        editor.setText("");
+        editor.setEnabled(false);
     }
 
     @NotNull
@@ -394,109 +300,37 @@ public class EditorGui implements Consumer<CompiledText> {
         return CompilerExplorerSettingsProvider.getInstance(project).getState();
     }
 
-    private void unlessUpdatesSuppressed(Runnable runnable) {
-        suppressUpdates.unlessApplied(runnable);
-    }
-
-    private void withUpdatesSuppressed(Runnable runnable) {
-        suppressUpdates.apply(runnable);
-    }
-
-    private void unlessFoldingUpdatesSuppressed(Runnable runnable) {
-        suppressFoldingUpdates.unlessApplied(runnable);
-    }
-
-    private void withFoldingUpdatesSuppressed(Runnable runnable) {
-        suppressFoldingUpdates.apply(runnable);
-    }
-
-    @Nullable
-    private Color getCurrentThemeHighlightColor() {
-        return EditorColorsManager.getInstance().getGlobalScheme().getAttributes(Constants.HIGHLIGHT_COLOR).getBackgroundColor();
-    }
-
-    private void applyThemeColors() {
-        Color highlightColor = getCurrentThemeHighlightColor();
-        lineMarkerRenderer.setColor(highlightColor);
-        for (RangeHighlighter highlighter : highlighters) {
-            highlighter.setErrorStripeMarkColor(highlightColor);
-        }
-    }
-
-    private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations) {
-        highlightLocations(locations, true, false);
-    }
-
-    private void highlightLocations(@NotNull List<CompiledText.SourceLocation> locations, boolean highlight, boolean forceScroll) {
+    private void scrollToClosestLocation(@NotNull List<CompiledText.SourceLocation> locations) {
         ApplicationManager.getApplication().assertIsDispatchThread();
         withEditor(ed -> {
-            SettingsState state = getState();
-            boolean scroll = forceScroll || state.getAutoscrollFromSource();
-            int currentScrollPosition = scroll ? findCurrentScrollPosition(ed) : -1;
-            int closestPosition = -1;
-            int closestPositionDistance = -1;
-
-            MarkupModelEx markupModel = ed.getMarkupModel();
-            if (highlight) {
-                try {
-                    highlighters.forEach(markupModel::removeHighlighter);
-                } catch (Exception e) {
-                    // empty
-                }
-                highlighters.clear();
-            }
-            for (CompiledText.SourceLocation location : locations) {
-                List<Range> ranges = locationsFromSourceMap.get(location);
-                if (ranges != null) {
-                    for (Range range : ranges) {
-                        if (highlight) {
-                            RangeHighlighter highlighter = markupModel.addRangeHighlighter(Constants.HIGHLIGHT_COLOR, range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, HighlighterTargetArea.LINES_IN_RANGE);
-                            highlighters.add(highlighter);
-                        }
-                        if (scroll) {
+            Integer[] closestPosition = new Integer[]{-1};
+            for (@NotNull CompiledText.SourceLocation location : locations) {
+                withCurrentTabProvider(provider -> {
+                    List<TabProvider.Range> ranges = provider.getRangesForLocation(location);
+                    if (ranges != null) {
+                        final int currentScrollPosition = findCurrentScrollPosition(ed);
+                        int closestPositionDistance = -1;
+                        for (TabProvider.Range range : ranges) {
                             int positionBegin = ed.offsetToXY(range.begin).y;
                             int diffBegin = Math.abs(positionBegin - currentScrollPosition);
                             if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
                                 closestPositionDistance = diffBegin;
-                                closestPosition = positionBegin;
+                                closestPosition[0] = positionBegin;
                             }
                             int positionEnd = ed.offsetToXY(range.end).y + ed.getLineHeight();
                             int diffEnd = Math.abs(positionEnd - currentScrollPosition);
                             if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
                                 closestPositionDistance = diffEnd;
-                                closestPosition = positionEnd;
+                                closestPosition[0] = positionEnd;
                             }
                         }
                     }
-                }
+                });
             }
-            if (highlight) {
-                applyThemeColors();
-            }
-
-            if (scroll && (closestPosition >= 0)) {
-                scrollToPosition(ed, closestPosition - (ed.getScrollingModel().getVisibleAreaOnScrollingFinished().height / 2));
+            if (closestPosition[0] >= 0) {
+                scrollToPosition(ed, closestPosition[0] - (ed.getScrollingModel().getVisibleAreaOnScrollingFinished().height / 2));
             }
         });
-    }
-
-    private void addFolding(@NotNull EditorEx ed, @NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
-        removeObsoleteFoldedLabels(labels, foldedLabels);
-        FoldingModelEx foldingModel = ed.getFoldingModel();
-        foldingModel.runBatchFoldingOperation(() -> withFoldingUpdatesSuppressed(() -> {
-            foldingModel.clearFoldRegions();
-            for (Pair<String, Range> label : labels) {
-                @Nullable FoldRegion region = foldingModel.addFoldRegion(label.getSecond().begin, label.getSecond().end, label.getFirst());
-                if (region != null) {
-                    region.setExpanded(!foldedLabels.contains(label.getFirst()));
-                }
-            }
-        }));
-    }
-
-    private void removeObsoleteFoldedLabels(@NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
-        Set<String> existingLabels = labels.stream().map(p -> p.getFirst()).collect(Collectors.toSet());
-        foldedLabels.stream().filter(l -> !existingLabels.contains(l)).collect(Collectors.toSet()).forEach(foldedLabels::remove);
     }
 
     public void expandAllFolding(boolean isExpanded) {
@@ -508,7 +342,7 @@ public class EditorGui implements Consumer<CompiledText> {
                         region.setExpanded(isExpanded);
                     }
                 });
-                reparse();
+                refresh();
             }
         });
     }
@@ -524,36 +358,26 @@ public class EditorGui implements Consumer<CompiledText> {
         if (!useAnimation) ed.getScrollingModel().enableAnimation();
     }
 
-    @Nullable
-    private CompiledText.SourceLocation findSourceLocationFromOffset(int offset) {
-        SortedMap<Integer, EndAndSource> headMap = locationsToSourceMap.headMap(offset + 1);
-        if (!headMap.isEmpty()) {
-            EndAndSource lastValue = headMap.get(headMap.lastKey());
-            if (lastValue.end >= offset) {
-                return lastValue.source;
-            }
-        }
-        return null;
+    @NotNull
+    private TabProvider findTabProvider(@NotNull Tabs tab) {
+        return tabs.stream()
+                .filter(provider -> provider.getTab() == tab)
+                .findFirst()
+                .orElse(tabs.get(tabs.size() - 1));
     }
 
-    private static class Range {
-        final int begin;
-        final int end;
-
-        Range(int begin_, int end_) {
-            begin = begin_;
-            end = end_;
+    private void withCurrentTabProvider(Consumer<TabProvider> consumer) {
+        if (currentTab != null) {
+            consumer.accept(findTabProvider(currentTab));
         }
     }
 
-    private static class EndAndSource {
-        final int end;
-        @NotNull
-        final CompiledText.SourceLocation source;
+    @NotNull
+    private AnAction findTabAction(@NotNull Tabs tab) {
+        return findAction(findTabProvider(tab).actionId());
+    }
 
-        EndAndSource(int length_, @NotNull CompiledText.SourceLocation source_) {
-            end = length_;
-            source = source_;
-        }
+    public boolean isTabEnabled(@NotNull Tabs tab) {
+        return lastT != null && (getState().getShowAllTabs() || findTabProvider(tab).isEnabled(lastT));
     }
 }

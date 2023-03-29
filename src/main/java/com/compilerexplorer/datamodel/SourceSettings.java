@@ -8,101 +8,58 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.util.List;
 
-public class SourceSettings {
+public class SourceSettings implements Visitable {
     @NotNull
-    private final VirtualFile source;
+    public final VirtualFile source;
     @NotNull
-    private final String sourcePath;
+    public final String sourcePath;
     @NotNull
-    private final String sourceName;
+    public final String sourceName;
     @NotNull
-    private final String language;
+    public final String language;
     @NotNull
-    private final String languageSwitch;
+    public final String languageSwitch;
     @NotNull
-    private final File compiler;
+    public final File compiler;
     @NotNull
-    private final String compilerKind;
+    public final String compilerPath;
     @NotNull
-    private final List<String> switches;
+    public final File compilerWorkingDir;
     @NotNull
-    private final HostMachine host;
+    public final String compilerKind;
+    @NotNull
+    public final List<String> switches;
+    @NotNull
+    public final HostMachine host;
 
     public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_, @NotNull HostMachine host_) {
         source = source_;
         sourcePath = sourcePath_;
-        sourceName = source.getPresentableName();
+        sourceName = source_.getPresentableName();
         language = language_;
         languageSwitch = languageSwitch_;
         compiler = compiler_;
+        compilerPath = compiler_.getPath();
+        compilerWorkingDir = compiler_.getParentFile();
         compilerKind = compilerKind_;
         switches = switches_;
         host = host_;
     }
 
-    @NotNull
-    public VirtualFile getSource() {
-        return source;
+    @Override
+    public void accept(@NotNull Visitor visitor) {
+        visitor.visit(this);
     }
-
-    @NotNull
-    public String getSourcePath() {
-        return sourcePath;
-    }
-
-    @NotNull
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    @NotNull
-    public String getLanguage() {
-        return language;
-    }
-
-    @NotNull
-    public String getLanguageSwitch() {
-        return languageSwitch;
-    }
-
-    @NotNull
-    private File getCompiler() {
-        return compiler;
-    }
-
-    @NotNull
-    public File getCompilerWorkingDir() {
-        return compiler.getParentFile();
-    }
-
-    @NotNull
-    public String getCompilerPath()
-    {
-        return compiler.getPath();
-    }
-
-    @NotNull
-    public String getCompilerKind() {
-        return compilerKind;
-    }
-
-    @NotNull
-    public List<String> getSwitches() {
-        return switches;
-    }
-
-    @NotNull
-    public HostMachine getHost() { return host; }
 
     @Override
     public int hashCode() {
-        return getSource().hashCode()
-                + getLanguage().hashCode()
-                + getLanguageSwitch().hashCode()
-                + FileUtil.fileHashCode(getCompiler())
-                + getCompilerKind().hashCode()
-                + getSwitches().hashCode()
-                + getHost().hashCode()
+        return source.hashCode()
+                + language.hashCode()
+                + languageSwitch.hashCode()
+                + FileUtil.fileHashCode(compiler)
+                + compilerKind.hashCode()
+                + switches.hashCode()
+                + host.hashCode()
                 ;
     }
 
@@ -111,13 +68,13 @@ public class SourceSettings {
         if (!(obj instanceof SourceSettings other)) {
             return false;
         }
-        return getSource().getPath().equals(other.getSource().getPath())
-                && getLanguage().equals(other.getLanguage())
-                && getLanguageSwitch().equals(other.getLanguageSwitch())
-                && FileUtil.filesEqual(getCompiler(), other.getCompiler())
-                && getCompilerKind().equals(other.getCompilerKind())
-                && String.join(" ", getSwitches()).equals(String.join(" ", other.getSwitches()))
-                && getHost().equals(other.getHost())
+        return source.equals(other.source)
+                && language.equals(other.language)
+                && languageSwitch.equals(other.languageSwitch)
+                && FileUtil.filesEqual(compiler, other.compiler)
+                && compilerKind.equals(other.compilerKind)
+                && switches.equals(other.switches)
+                && host.equals(other.host)
                 ;
     }
 }

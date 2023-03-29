@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs;
 
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.LineMarkerRenderer;

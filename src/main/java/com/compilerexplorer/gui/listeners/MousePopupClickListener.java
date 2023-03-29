@@ -6,11 +6,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.function.BiConsumer;
 
-public class GutterMousePopupClickListener extends MouseAdapter {
+public class MousePopupClickListener extends MouseAdapter {
     @NotNull
     private final BiConsumer<Integer, Integer> popupClickConsumer;
 
-    public GutterMousePopupClickListener(@NotNull BiConsumer<Integer, Integer> popupClickConsumer_) {
+    public MousePopupClickListener(@NotNull BiConsumer<Integer, Integer> popupClickConsumer_) {
         popupClickConsumer = popupClickConsumer_;
     }
 

@@ -1,7 +1,7 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.*;
 import com.google.common.annotations.VisibleForTesting;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSettings> {
+public class SourceRemoteMatchProducer implements Consumer<PreprocessedSource> {
     @NotNull
     private final Project project;
     @NotNull
@@ -24,29 +24,36 @@ public class SourceRemoteMatchProducer implements Consumer<SourceCompilerSetting
     }
 
     @Override
-    public void accept(@NotNull SourceCompilerSettings sourceCompilerSettings) {
+    public void accept(@NotNull PreprocessedSource preprocessedSource) {
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
         }
 
-        {
-            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(sourceCompilerSettings.getSourceSettings().getCompilerPath()));
+        SourceRemoteMatched sourceRemoteMatched = new SourceRemoteMatched(preprocessedSource);
+
+        if (preprocessedSource.isValid() && preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.isValid()) {
+            assert preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings != null;
+
+            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.compilerPath));
             if (existingMatches != null) {
-                sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, existingMatches));
-                return;
+                sourceRemoteMatched.remoteCompilerMatches = existingMatches;
+                sourceRemoteMatched.cached = true;
+            } else {
+                if (preprocessedSource.sourceCompilerSettings.isValid() && preprocessedSource.sourceCompilerSettings.localCompilerSettings != null) {
+                    String localName = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getName().toLowerCase();
+                    String localVersionFull = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getVersion();
+                    String localVersion = localName.equals("gcc") ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
+                    String localTarget = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getTarget();
+                    String language = preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.language;
+                    List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);
+                    sourceRemoteMatched.remoteCompilerMatches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
+                }
             }
         }
 
-        String localName = sourceCompilerSettings.getLocalCompilerSettings().getName().toLowerCase();
-        String localVersionFull = sourceCompilerSettings.getLocalCompilerSettings().getVersion();
-        String localVersion = localName.equals("gcc") ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
-        String localTarget = sourceCompilerSettings.getLocalCompilerSettings().getTarget();
-        String language = sourceCompilerSettings.getSourceSettings().getLanguage();
-        List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);
-        CompilerMatches matches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
-        sourceRemoteMatchedConsumer.accept(new SourceRemoteMatched(sourceCompilerSettings, matches));
+        sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
     }
 
     @NotNull

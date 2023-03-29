@@ -1,12 +1,6 @@
 package com.compilerexplorer;
 
-import com.compilerexplorer.common.LaterRunnableOnFlagChange;
-import com.compilerexplorer.common.RefreshSignal;
-import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
-import com.compilerexplorer.common.TaskRunner;
-import com.compilerexplorer.datamodel.PreprocessedSource;
-import com.compilerexplorer.datamodel.SourceCompilerSettings;
-import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.common.*;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.SourceRemoteMatchProducer;
 import com.compilerexplorer.compiler.CompilerSettingsProducer;
@@ -14,6 +8,9 @@ import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
 import com.compilerexplorer.explorer.RemoteCompiler;
 import com.compilerexplorer.compiler.SourcePreprocessor;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
+import com.compilerexplorer.gui.EditorGui;
+import com.compilerexplorer.gui.MatchesGui;
+import com.compilerexplorer.gui.ProjectSettingsGui;
 import com.compilerexplorer.gui.ToolWindowGui;
 import com.compilerexplorer.project.ProjectListener;
 import com.intellij.openapi.actionSystem.ActionManager;
@@ -24,13 +21,54 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
+    private static class WaitUntilEditorReady implements Consumer<RefreshSignal> {
+        private boolean ready;
+        @Nullable
+        private Consumer<RefreshSignal> delegate;
+        @Nullable
+        private RefreshSignal strongestSignal;
+
+        public void setDelegate(@NotNull Consumer<RefreshSignal> delegate_) {
+            delegate = delegate_;
+            trySendSignal();
+        }
+
+        public boolean getReady() {
+            return ready;
+        }
+
+        public void setReady() {
+            ready = true;
+            trySendSignal();
+        }
+
+        @Override
+        public void accept(@NotNull RefreshSignal refreshSignal) {
+            accumulate(refreshSignal);
+            trySendSignal();
+        }
+
+        private void accumulate(@NotNull RefreshSignal refreshSignal) {
+            if (strongestSignal == null || refreshSignal.strongerThan(strongestSignal)) {
+                strongestSignal = refreshSignal;
+            }
+        }
+
+        private void trySendSignal() {
+            if (ready && delegate != null && strongestSignal != null) {
+                RefreshSignal signal = strongestSignal;
+                ApplicationManager.getApplication().invokeLater(() -> delegate.accept(signal));
+                strongestSignal = null;
+            }
+        }
+    }
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         addComponentToToolWindow(toolWindow, createComponent(project, toolWindow));
@@ -40,48 +78,39 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
     private static JComponent createComponent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         TaskRunner taskRunner = new TaskRunner();
-
-        ToolWindowGui form = new ToolWindowGui(project);
-        toolWindow.setAdditionalGearActions(new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.ToolbarSettingsGroup")));
-        toolWindow.setTitleActions(List.of(ActionManager.getInstance().getAction("compilerexplorer.ScrollFromSource")));
-
-        ProjectListener projectListener = new ProjectListener(project, form.asProjectSettingsConsumer());
-
-        SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(project, form.asSourceRemoteMatchedConsumer());
-        RemoteCompilersProducer<SourceCompilerSettings> remoteCompilersProducer = new RemoteCompilersProducer<>(project, state, sourceRemoteMatchProducer, form.asErrorConsumer(), state::addToUrlHistory, taskRunner);
-        CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, remoteCompilersProducer, form.asErrorConsumer(), taskRunner);
-
-        form.setSourceSettingsConsumer(compilerSettingsProducer);
-
-        RemoteCompiler explorer = new RemoteCompiler(project, form.asCompiledTextConsumer(), form.asErrorConsumer(), taskRunner);
-        SourceRemoteMatchSaver<PreprocessedSource> sourceRemoteMatchSaver2 = new SourceRemoteMatchSaver<>(project, explorer, PreprocessedSource::getSourceRemoteMatched);
-
-        form.setPreprocessedSourceConsumer(sourceRemoteMatchSaver2);
-
-        SourcePreprocessor preprocessor = new SourcePreprocessor(project, sourceRemoteMatchSaver2, form.asErrorConsumer(), taskRunner);
-        SourceRemoteMatchSaver<SourceRemoteMatched> sourceRemoteMatchSaver1 = new SourceRemoteMatchSaver<>(project, preprocessor, Function.identity());
-
-        form.setSourceRemoteMatchedConsumer(sourceRemoteMatchSaver1);
+        SuppressionFlag suppressUpdates = new SuppressionFlag();
+        WaitUntilEditorReady resetDelegate = new WaitUntilEditorReady();
+        WaitUntilEditorReady refreshDelegate = new WaitUntilEditorReady();
+        EditorGui editorGui = new EditorGui(project, suppressUpdates, () -> {resetDelegate.setReady(); refreshDelegate.setReady();});
+        RemoteCompiler explorer = new RemoteCompiler(project, editorGui, taskRunner);
+        SourceRemoteMatchSaver sourceRemoteMatchSaver = new SourceRemoteMatchSaver(project, explorer);
+        MatchesGui matchesGui = new MatchesGui(suppressUpdates, sourceRemoteMatchSaver);
+        SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(project, matchesGui);
+        SourcePreprocessor preprocessor = new SourcePreprocessor(project, sourceRemoteMatchProducer, taskRunner);
+        CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(project, preprocessor, taskRunner);
+        RemoteCompilersProducer remoteCompilersProducer = new RemoteCompilersProducer(project, state, compilerSettingsProducer, state::addToUrlHistory, taskRunner);
+        ProjectSettingsGui projectSettingsGui = new ProjectSettingsGui(suppressUpdates, remoteCompilersProducer);
+        ProjectListener projectListener = new ProjectListener(project, projectSettingsGui, resetDelegate::getReady);
 
         Consumer<RefreshSignal> resetter = refreshSignal -> {
-            switch(refreshSignal) {
+            switch (refreshSignal) {
                 case RESET:
-                    compilerSettingsProducer.asRefreshSignalConsumer().accept(refreshSignal);
-                    form.asResetSignalConsumer().accept(refreshSignal);
+                    compilerSettingsProducer.asResetSignalConsumer().accept(refreshSignal);
+                    projectSettingsGui.asResetSignalConsumer().accept(refreshSignal);
                     explorer.asResetSignalConsumer().accept(refreshSignal);
                     // fall through
                 case RECONNECT:
-                    remoteCompilersProducer.asRefreshSignalConsumer().accept(refreshSignal);
-                    sourceRemoteMatchSaver1.asRefreshSignalConsumer().accept(refreshSignal);
-                    sourceRemoteMatchSaver2.asRefreshSignalConsumer().accept(refreshSignal);
-                    form.asReconnectSignalConsumer().accept(refreshSignal);
+                    remoteCompilersProducer.asReconnectSignalConsumer().accept(refreshSignal);
+                    sourceRemoteMatchSaver.asReconnectSignalConsumer().accept(refreshSignal);
+                    matchesGui.asReconnectSignalConsumer().accept(refreshSignal);
                     // fall through
                 case PREPROCESS:
                     // fall through
                 case COMPILE:
-                    form.asRecompileSignalConsumer().accept(refreshSignal);
+                    // fall through
             }
         };
+        resetDelegate.setDelegate(resetter);
         Consumer<RefreshSignal> refresher = refreshSignal -> {
             switch (refreshSignal) {
                 case RESET -> projectListener.refresh();
@@ -90,29 +119,35 @@ public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.w
                 case COMPILE -> explorer.refresh();
             }
         };
+        refreshDelegate.setDelegate(refresher);
         Consumer<RefreshSignal> refreshSignalConsumer = refreshSignal -> {
-            RefreshSignal signal = upgradeSignalIfDisconnected(state, refreshSignal);
-            resetter.accept(signal);
-            refresher.accept(signal);
+            RefreshSignal signal = strengthenSignalIfDisconnected(state, refreshSignal);
+            resetDelegate.accept(signal);
+            refreshDelegate.accept(signal);
         };
-        form.setRefreshSignalConsumer(refreshSignalConsumer);
+
+        ToolWindowGui toolWindowGui = new ToolWindowGui(project, refreshSignalConsumer, projectSettingsGui.getComponent(), matchesGui.getComponent(), editorGui.getComponent(), editorGui::getEditor);
+
+        toolWindow.setAdditionalGearActions(new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.ToolbarSettingsGroup")));
+        toolWindow.setTitleActions(List.of(ActionManager.getInstance().getAction("compilerexplorer.ScrollFromSource")));
+
         CompilerExplorerSettingsProvider.getInstance(project).setRefreshSignalConsumer(refreshSignalConsumer);
 
-        refresher.accept(RefreshSignal.RESET);
+        refreshDelegate.accept(RefreshSignal.RESET);
 
-        new FormAncestorListener(form.getContent(), new LaterRunnableOnFlagChange(toolWindow::isVisible, visible -> {
+        new FormAncestorListener(toolWindowGui.getContent(), new LaterRunnableOnFlagChange(toolWindow::isVisible, visible -> {
             state.setEnabled(visible);
             if (visible) {
-                refresher.accept(RefreshSignal.RESET);
+                refreshDelegate.accept(RefreshSignal.RESET);
             }
         }));
 
-        return form.getContent();
+        return toolWindowGui.getContent();
     }
 
     @NotNull
-    private static RefreshSignal upgradeSignalIfDisconnected(@NotNull SettingsState state, @NotNull RefreshSignal signal) {
-        if (signal != RefreshSignal.RESET && !state.getConnected()) {
+    private static RefreshSignal strengthenSignalIfDisconnected(@NotNull SettingsState state, @NotNull RefreshSignal signal) {
+        if (RefreshSignal.RECONNECT.strongerThan(signal) && !state.getConnected()) {
             return RefreshSignal.RECONNECT;
         }
         return signal;

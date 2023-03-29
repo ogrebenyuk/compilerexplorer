@@ -6,10 +6,10 @@ import com.compilerexplorer.actions.common.BaseActionWithState;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class CollapseAllFoldingToggle extends BaseAction implements BaseActionWithEditorGui, BaseActionWithState {
+public class ExpandAllFolding extends BaseAction implements BaseActionWithEditorGui, BaseActionWithState {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        withEditorGui(event, editorGui -> editorGui.expandAllFolding(false));
+        withEditorGui(event, editorGui -> editorGui.expandAllFolding(true));
     }
 
     @Override

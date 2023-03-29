@@ -4,6 +4,7 @@ import com.compilerexplorer.common.LaterConsumerUnlessSuppressed;
 import com.compilerexplorer.common.RefreshSignal;
 import com.compilerexplorer.common.SuppressionFlag;
 import com.compilerexplorer.datamodel.ProjectSettings;
+import com.compilerexplorer.datamodel.SelectedSourceSettings;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
 import com.intellij.openapi.application.ApplicationManager;
@@ -14,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ItemListener;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class ProjectSettingsGui implements Consumer<ProjectSettings> {
@@ -21,11 +24,13 @@ public class ProjectSettingsGui implements Consumer<ProjectSettings> {
     private final ComboBox<SourceSettings> comboBox;
     @NotNull
     private final SuppressionFlag suppressionFlag;
-    @Nullable
-    private Consumer<SourceSettings> sourceSettingsConsumer;
+    @NotNull
+    private final Consumer<SelectedSourceSettings> sourceSettingsConsumer;
+    @Nullable private ItemListener selectionListener;
 
-    public ProjectSettingsGui(@NotNull SuppressionFlag suppressionFlag_) {
+    public ProjectSettingsGui(@NotNull SuppressionFlag suppressionFlag_, @NotNull Consumer<SelectedSourceSettings> sourceSettingsConsumer_) {
         suppressionFlag = suppressionFlag_;
+        sourceSettingsConsumer = sourceSettingsConsumer_;
 
         comboBox = new ComboBox<>();
         comboBox.setRenderer(new SimpleListCellRenderer<>() {
@@ -35,10 +40,9 @@ public class ProjectSettingsGui implements Consumer<ProjectSettings> {
             }
             @NotNull
             private String getText(@NotNull SourceSettings value) {
-                return value.getSourceName();
+                return value.sourceName;
             }
         });
-        comboBox.addItemListener(new ComboBoxSelectionListener<>(comboBox, new LaterConsumerUnlessSuppressed<>(this::sourceSettingsChanged, suppressionFlag)));
     }
 
     @NotNull
@@ -46,56 +50,60 @@ public class ProjectSettingsGui implements Consumer<ProjectSettings> {
         return comboBox;
     }
 
-    public void setSourceSettingsConsumer(@NotNull Consumer<SourceSettings> sourceSettingsConsumer_) {
-        sourceSettingsConsumer = sourceSettingsConsumer_;
-    }
-
     @NotNull
     public Consumer<RefreshSignal> asResetSignalConsumer() {
-        return this::refresh;
+        return refreshSignal -> {
+            ApplicationManager.getApplication().assertIsDispatchThread();
+            clear();
+        };
     }
 
     @Override
-    public void accept(ProjectSettings projectSettings) {
+    public void accept(@NotNull ProjectSettings projectSettings) {
         suppressionFlag.apply(() -> projectSettingsChanged(projectSettings));
     }
 
-    private void refresh(RefreshSignal refreshSignal) {
+    private void projectSettingsChanged(@NotNull ProjectSettings projectSettings) {
         ApplicationManager.getApplication().assertIsDispatchThread();
-        clear();
-    }
 
-    private void projectSettingsChanged(ProjectSettings projectSettings) {
-        ApplicationManager.getApplication().assertIsDispatchThread();
+        if (selectionListener != null) {
+            comboBox.removeItemListener(selectionListener);
+        }
+        selectionListener = new ComboBoxSelectionListener<>(comboBox,
+                new LaterConsumerUnlessSuppressed<>(selectedSource -> sourceSettingsChanged(projectSettings, selectedSource), suppressionFlag)
+        );
+        comboBox.addItemListener(selectionListener);
+
+
         SourceSettings oldSelection = comboBox.getItemAt(comboBox.getSelectedIndex());
         SourceSettings newSelection = projectSettings.getSettings().stream()
-                .filter(x -> oldSelection != null && x.getSourcePath().equals(oldSelection.getSourcePath()))
+                .filter(x -> oldSelection != null && Objects.equals(x.sourcePath, oldSelection.sourcePath))
                 .findFirst()
-                .orElse(projectSettings.getSettings().size() != 0 ? projectSettings.getSettings().firstElement() : null);
-        DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings());
+                .orElse(projectSettings.getSettings().size() != 0 ? projectSettings.getSettings().get(0) : null);
+        DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSettings.getSettings().toArray(new SourceSettings[0]));
         model.setSelectedItem(newSelection);
         comboBox.setModel(model);
-        sourceSettingsChanged(newSelection);
+        sourceSettingsChanged(projectSettings, newSelection);
     }
 
-    private void sourceSettingsChanged(@Nullable SourceSettings sourceSettings) {
+    private void sourceSettingsChanged(@NotNull ProjectSettings projectSettings, @Nullable SourceSettings sourceSettings) {
+        SelectedSourceSettings selectedSource = new SelectedSourceSettings(projectSettings);
         if (sourceSettings != null) {
+            selectedSource.selectedSourceSettings = sourceSettings;
             comboBox.setToolTipText(getSourceTooltip(sourceSettings));
         } else {
             clear();
         }
-        if (sourceSettingsConsumer != null) {
-            sourceSettingsConsumer.accept(sourceSettings);
-        }
+        sourceSettingsConsumer.accept(selectedSource);
     }
 
     @NotNull
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
-        return "File: " + sourceSettings.getSourcePath()
-                + "<br/>Language: " + sourceSettings.getLanguage()
-                + "<br/>Compiler: " + sourceSettings.getCompilerPath()
-                + "<br/>Compiler kind: " + sourceSettings.getCompilerKind()
-                + "<br/>Compiler options: " + String.join(" ", sourceSettings.getSwitches());
+        return "File: " + sourceSettings.sourcePath
+                + "<br/>Language: " + sourceSettings.language
+                + "<br/>Compiler: " + sourceSettings.compilerPath
+                + "<br/>Compiler kind: " + sourceSettings.compilerKind
+                + "<br/>Compiler options: " + String.join(" ", sourceSettings.switches);
     }
 
     private void clear() {

@@ -44,13 +44,32 @@
         <action id="compilerexplorer.ShowOpcodesToggle" class="com.compilerexplorer.actions.appearance.ShowOpcodesToggle"/>
         <action id="compilerexplorer.ShortenTemplatesToggle" class="com.compilerexplorer.actions.appearance.ShortenTemplatesToggle"/>
         <action id="compilerexplorer.EnableFoldingToggle" class="com.compilerexplorer.actions.appearance.EnableFoldingToggle"/>
-        <action id="compilerexplorer.ExpandAllFoldingToggle" class="com.compilerexplorer.actions.appearance.ExpandAllFoldingToggle"/>
-        <action id="compilerexplorer.CollapseAllFoldingToggle" class="com.compilerexplorer.actions.appearance.CollapseAllFoldingToggle"/>
+        <action id="compilerexplorer.ExpandAllFolding" class="com.compilerexplorer.actions.appearance.ExpandAllFolding"/>
+        <action id="compilerexplorer.CollapseAllFolding" class="com.compilerexplorer.actions.appearance.CollapseAllFolding"/>
+
+        <action id="compilerexplorer.ShowProjectInfoTab" class="com.compilerexplorer.actions.appearance.tabs.ShowProjectInfoTab"/>
+        <action id="compilerexplorer.ShowPreprocessorVersionStdoutTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorVersionStdoutTab"/>
+        <action id="compilerexplorer.ShowPreprocessorVersionStderrTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorVersionStderrTab"/>
+        <action id="compilerexplorer.ShowPreprocessorVersionOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorVersionOutputTab"/>
+        <action id="compilerexplorer.ShowPreprocessorStdoutTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorStdoutTab"/>
+        <action id="compilerexplorer.ShowPreprocessorStderrTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorStderrTab"/>
+        <action id="compilerexplorer.ShowPreprocessorOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowPreprocessorOutputTab"/>
+        <action id="compilerexplorer.ShowSourceInfoTab" class="com.compilerexplorer.actions.appearance.tabs.ShowSourceInfoTab"/>
+        <action id="compilerexplorer.ShowExplorerSiteInfoTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerSiteInfoTab"/>
+        <action id="compilerexplorer.ShowExplorerSiteRawOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerSiteRawOutputTab"/>
+        <action id="compilerexplorer.ShowExplorerRawInputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerRawInputTab"/>
+        <action id="compilerexplorer.ShowExplorerRawOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerRawOutputTab"/>
+        <action id="compilerexplorer.ShowExplorerStdoutTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerStdoutTab"/>
+        <action id="compilerexplorer.ShowExplorerStderrTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerStderrTab"/>
+        <action id="compilerexplorer.ShowExplorerOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputTab"/>
+        <action id="compilerexplorer.ShowExplorerExecResultTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerExecResultTab"/>
+        <action id="compilerexplorer.ShowAllTabsToggle" class="com.compilerexplorer.actions.appearance.ShowAllTabsToggle"/>
 
         <action id="compilerexplorer.AutoscrollToSourceToggle" class="com.compilerexplorer.actions.behavior.AutoscrollToSourceToggle"/>
         <action id="compilerexplorer.AutoscrollFromSourceToggle" class="com.compilerexplorer.actions.behavior.AutoscrollFromSourceToggle"/>
         <action id="compilerexplorer.ScrollFromSource" class="com.compilerexplorer.actions.behavior.ScrollFromSource" icon="AllIcons.General.Locate"/>
         <action id="compilerexplorer.AutoupdateFromSourceToggle" class="com.compilerexplorer.actions.behavior.AutoupdateFromSourceToggle"/>
+        <action id="compilerexplorer.PreprocessLocallyToggle" class="com.compilerexplorer.actions.behavior.PreprocessLocallyToggle"/>
         <action id="compilerexplorer.RecompileCurrentSource" class="com.compilerexplorer.actions.behavior.RecompileCurrentSource" icon="AllIcons.Actions.Refresh"/>
         <action id="compilerexplorer.ShowSettings" class="com.compilerexplorer.actions.behavior.ShowSettings" icon="AllIcons.General.Settings"/>
         <action id="compilerexplorer.ShowUrlHistoryInSettings" class="com.compilerexplorer.actions.behavior.ShowUrlHistoryInSettings" icon="AllIcons.General.Settings"/>
@@ -83,6 +102,31 @@
             <reference ref="compilerexplorer.FilterGroup"/>
         </group>
 
+        <group id="compilerexplorer.TabsGroup" popup="false">
+            <reference ref="compilerexplorer.ShowProjectInfoTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorVersionStdoutTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorVersionStderrTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorVersionOutputTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorStdoutTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorStderrTab"/>
+            <reference ref="compilerexplorer.ShowPreprocessorOutputTab"/>
+            <reference ref="compilerexplorer.ShowSourceInfoTab"/>
+            <reference ref="compilerexplorer.ShowExplorerSiteInfoTab"/>
+            <reference ref="compilerexplorer.ShowExplorerSiteRawOutputTab"/>
+            <reference ref="compilerexplorer.ShowExplorerRawInputTab"/>
+            <reference ref="compilerexplorer.ShowExplorerRawOutputTab"/>
+            <reference ref="compilerexplorer.ShowExplorerStdoutTab"/>
+            <reference ref="compilerexplorer.ShowExplorerStderrTab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputTab"/>
+            <reference ref="compilerexplorer.ShowExplorerExecResultTab"/>
+        </group>
+
+        <group id="compilerexplorer.TabsPopupGroup" popup="true">
+            <reference ref="compilerexplorer.TabsGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.ShowAllTabsToggle"/>
+        </group>
+
         <group id="compilerexplorer.AppearanceGroup" popup="false">
             <reference ref="compilerexplorer.ShowLineNumbersToggle"/>
             <reference ref="compilerexplorer.ShowByteOffsetsToggle"/>
@@ -90,12 +134,13 @@
             <reference ref="compilerexplorer.ShowOpcodesToggle"/>
             <reference ref="compilerexplorer.ShortenTemplatesToggle"/>
             <reference ref="compilerexplorer.EnableFoldingToggle"/>
-            <reference ref="compilerexplorer.ExpandAllFoldingToggle"/>
-            <reference ref="compilerexplorer.CollapseAllFoldingToggle"/>
+            <reference ref="compilerexplorer.ExpandAllFolding"/>
+            <reference ref="compilerexplorer.CollapseAllFolding"/>
         </group>
 
         <group id="compilerexplorer.AppearancePopupGroup" popup="true">
             <reference ref="compilerexplorer.AppearanceGroup"/>
+            <reference ref="compilerexplorer.TabsPopupGroup"/>
         </group>
 
         <group id="compilerexplorer.ShortBehaviorGroup" popup="false">

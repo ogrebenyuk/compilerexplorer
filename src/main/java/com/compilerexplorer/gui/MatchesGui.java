@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.Objects;
 import java.util.Vector;
@@ -26,13 +27,14 @@ public class MatchesGui implements Consumer<SourceRemoteMatched> {
     private final ComboBox<CompilerMatch> comboBox;
     @NotNull
     private final SuppressionFlag suppressionFlag;
+    @NotNull
+    private final Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
     @Nullable
-    private SourceRemoteMatched sourceRemoteMatched;
-    @Nullable
-    private Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
+    private ItemListener selectionListener;
 
-    public MatchesGui(@NotNull SuppressionFlag suppressionFlag_) {
+    public MatchesGui(@NotNull SuppressionFlag suppressionFlag_, @NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
         suppressionFlag = suppressionFlag_;
+        sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
 
         comboBox = new ComboBox<>();
         comboBox.setRenderer(new SimpleListCellRenderer<>() {
@@ -45,16 +47,11 @@ public class MatchesGui implements Consumer<SourceRemoteMatched> {
                 return value.getRemoteCompilerInfo().getName() + (value.getCompilerMatchKind() != CompilerMatchKind.NO_MATCH ? " (" + CompilerMatchKind.asString(value.getCompilerMatchKind()) + ")" : "");
             }
         });
-        comboBox.addItemListener(new ComboBoxSelectionListener<>(comboBox, new LaterConsumerUnlessSuppressed<>(this::selectCompilerMatch, suppressionFlag)));
     }
 
     @NotNull
     public Component getComponent() {
         return comboBox;
-    }
-
-    public void setSourceRemoteMatchedConsumer(@NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
-        sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
     }
 
     @NotNull
@@ -63,31 +60,41 @@ public class MatchesGui implements Consumer<SourceRemoteMatched> {
     }
 
     @Override
-    public void accept(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
-        suppressionFlag.apply(() -> sourceRemoteMatchedChanged(sourceRemoteMatched_));
+    public void accept(@NotNull SourceRemoteMatched sourceRemoteMatched) {
+        suppressionFlag.apply(() -> sourceRemoteMatchedChanged(sourceRemoteMatched));
     }
 
-    public void clearSourceRemoteMatched() {
-        sourceRemoteMatched = null;
-    }
-
-    private void sourceRemoteMatchedChanged(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
+    private void sourceRemoteMatchedChanged(@NotNull SourceRemoteMatched sourceRemoteMatched) {
         ApplicationManager.getApplication().assertIsDispatchThread();
-        sourceRemoteMatched = sourceRemoteMatched_;
-        CompilerMatch chosenMatch = sourceRemoteMatched.getRemoteCompilerMatches().getChosenMatch();
-        List<CompilerMatch> matches = sourceRemoteMatched.getRemoteCompilerMatches().getOtherMatches();
-        CompilerMatch oldSelection = comboBox.getItemAt(comboBox.getSelectedIndex());
-        CompilerMatch newSelection = matches.stream()
-                .filter(x -> oldSelection != null && x.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId()))
-                .findFirst()
-                .orElse(!chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null));
-        DefaultComboBoxModel<CompilerMatch> model = new DefaultComboBoxModel<>(
-                matches.stream()
-                        .map(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()) ? x : newSelection)
-                        .filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
-        model.setSelectedItem(newSelection);
-        comboBox.setModel(model);
-        selectCompilerMatch(newSelection);
+
+        if (selectionListener != null) {
+            comboBox.removeItemListener(selectionListener);
+        }
+        selectionListener = new ComboBoxSelectionListener<>(comboBox,
+                new LaterConsumerUnlessSuppressed<>(selectedMatch -> selectCompilerMatch(sourceRemoteMatched, selectedMatch), suppressionFlag)
+        );
+        comboBox.addItemListener(selectionListener);
+
+        if (sourceRemoteMatched.isValid()) {
+            assert sourceRemoteMatched.remoteCompilerMatches != null;
+
+            CompilerMatch chosenMatch = sourceRemoteMatched.remoteCompilerMatches.getChosenMatch();
+            List<CompilerMatch> matches = sourceRemoteMatched.remoteCompilerMatches.getOtherMatches();
+            CompilerMatch oldSelection = comboBox.getItemAt(comboBox.getSelectedIndex());
+            CompilerMatch newSelection = matches.stream()
+                    .filter(x -> oldSelection != null && x.getRemoteCompilerInfo().getId().equals(oldSelection.getRemoteCompilerInfo().getId()))
+                    .findFirst()
+                    .orElse(!chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null));
+            DefaultComboBoxModel<CompilerMatch> model = new DefaultComboBoxModel<>(
+                    matches.stream()
+                            .map(x -> newSelection == null || !newSelection.getRemoteCompilerInfo().getId().equals(x.getRemoteCompilerInfo().getId()) ? x : newSelection)
+                            .filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
+            model.setSelectedItem(newSelection);
+            comboBox.setModel(model);
+            selectCompilerMatch(sourceRemoteMatched, newSelection);
+        } else {
+            selectCompilerMatch(sourceRemoteMatched, null);
+        }
     }
 
     @NotNull
@@ -100,15 +107,13 @@ public class MatchesGui implements Consumer<SourceRemoteMatched> {
                 + "<br/>Raw data: " + compilerMatch.getRemoteCompilerInfo().getRawData();
     }
 
-    private void selectCompilerMatch(@Nullable CompilerMatch compilerMatch) {
+    private void selectCompilerMatch(@NotNull SourceRemoteMatched sourceRemoteMatched, @Nullable CompilerMatch compilerMatch) {
         if (compilerMatch != null) {
             comboBox.setToolTipText(getMatchTooltip(compilerMatch));
         } else {
             clear();
         }
-        if (sourceRemoteMatchedConsumer != null && sourceRemoteMatched != null) {
-            sourceRemoteMatchedConsumer.accept(compilerMatch != null ? sourceRemoteMatched.withChosenMatch(compilerMatch) : null);
-        }
+        sourceRemoteMatchedConsumer.accept(sourceRemoteMatched.withChosenMatch(compilerMatch != null ? compilerMatch : new CompilerMatch()));
     }
 
     private void reconnect(RefreshSignal refreshSignal) {

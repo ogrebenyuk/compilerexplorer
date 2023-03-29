@@ -1,6 +1,7 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.compilerexplorer.common.Constants;
+import com.compilerexplorer.common.Tabs;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
@@ -86,6 +87,10 @@ public class SettingsState {
     private long delayMillis = DEFAULT_DELAY_MILLIS;
     @Property
     private int compilerTimeoutMillis = DEFAULT_COMPILER_TIMEOUT_MILLIS;
+    @Property
+    private boolean showAllTabs = false;
+    @Property
+    private Map<Tabs, Integer> scrollPositions = new HashMap<>();
     @Property
     private boolean initialNoticeShown = false;
 
@@ -309,6 +314,24 @@ public class SettingsState {
         compilerTimeoutMillis = compilerTimeoutMillis_;
     }
 
+    public boolean getShowAllTabs() {
+        return showAllTabs;
+    }
+
+    public void setShowAllTabs(boolean showAllTabs_) {
+        showAllTabs = showAllTabs_;
+    }
+
+    @NotNull
+    public Map<Tabs, Integer> getScrollPositions() {
+        return scrollPositions;
+    }
+
+    public void setScrollPositions(@NotNull Map<Tabs, Integer> scrollPositions_) {
+        scrollPositions = new HashMap<>();
+        scrollPositions.putAll(scrollPositions_);
+    }
+
     public boolean getInitialNoticeShown() {
         return initialNoticeShown;
     }
@@ -342,6 +365,8 @@ public class SettingsState {
         setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
         setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
+        setShowAllTabs(other.getShowAllTabs());
+        setScrollPositions(other.getScrollPositions());
         setInitialNoticeShown(other.getInitialNoticeShown());
     }
 
@@ -371,6 +396,8 @@ public class SettingsState {
                 + getHighlightColorRGB()
                 + ((int) getDelayMillis())
                 + getCompilerTimeoutMillis()
+                + (getShowAllTabs() ? 1 : 0)
+                + getScrollPositions().hashCode()
                 + (getInitialNoticeShown() ? 1 : 0)
         ;
     }
@@ -400,10 +427,12 @@ public class SettingsState {
                 && getShowSourceAnnotations() == (other.getShowSourceAnnotations())
                 && getShowOpcodes() == (other.getShowOpcodes())
                 && getEnableFolding() == (other.getEnableFolding())
-                && getFoldedLabels() == (other.getFoldedLabels())
+                && getFoldedLabels().equals(other.getFoldedLabels())
                 && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
                 && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()
+                && getShowAllTabs() == other.getShowAllTabs()
+                && getScrollPositions().equals(other.getScrollPositions())
                 && getInitialNoticeShown() == other.getInitialNoticeShown()
         ;
     }

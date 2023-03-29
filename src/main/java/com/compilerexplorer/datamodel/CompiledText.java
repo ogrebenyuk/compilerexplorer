@@ -25,6 +25,7 @@ public class CompiledText {
         }
 
         @Override
+        @NotNull
         public String toString()
         {
             return (file != null ? file : "") + ":" + line;
@@ -53,7 +54,9 @@ public class CompiledText {
     public static class CompiledChunk {
         public final static int NO_ADDRESS = -1;
 
+        @Nullable
         public String text;
+        @Nullable
         public SourceLocation source;
         @Nullable
         public List<String> opcodes;
@@ -62,8 +65,8 @@ public class CompiledText {
         @SuppressWarnings("unused")
         @Override
         public int hashCode() {
-            return text.hashCode()
-                    + source.hashCode()
+            return (text != null ? text.hashCode() : 0)
+                    + (source != null ? source.hashCode() : 0)
                     + (opcodes != null ? opcodes.hashCode() : 0)
                     + address
                     ;
@@ -75,8 +78,8 @@ public class CompiledText {
             if (!(obj instanceof CompiledChunk other)) {
                 return false;
             }
-            return text.equals(other.text)
-                    && source.equals(other.source)
+            return Objects.equals(text, other.text)
+                    && Objects.equals(source, other.source)
                     && Objects.equals(opcodes, other.opcodes)
                     && address == other.address
                     ;
@@ -103,22 +106,33 @@ public class CompiledText {
     }
 
     public static class CompiledResult {
-        public int code;
+        public static final int CODE_GOOD = 0;
+        public static final int CODE_REGULAR_BAD = 1;
+        public static final int CODE_NOT_COMPILED = -1;
+
+        public int code = CODE_NOT_COMPILED;
+        @Nullable
         public List<CompiledChunk> stdout;
+        @Nullable
         public List<CompiledChunk> stderr;
+        @Nullable
         public List<CompiledChunk> asm;
         @Nullable
         public Map<String, Integer> labelDefinitions;
         @Nullable
         public ExecResult execResult;
 
+        public boolean isValid() {
+            return code == CODE_GOOD;
+        }
+
         @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
             return code
-                    + stdout.hashCode()
-                    + stderr.hashCode()
-                    + asm.hashCode()
+                    + (stdout != null ? stdout.hashCode() : 0)
+                    + (stderr != null ? stderr.hashCode() : 0)
+                    + (asm != null ? asm.hashCode() : 0)
                     + (labelDefinitions != null ? labelDefinitions.hashCode() : 0)
                     + (execResult != null ? execResult.hashCode() : 0)
                     ;
@@ -131,9 +145,9 @@ public class CompiledText {
                 return false;
             }
             return code == other.code
-                    && stdout.equals(other.stdout)
-                    && stderr.equals(other.stderr)
-                    && asm.equals(other.asm)
+                    && Objects.equals(stdout, other.stdout)
+                    && Objects.equals(stderr, other.stderr)
+                    && Objects.equals(asm, other.asm)
                     && Objects.equals(labelDefinitions, other.labelDefinitions)
                     && Objects.equals(execResult, other.execResult)
                     ;
@@ -141,31 +155,37 @@ public class CompiledText {
     }
 
     @NotNull
-    private final PreprocessedSource preprocessedSource;
+    public final SourceRemoteMatched sourceRemoteMatched;
 
-    @NotNull
-    private final CompiledResult compiledResult;
+    @Nullable
+    public String rawInput;
+    @Nullable
+    public String rawOutput;
+    @Nullable
+    public Exception exception;
+    @Nullable
+    public CompiledResult compiledResult;
 
-    public CompiledText(@NotNull PreprocessedSource preprocessedSource_, @NotNull CompiledResult compiledResult_) {
-        preprocessedSource = preprocessedSource_;
-        compiledResult = compiledResult_;
+    public CompiledText(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
+        sourceRemoteMatched = sourceRemoteMatched_;
     }
 
-    @NotNull
-    public PreprocessedSource getPreprocessedSource() {
-        return preprocessedSource;
+    public boolean isValid() {
+        return compiledResult != null && compiledResult.isValid();
     }
 
-    @NotNull
-    public CompiledResult getCompiledResult() {
-        return compiledResult;
+    public boolean isValidExecResult() {
+        return compiledResult != null && compiledResult.isValid() && compiledResult.execResult != null;
     }
 
     @SuppressWarnings("unused")
     @Override
     public int hashCode() {
-        return getPreprocessedSource().hashCode()
-                + getCompiledResult().hashCode()
+        return sourceRemoteMatched.hashCode()
+                + (rawInput != null ? rawInput.hashCode() : 0)
+                + (rawOutput != null ? rawOutput.hashCode() : 0)
+                + (exception != null ? exception.hashCode() : 0)
+                + (compiledResult != null ? compiledResult.hashCode() : 0)
                 ;
     }
 
@@ -175,8 +195,11 @@ public class CompiledText {
         if (!(obj instanceof CompiledText other)) {
             return false;
         }
-        return getPreprocessedSource().equals(other.getPreprocessedSource())
-                && getCompiledResult().equals(other.getCompiledResult())
+        return sourceRemoteMatched.equals(other.sourceRemoteMatched)
+                && Objects.equals(rawInput, other.rawInput)
+                && Objects.equals(rawOutput, other.rawOutput)
+                && Objects.equals(exception, other.exception)
+                && Objects.equals(compiledResult, other.compiledResult)
                 ;
     }
 }

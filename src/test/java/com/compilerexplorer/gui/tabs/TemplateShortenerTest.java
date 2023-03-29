@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;

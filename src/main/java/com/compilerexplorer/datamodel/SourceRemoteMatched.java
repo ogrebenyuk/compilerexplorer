@@ -3,37 +3,40 @@ package com.compilerexplorer.datamodel;
 import com.compilerexplorer.datamodel.state.CompilerMatch;
 import com.compilerexplorer.datamodel.state.CompilerMatches;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
 
 public class SourceRemoteMatched {
     @NotNull
-    private final SourceCompilerSettings sourceCompilerSettings;
-    @NotNull
-    private final CompilerMatches remoteCompilerMatches;
+    public final PreprocessedSource preprocessedSource;
 
-    public SourceRemoteMatched(@NotNull SourceCompilerSettings sourceCompilerSettings_, @NotNull CompilerMatches remoteCompilerMatches_) {
-        sourceCompilerSettings = sourceCompilerSettings_;
-        remoteCompilerMatches = remoteCompilerMatches_;
+    public boolean cached;
+    @Nullable
+    public CompilerMatches remoteCompilerMatches;
+
+    public SourceRemoteMatched(@NotNull PreprocessedSource preprocessedSource_) {
+        preprocessedSource = preprocessedSource_;
+    }
+
+    public boolean isValid() {
+        return remoteCompilerMatches != null && !remoteCompilerMatches.getChosenMatch().getRemoteCompilerInfo().getId().isEmpty();
     }
 
     @NotNull
-    public SourceCompilerSettings getSourceCompilerSettings() {
-        return sourceCompilerSettings;
-    }
-
-    @NotNull
-    public CompilerMatches getRemoteCompilerMatches() {
-        return remoteCompilerMatches;
-    }
-
-    @NotNull
-    public SourceRemoteMatched withChosenMatch(@NotNull CompilerMatch chosenMatch) {
-        return new SourceRemoteMatched(sourceCompilerSettings, remoteCompilerMatches.withChosenMatch(chosenMatch));
+    public SourceRemoteMatched withChosenMatch(@NotNull CompilerMatch newChosenMatch) {
+        SourceRemoteMatched newSourceRemoteMatched = new SourceRemoteMatched(preprocessedSource);
+        if (remoteCompilerMatches != null) {
+            newSourceRemoteMatched.remoteCompilerMatches = remoteCompilerMatches.withChosenMatch(newChosenMatch);
+        }
+        return newSourceRemoteMatched;
     }
 
     @Override
     public int hashCode() {
-        return getSourceCompilerSettings().hashCode()
-                + getRemoteCompilerMatches().hashCode()
+        return preprocessedSource.hashCode()
+                + (cached ? 1 : 0)
+                + (remoteCompilerMatches != null ? remoteCompilerMatches.hashCode() : 0)
                 ;
     }
 
@@ -42,8 +45,9 @@ public class SourceRemoteMatched {
         if (!(obj instanceof SourceRemoteMatched other)) {
             return false;
         }
-        return getSourceCompilerSettings().equals(other.getSourceCompilerSettings())
-                && getRemoteCompilerMatches().equals(other.getRemoteCompilerMatches())
+        return preprocessedSource.equals(other.preprocessedSource)
+                && cached == other.cached
+                && Objects.equals(remoteCompilerMatches, other.remoteCompilerMatches)
                 ;
     }
 }

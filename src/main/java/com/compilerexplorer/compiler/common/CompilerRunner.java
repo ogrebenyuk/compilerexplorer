@@ -47,11 +47,9 @@ public class CompilerRunner {
                 ShutDownTracker.getInstance().unregisterShutdownTask(shutdownHook);
                 shutdownHook.run();
             }
-
-
         }
         catch (Exception e) {
-            throw(new RuntimeException("Failed to run compiler: "+e.getMessage()));
+            throw(new RuntimeException("Failed to run compiler: " + e.getMessage()));
         }
 
         stdout = output.getStdout();

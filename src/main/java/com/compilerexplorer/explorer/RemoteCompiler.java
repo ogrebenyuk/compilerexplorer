@@ -2,7 +2,7 @@ package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.datamodel.CompiledText;
-import com.compilerexplorer.datamodel.PreprocessedSource;
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
@@ -34,162 +34,163 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class RemoteCompiler implements Consumer<PreprocessedSource> {
+public class RemoteCompiler extends RefreshableComponent<SourceRemoteMatched> {
     @NotNull
     private final Project project;
     @NotNull
     private final Consumer<CompiledText> compiledTextConsumer;
     @NotNull
-    private final Consumer<Error> errorConsumer;
-    @NotNull
     private final TaskRunner taskRunner;
-    @Nullable
-    private PreprocessedSource lastPreprocessedSource;
     @NotNull
-    private final Map<String, String> normalizedPathMap;
+    private final Map<String, String> normalizedPathMap = new HashMap<>();
 
     public RemoteCompiler(@NotNull Project project_,
                           @NotNull Consumer<CompiledText> compiledTextConsumer_,
-                          @NotNull Consumer<Error> errorConsumer_,
                           @NotNull TaskRunner taskRunner_) {
         project = project_;
         compiledTextConsumer = compiledTextConsumer_;
-        errorConsumer = errorConsumer_;
         taskRunner = taskRunner_;
-        normalizedPathMap = new HashMap<>();
     }
 
     @SuppressWarnings("WeakerAccess")
     @Override
-    public void accept(@NotNull PreprocessedSource preprocessedSource) {
-        lastPreprocessedSource = preprocessedSource;
+    public void accept(@NotNull SourceRemoteMatched sourceRemoteMatched) {
+        super.accept(sourceRemoteMatched);
+
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
 
         if (!state.getEnabled()) {
             return;
         }
 
-        SourceSettings sourceSettings = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings();
-        String url = state.getUrl();
-        Filters filters = new Filters(state.getFilters());
-        String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
-        String name = sourceSettings.getSourceName();
-        taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": compiling " + name) {
+        SourceSettings sourceSettings = sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings;
+        taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": compiling " + (sourceSettings != null ? sourceSettings.sourceName : null)) {
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
-                String remoteCompilerId = preprocessedSource.getSourceRemoteMatched().getRemoteCompilerMatches().getChosenMatch().getRemoteCompilerInfo().getId();
-                String endpoint = url + "/api/compiler/" + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + "/compile";
-                try {
-                    CloseableHttpClient httpClient = HttpClients.createDefault();
+                CompiledText compiledText = new CompiledText(sourceRemoteMatched);
+                if (sourceRemoteMatched.isValid() && sourceRemoteMatched.preprocessedSource.isValid() && sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.isValid()) {
+                    assert sourceSettings != null;
+                    assert sourceRemoteMatched.remoteCompilerMatches != null;
+                    assert sourceRemoteMatched.preprocessedSource.preprocessedText != null;
+                    assert sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings != null;
 
-                    HttpPost postRequest = new HttpPost(endpoint);
-                    postRequest.addHeader("accept", "application/json");
+                    String url = state.getUrl();
+                    Filters filters = new Filters(state.getFilters());
+                    String switches = getCompilerOptions(sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
+                    String remoteCompilerId = sourceRemoteMatched.remoteCompilerMatches.getChosenMatch().getRemoteCompilerInfo().getId();
+                    String endpoint = url + "/api/compiler/" + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + "/compile";
+                    try {
+                        CloseableHttpClient httpClient = HttpClients.createDefault();
 
-                    Gson gson = new Gson();
+                        HttpPost postRequest = new HttpPost(endpoint);
+                        postRequest.addHeader("accept", "application/json");
 
-                    String source = preprocessedSource.getPreprocessedText();
-                    Request request = new Request();
-                    request.source = source;
-                    request.options = new Options();
-                    request.options.userArguments = switches;
-                    request.options.filters = filters;
-                    request.options.compilerOptions = new CompilerOptions();
-                    request.options.compilerOptions.executorRequest = false;
+                        Gson gson = new Gson();
 
-                    postRequest.setEntity(new StringEntity(gson.toJson(request), ContentType.APPLICATION_JSON));
+                        Request request = new Request();
+                        request.source = sourceRemoteMatched.preprocessedSource.preprocessedText;
+                        request.options = new Options();
+                        request.options.userArguments = switches;
+                        request.options.filters = filters;
+                        request.options.compilerOptions = new CompilerOptions();
+                        request.options.compilerOptions.executorRequest = false;
 
-                    CloseableHttpResponse[] responses = {null};
-                    Exception[] exceptions = {null};
-                    Thread thread = new Thread(() -> {
-                        try {
-                            while (true) {
-                                responses[0] = httpClient.execute(postRequest);
+                        String rawInput = gson.toJson(request);
+                        compiledText.rawInput = rawInput;
 
-                                boolean isRedirected = responses[0].getStatusLine().getStatusCode() / 100 == 3;
-                                if (isRedirected) {
-                                    Header[] headers = responses[0].getHeaders("Location");
-                                    if (headers != null && headers.length > 0) {
-                                        postRequest.setURI(new URI(headers[0].getValue()));
-                                        continue;
+                        postRequest.setEntity(new StringEntity(rawInput, ContentType.APPLICATION_JSON));
+
+                        CloseableHttpResponse[] responses = {null};
+                        Exception[] exceptions = {null};
+                        Thread thread = new Thread(() -> {
+                            try {
+                                while (true) {
+                                    responses[0] = httpClient.execute(postRequest);
+
+                                    boolean isRedirected = responses[0].getStatusLine().getStatusCode() / 100 == 3;
+                                    if (isRedirected) {
+                                        Header[] headers = responses[0].getHeaders("Location");
+                                        if (headers != null && headers.length > 0) {
+                                            postRequest.setURI(new URI(headers[0].getValue()));
+                                            continue;
+                                        }
                                     }
+
+                                    break;
                                 }
-
-                                break;
+                            } catch (Exception exception) {
+                                exceptions[0] = exception;
                             }
-                        } catch (Exception exception) {
-                            exceptions[0] = exception;
-                        }
-                    });
-                    thread.start();
+                        });
+                        thread.start();
 
-                    while (thread.isAlive()) {
-                        thread.join(100);
-                        try {
-                            indicator.checkCanceled();
-                        } catch (Exception exception) {
-                            thread.interrupt();
+                        while (thread.isAlive()) {
+                            thread.join(100);
+                            try {
+                                indicator.checkCanceled();
+                            } catch (Exception exception) {
+                                thread.interrupt();
+                                throw exception;
+                            }
+                        }
+
+                        Exception exception = exceptions[0];
+                        if (exception != null) {
                             throw exception;
                         }
-                    }
 
-                    Exception exception = exceptions[0];
-                    if (exception != null) {
-                        throw exception;
-                    }
+                        CloseableHttpResponse response = responses[0];
 
-                    CloseableHttpResponse response = responses[0];
-
-                    if (response.getStatusLine().getStatusCode() != 200) {
+                        if (response.getStatusLine().getStatusCode() != 200) {
+                            httpClient.close();
+                            response.close();
+                            throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
+                        }
+                        BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+                        StringBuilder output = new StringBuilder();
+                        String line;
+                        while ((line = br.readLine()) != null) {
+                            indicator.checkCanceled();
+                            output.append(line);
+                        }
                         httpClient.close();
                         response.close();
-                        throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
-                    }
-                    BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-                    StringBuilder output = new StringBuilder();
-                    String line;
-                    while ((line = br.readLine()) != null) {
                         indicator.checkCanceled();
-                        output.append(line);
-                    }
-                    httpClient.close();
-                    response.close();
-                    indicator.checkCanceled();
 
-                    JsonObject obj = JsonParser.parseString(output.toString()).getAsJsonObject();
-                    CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
+                        String rawOutput = output.toString();
+                        compiledText.rawOutput = rawOutput;
 
-                    if (compiledResult.code == 0) {
-                        HostMachine host = preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getHost();
-                        @Nullable File compilerDir = new File(preprocessedSource.getSourceRemoteMatched().getSourceCompilerSettings().getSourceSettings().getCompilerPath()).getParentFile();
-                        @Nullable String compilerInstallPath = compilerDir != null ? compilerDir.getParent() : null;
-                        normalizePaths(compiledResult.stdout, host, compilerInstallPath);
-                        normalizePaths(compiledResult.stderr, host, compilerInstallPath);
-                        normalizePaths(compiledResult.asm, host, compilerInstallPath);
-                        if (compiledResult.execResult != null) {
-                            normalizePaths(compiledResult.execResult.stdout, host, compilerInstallPath);
+                        JsonObject obj = JsonParser.parseString(rawOutput).getAsJsonObject();
+                        CompiledText.CompiledResult compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
+                        compiledText.compiledResult = compiledResult;
+
+                        if (compiledResult.code == 0) {
+                            HostMachine host = sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.host;
+                            @Nullable File compilerDir = new File(sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.compilerPath).getParentFile();
+                            @Nullable String compilerInstallPath = compilerDir != null ? compilerDir.getParent() : null;
+                            normalizePaths(compiledResult.stdout, host, compilerInstallPath);
+                            normalizePaths(compiledResult.stderr, host, compilerInstallPath);
+                            normalizePaths(compiledResult.asm, host, compilerInstallPath);
+                            if (compiledResult.execResult != null) {
+                                normalizePaths(compiledResult.execResult.stdout, host, compilerInstallPath);
+                            }
                         }
-                        ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(new CompiledText(preprocessedSource, compiledResult)));
-                    } else {
-                        String err = compiledResult.stderr.stream().map(c -> c.text).filter(Objects::nonNull).collect(Collectors.joining("\n"));
-                        errorLater(err);
+                    } catch (ProcessCanceledException canceledException) {
+                        // empty
+                    } catch (Exception exception) {
+                        compiledText.exception = exception;
                     }
-                } catch (ProcessCanceledException canceledException) {
-                    //errorLater("Canceled compiling " + name);
-                } catch (Exception e) {
-                    errorLater("Exception compiling " + name + ": " + e.getMessage());
                 }
+
+                ApplicationManager.getApplication().invokeLater(() -> compiledTextConsumer.accept(compiledText));
             }
         });
-    }
-
-    private void errorLater(@NotNull String text) {
-        ApplicationManager.getApplication().invokeLater(() -> errorConsumer.accept(new Error(text)));
     }
 
     @NotNull
     private static String getCompilerOptions(@NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches, @NotNull String ignoreSwitches) {
         List<String> ignoreSwitchesList = Arrays.asList(ignoreSwitches.split(" "));
-        return sourceSettings.getSwitches().stream().filter(x -> !ignoreSwitchesList.contains(x)).map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
+        return sourceSettings.switches.stream().filter(x -> !ignoreSwitchesList.contains(x)).map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
                 + (AdditionalSwitches.INSTANCE.isEmpty() ? "" : " " + String.join(" ", AdditionalSwitches.INSTANCE))
                 + (additionalSwitches.isEmpty() ? "" : " " + Arrays.stream(additionalSwitches.split(" ")).filter(x -> !ignoreSwitchesList.contains(x)).collect(Collectors.joining(" ")));
     }
@@ -209,18 +210,14 @@ public class RemoteCompiler implements Consumer<PreprocessedSource> {
         Options options;
     }
 
-    public void refresh() {
-        if (lastPreprocessedSource != null && CompilerExplorerSettingsProvider.getInstance(project).getState().getEnabled()) {
-            accept(lastPreprocessedSource);
+    private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
+        if (chunks != null) {
+            chunks.forEach(chunk -> {
+                if (chunk.source != null) {
+                    chunk.source.file = tryNormalizePath(chunk.source.file, host, compilerInstallPath);
+                }
+            });
         }
-    }
-
-    private void normalizePaths(@NotNull List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
-        chunks.forEach(chunk -> {
-            if (chunk.source != null) {
-                chunk.source.file = tryNormalizePath(chunk.source.file, host, compilerInstallPath);
-            }
-        });
     }
 
     @Nullable

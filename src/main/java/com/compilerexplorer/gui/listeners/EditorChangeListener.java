@@ -6,11 +6,22 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 public class EditorChangeListener {
-    public EditorChangeListener(@NotNull Project project, @NotNull Runnable consumer) {
+    @NotNull
+    private final Producer<EditorEx> excludedEditorProducer;
+
+    public EditorChangeListener(@NotNull Project project, @NotNull Producer<EditorEx> excludedEditorProducer_, @NotNull Runnable consumer) {
+        excludedEditorProducer = excludedEditorProducer_;
+
         EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new DocumentListener() {
             @Override
             public void documentChanged(@NotNull DocumentEvent event) {
@@ -19,12 +30,15 @@ public class EditorChangeListener {
                 }
             }
             private boolean belongsToProject(@NotNull Document document) {
-                Editor[] editors = findEditors(document);
-                return editors.length != 0;
+                Optional<Editor> anyEditor = findAnyEditor(document);
+                return anyEditor.isPresent();
             }
             @NotNull
-            private Editor[] findEditors(@NotNull Document document) {
-                return EditorFactory.getInstance().getEditors(document, project);
+            private Optional<Editor> findAnyEditor(@NotNull Document document) {
+                @Nullable EditorEx excludedEditor = excludedEditorProducer.produce();
+                return Arrays.stream(EditorFactory.getInstance().getEditors(document, project))
+                        .filter(ed -> ed != excludedEditor)
+                        .findFirst();
             }
         }, DisposableParentProjectService.getInstance(project));
 

@@ -2,19 +2,25 @@ package com.compilerexplorer.datamodel;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Vector;
 
-public class ProjectSettings {
+public class ProjectSettings implements Visitable {
     @NotNull
-    private final Vector<SourceSettings> settings;
+    private final List<SourceSettings> settings;
 
     public ProjectSettings(@NotNull Vector<SourceSettings> settings_) {
         settings = settings_;
     }
 
     @NotNull
-    public Vector<SourceSettings> getSettings() {
+    public List<SourceSettings> getSettings() {
         return settings;
+    }
+
+    @Override
+    public void accept(@NotNull Visitor visitor) {
+        visitor.visit(this);
     }
 
     @Override

@@ -15,6 +15,6 @@ public class ShortenTemplatesToggle extends BaseAppearanceToggleAction implement
 
     @Override
     public void setSelected(@NotNull AnActionEvent event, boolean selected) {
-        setSelected(event, selected, SettingsState::setShortenTemplates, withEditorGuiRun(event, EditorGui::reparse));
+        setSelected(event, selected, SettingsState::setShortenTemplates, withEditorGuiRun(event, EditorGui::refresh));
     }
 }

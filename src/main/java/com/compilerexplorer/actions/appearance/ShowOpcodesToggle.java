@@ -16,7 +16,7 @@ public class ShowOpcodesToggle extends BaseAppearanceToggleAction implements Bas
 
     @Override
     public void setSelected(@NotNull AnActionEvent event, boolean selected) {
-        setSelected(event, selected, SettingsState::setShowOpcodes, withEditorGuiRun(event, EditorGui::reparse));
+        setSelected(event, selected, SettingsState::setShowOpcodes, withEditorGuiRun(event, EditorGui::refresh));
     }
 
     @Override

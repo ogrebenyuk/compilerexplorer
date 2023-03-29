@@ -36,6 +36,10 @@ interface BaseActionUtil extends BaseActionWithProject {
         event.getPresentation().setVisible(isVisible);
     }
 
+    default boolean isEnabledAndVisible(@NotNull AnActionEvent event) {
+        return event.getPresentation().isEnabledAndVisible();
+    }
+
     default void setEnabledAndVisible(@NotNull AnActionEvent event, boolean isEnabledAndVisible) {
         event.getPresentation().setEnabledAndVisible(isEnabledAndVisible);
     }

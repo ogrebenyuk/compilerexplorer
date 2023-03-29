@@ -92,12 +92,6 @@ public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable
 
     @Override
     @NotNull
-    public EditorColorsScheme customizeColorScheme(@NotNull EditorColorsScheme scheme) {
-        return scheme;
-    }
-
-    @Override
-    @NotNull
     public DisplayPriority getPriority() {
         return DisplayPriority.COMMON_SETTINGS;
     }
