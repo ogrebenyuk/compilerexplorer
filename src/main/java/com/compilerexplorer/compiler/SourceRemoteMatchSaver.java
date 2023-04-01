@@ -32,7 +32,7 @@ public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
         if (sourceRemoteMatched.isValid()) {
             assert sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings != null;
 
-            state.getCompilerMatches().put(new LocalCompilerPath(sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.compilerPath), sourceRemoteMatched.remoteCompilerMatches);
+            state.addToCompilerMatches(new LocalCompilerPath(sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.compilerPath), sourceRemoteMatched.remoteCompilerMatches);
         }
 
         delegate.accept(sourceRemoteMatched);
@@ -42,7 +42,7 @@ public class SourceRemoteMatchSaver implements Consumer<SourceRemoteMatched> {
     public Consumer<RefreshSignal> asReconnectSignalConsumer() {
         return refreshSignal -> {
             SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
-            state.setCompilerMatches(SettingsState.EMPTY.getCompilerMatches());
+            state.clearCompilerMatches();
         };
     }
 }

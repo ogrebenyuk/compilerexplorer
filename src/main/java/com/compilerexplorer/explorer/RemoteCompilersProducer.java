@@ -145,7 +145,7 @@ public class RemoteCompilersProducer extends RefreshableComponent<SelectedSource
     public Consumer<RefreshSignal> asReconnectSignalConsumer() {
         return refreshSignal -> {
             state.setConnected(SettingsState.EMPTY.getConnected());
-            state.setRemoteCompilers(SettingsState.EMPTY.getRemoteCompilers());
+            state.clearRemoteCompilers();
         };
     }
 }

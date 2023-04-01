@@ -65,9 +65,9 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
     @NotNull
     private final FoldingChangeListener foldingChangeListener = new FoldingChangeListener((label, isExpanded) -> unlessFoldingUpdatesSuppressed(() -> {
         if (isExpanded) {
-            getState().getFoldedLabels().remove(label);
+            getState().removeFoldedLabel(label);
         } else {
-            getState().getFoldedLabels().add(label);
+            getState().addFoldedLabel(label);
         }
     }));
 
@@ -304,7 +304,7 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
             for (Pair<String, Range> label : labels) {
                 @Nullable FoldRegion region = foldingModel.addFoldRegion(label.getSecond().begin, label.getSecond().end, label.getFirst());
                 if (region != null) {
-                    region.setExpanded(!foldedLabels.contains(label.getFirst()));
+                    region.setExpanded(!state.containsFoldedLabel(label.getFirst()));
                 }
             }
         }));
@@ -312,7 +312,7 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
 
     private void removeObsoleteFoldedLabels(@NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
         Set<String> existingLabels = labels.stream().map(p -> p.getFirst()).collect(Collectors.toSet());
-        foldedLabels.stream().filter(l -> !existingLabels.contains(l)).collect(Collectors.toSet()).forEach(foldedLabels::remove);
+        foldedLabels.stream().filter(l -> !existingLabels.contains(l)).collect(Collectors.toSet()).forEach(state::removeFoldedLabel);
     }
 
     private void unlessFoldingUpdatesSuppressed(Runnable runnable) {

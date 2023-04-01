@@ -52,7 +52,7 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
 
     public void copyFrom(@NotNull SettingsState state_) {
         boolean urlChanged = !state.getUrl().equals(state_.getUrl());
-        boolean preprocessChanged = state.getPreprocessLocally() != state_.getPreprocessLocally();
+        boolean preprocessChanged = (state.getPreprocessLocally() != state_.getPreprocessLocally()) || !state.getIgnoreSwitches().equals(state_.getIgnoreSwitches());
         state.copyFrom(state_);
         if (refreshSignalConsumer != null) {
             if (urlChanged) {

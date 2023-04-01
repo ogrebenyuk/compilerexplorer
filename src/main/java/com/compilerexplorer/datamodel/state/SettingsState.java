@@ -98,245 +98,284 @@ public class SettingsState {
         // empty
     }
 
-    public boolean getEnabled() {
+    synchronized public boolean getEnabled() {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled_) {
+    synchronized public void setEnabled(boolean enabled_) {
         enabled = enabled_;
     }
 
     @NotNull
-    public String getUrl() {
+    synchronized public String getUrl() {
         return url;
     }
 
-    public void setUrl(@NotNull String url_) {
+    synchronized public void setUrl(@NotNull String url_) {
         url = url_;
     }
 
     @NotNull
-    public List<String> getUrlHistory() {
-        return urlHistory;
+    synchronized public List<String> getUrlHistory() {
+        return new ArrayList<>(urlHistory);
     }
 
-    public void setUrlHistory(@NotNull List<String> urlHistory_) {
-        urlHistory = new ArrayList<>();
-        urlHistory.addAll(urlHistory_);
+    synchronized public void setUrlHistory(@NotNull List<String> urlHistory_) {
+        urlHistory = new ArrayList<>(urlHistory_);
     }
 
-    public void addToUrlHistory(@NotNull String url_) {
+    synchronized public void addToUrlHistory(@NotNull String url_) {
         if (!Constants.DEFAULT_URLS.containsKey(url_) && !urlHistory.contains(url_)) {
             urlHistory.add(url_);
         }
     }
 
-    public void clearUrlHistory() {
+    synchronized public void clearUrlHistory() {
         urlHistory = EMPTY_URL_HISTORY;
     }
 
-    public boolean getConnected() {
+    synchronized public boolean getConnected() {
         return connected;
     }
 
-    public void setConnected(boolean connected_) {
+    synchronized public void setConnected(boolean connected_) {
         connected = connected_;
     }
 
     @NotNull
-    public List<RemoteCompilerInfo> getRemoteCompilers() {
-        return remoteCompilers;
+    synchronized public List<RemoteCompilerInfo> getRemoteCompilers() {
+        List<RemoteCompilerInfo> copy = new ArrayList<>();
+        remoteCompilers.forEach(otherInfo -> copy.add(new RemoteCompilerInfo(otherInfo)));
+        return copy;
     }
 
-    public void setRemoteCompilers(@NotNull List<RemoteCompilerInfo> remoteCompilers_) {
+    synchronized public void setRemoteCompilers(@NotNull List<RemoteCompilerInfo> remoteCompilers_) {
         remoteCompilers = new ArrayList<>();
         remoteCompilers_.forEach(otherInfo -> remoteCompilers.add(new RemoteCompilerInfo(otherInfo)));
     }
 
-    @NotNull
-    public Map<LocalCompilerPath, LocalCompilerSettings> getLocalCompilerSettings() {
-        return localCompilerSettings;
+    synchronized public void clearRemoteCompilers() {
+        setRemoteCompilers(EMPTY.getRemoteCompilers());
     }
 
-    public void setLocalCompilerSettings(@NotNull Map<LocalCompilerPath, LocalCompilerSettings> localCompilers_) {
+    @NotNull
+    synchronized public Map<LocalCompilerPath, LocalCompilerSettings> getLocalCompilerSettings() {
+        Map<LocalCompilerPath, LocalCompilerSettings> copy = new HashMap<>();
+        localCompilerSettings.forEach((key, value) -> copy.put(new LocalCompilerPath(key), new LocalCompilerSettings(value)));
+        return copy;
+    }
+
+    synchronized public void setLocalCompilerSettings(@NotNull Map<LocalCompilerPath, LocalCompilerSettings> localCompilers_) {
         localCompilerSettings = new HashMap<>();
         localCompilers_.forEach((key, value) -> localCompilerSettings.put(new LocalCompilerPath(key), new LocalCompilerSettings(value)));
     }
 
-    @NotNull
-    public Filters getFilters() {
-        return filters;
+    synchronized public void addToLocalCompilerSettings(@NotNull LocalCompilerPath compilerPath, @NotNull LocalCompilerSettings compilerSettings) {
+        localCompilerSettings.put(compilerPath, compilerSettings);
     }
 
-    private void setFilters(@NotNull Filters filters_) {
+    synchronized public void clearLocalCompilerSettings() {
+        setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
+    }
+
+    @NotNull
+    synchronized public Filters getFilters() {
+        return new Filters(filters);
+    }
+
+    synchronized private void setFilters(@NotNull Filters filters_) {
         filters = new Filters(filters_);
     }
 
     @NotNull
-    public Map<LocalCompilerPath, CompilerMatches> getCompilerMatches() {
-        return compilerMatches;
+    synchronized public Map<LocalCompilerPath, CompilerMatches> getCompilerMatches() {
+        Map<LocalCompilerPath, CompilerMatches> copy = new HashMap<>();
+        compilerMatches.forEach((key, value) -> copy.put(new LocalCompilerPath(key), new CompilerMatches(value)));
+        return copy;
     }
 
-    public void setCompilerMatches(@NotNull Map<LocalCompilerPath, CompilerMatches> compilerMatches_) {
+    synchronized public void setCompilerMatches(@NotNull Map<LocalCompilerPath, CompilerMatches> compilerMatches_) {
         compilerMatches = new HashMap<>();
         compilerMatches_.forEach((key, value) -> compilerMatches.put(new LocalCompilerPath(key), new CompilerMatches(value)));
     }
 
-    public boolean getPreprocessLocally() {
+    synchronized public void addToCompilerMatches(@NotNull LocalCompilerPath compilerPath, @NotNull CompilerMatches matches) {
+        compilerMatches.put(compilerPath, matches);
+    }
+
+    synchronized public void clearCompilerMatches() {
+        setCompilerMatches(EMPTY.getCompilerMatches());
+    }
+
+    synchronized public boolean getPreprocessLocally() {
         return preprocessLocally;
     }
 
-    public void setPreprocessLocally(boolean preprocessLocally_) {
+    synchronized public void setPreprocessLocally(boolean preprocessLocally_) {
         preprocessLocally = preprocessLocally_;
     }
 
     @NotNull
-    public String getAdditionalSwitches() {
+    synchronized public String getAdditionalSwitches() {
         return additionalSwitches;
     }
 
-    public void setAdditionalSwitches(@NotNull String additionalSwitches_) {
+    synchronized public void setAdditionalSwitches(@NotNull String additionalSwitches_) {
         additionalSwitches = additionalSwitches_;
     }
 
     @NotNull
-    public String getIgnoreSwitches() {
+    synchronized public String getIgnoreSwitches() {
         return ignoreSwitches;
     }
 
-    public void setIgnoreSwitches(@NotNull String ignoreSwitches_) {
+    synchronized public void setIgnoreSwitches(@NotNull String ignoreSwitches_) {
         ignoreSwitches = ignoreSwitches_;
     }
 
-    public boolean getAutoscrollFromSource() {
+    synchronized public boolean getAutoscrollFromSource() {
         return autoscrollFromSource;
     }
 
-    public void setAutoscrollFromSource(boolean autoscrollFromSource_) {
+    synchronized public void setAutoscrollFromSource(boolean autoscrollFromSource_) {
         autoscrollFromSource = autoscrollFromSource_;
     }
 
-    public boolean getAutoscrollToSource() {
+    synchronized public boolean getAutoscrollToSource() {
         return autoscrollToSource;
     }
 
-    public void setAutoscrollToSource(boolean autoscrollToSource_) {
+    synchronized public void setAutoscrollToSource(boolean autoscrollToSource_) {
         autoscrollToSource = autoscrollToSource_;
     }
 
-    public boolean getAutoupdateFromSource() {
+    synchronized public boolean getAutoupdateFromSource() {
         return autoupdateFromSource;
     }
 
-    public void setAutoupdateFromSource(boolean autoupdateFromSource_) {
+    synchronized public void setAutoupdateFromSource(boolean autoupdateFromSource_) {
         autoupdateFromSource = autoupdateFromSource_;
     }
 
-    public boolean getShortenTemplates() {
+    synchronized public boolean getShortenTemplates() {
         return shortenTemplates;
     }
 
-    public void setShortenTemplates(boolean shortenTemplates_) {
+    synchronized public void setShortenTemplates(boolean shortenTemplates_) {
         shortenTemplates = shortenTemplates_;
     }
 
-    public boolean getShowLineNumbers() {
+    synchronized public boolean getShowLineNumbers() {
         return showLineNumbers;
     }
 
-    public void setShowLineNumbers(boolean showLineNumbers_) {
+    synchronized public void setShowLineNumbers(boolean showLineNumbers_) {
         showLineNumbers = showLineNumbers_;
     }
 
-    public boolean getShowByteOffsets() {
+    synchronized public boolean getShowByteOffsets() {
         return showByteOffsets;
     }
 
-    public void setShowByteOffsets(boolean showByteOffsets_) {
+    synchronized public void setShowByteOffsets(boolean showByteOffsets_) {
         showByteOffsets = showByteOffsets_;
     }
 
-    public boolean getShowSourceAnnotations() {
+    synchronized public boolean getShowSourceAnnotations() {
         return showSourceAnnotations;
     }
 
-    public void setShowSourceAnnotations(boolean showSourceAnnotations_) {
+    synchronized public void setShowSourceAnnotations(boolean showSourceAnnotations_) {
         showSourceAnnotations = showSourceAnnotations_;
     }
 
-    public boolean getShowOpcodes() {
+    synchronized public boolean getShowOpcodes() {
         return showOpcodes;
     }
 
-    public void setShowOpcodes(boolean showOpcodes_) {
+    synchronized public void setShowOpcodes(boolean showOpcodes_) {
         showOpcodes = showOpcodes_;
     }
 
-    public boolean getEnableFolding() {
+    synchronized public boolean getEnableFolding() {
         return enableFolding;
     }
 
-    public void setEnableFolding(boolean enableFolding_) {
+    synchronized public void setEnableFolding(boolean enableFolding_) {
         enableFolding = enableFolding_;
     }
 
     @NotNull
-    public Set<String> getFoldedLabels() {
-        return foldedLabels;
+    synchronized public Set<String> getFoldedLabels() {
+        return new HashSet<>(foldedLabels);
     }
 
-    public void setFoldedLabels(@NotNull Set<String> foldedLabels_) {
-        foldedLabels = new HashSet<>();
-        foldedLabels.addAll(foldedLabels_);
+    synchronized public void setFoldedLabels(@NotNull Set<String> foldedLabels_) {
+        foldedLabels = new HashSet<>(foldedLabels_);
     }
 
-    public int getHighlightColorRGB() {
+    synchronized public void addFoldedLabel(@NotNull String label) {
+        foldedLabels.add(label);
+    }
+
+    synchronized public void removeFoldedLabel(@NotNull String label) {
+        foldedLabels.remove(label);
+    }
+
+    synchronized public boolean containsFoldedLabel(@NotNull String label) {
+        return foldedLabels.contains(label);
+    }
+
+    synchronized public int getHighlightColorRGB() {
         return highlightColorRGB;
     }
 
-    public void setHighlightColorRGB(int highlightColorRGB_) {
+    synchronized public void setHighlightColorRGB(int highlightColorRGB_) {
         highlightColorRGB = highlightColorRGB_;
     }
 
-    public long getDelayMillis() {
+    synchronized public long getDelayMillis() {
         return delayMillis;
     }
 
-    public void setDelayMillis(long delayMillis_) {
+    synchronized public void setDelayMillis(long delayMillis_) {
         delayMillis = delayMillis_;
     }
 
-    public int getCompilerTimeoutMillis() {
+    synchronized public int getCompilerTimeoutMillis() {
         return compilerTimeoutMillis;
     }
 
-    public void setCompilerTimeoutMillis(int compilerTimeoutMillis_) {
+    synchronized public void setCompilerTimeoutMillis(int compilerTimeoutMillis_) {
         compilerTimeoutMillis = compilerTimeoutMillis_;
     }
 
-    public boolean getShowAllTabs() {
+    synchronized public boolean getShowAllTabs() {
         return showAllTabs;
     }
 
-    public void setShowAllTabs(boolean showAllTabs_) {
+    synchronized public void setShowAllTabs(boolean showAllTabs_) {
         showAllTabs = showAllTabs_;
     }
 
     @NotNull
-    public Map<Tabs, Integer> getScrollPositions() {
-        return scrollPositions;
+    synchronized public Map<Tabs, Integer> getScrollPositions() {
+        return new HashMap<>(scrollPositions);
     }
 
-    public void setScrollPositions(@NotNull Map<Tabs, Integer> scrollPositions_) {
-        scrollPositions = new HashMap<>();
-        scrollPositions.putAll(scrollPositions_);
+    synchronized public void setScrollPositions(@NotNull Map<Tabs, Integer> scrollPositions_) {
+        scrollPositions = new HashMap<>(scrollPositions_);
     }
 
-    public boolean getInitialNoticeShown() {
+    synchronized public void addToScrollPositions(@NotNull Tabs tab, int position) {
+        scrollPositions.put(tab, position);
+    }
+
+    synchronized public boolean getInitialNoticeShown() {
         return initialNoticeShown;
     }
 
-    public void setInitialNoticeShown(boolean initialNoticeShown_) {
+    synchronized public void setInitialNoticeShown(boolean initialNoticeShown_) {
         initialNoticeShown = initialNoticeShown_;
     }
 

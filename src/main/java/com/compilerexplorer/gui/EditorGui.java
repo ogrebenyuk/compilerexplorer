@@ -238,7 +238,7 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
         if (currentTab != tab || forceRefresh) {
             if (currentTab != null && currentTab != tab) {
                 int scrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
-                getState().getScrollPositions().put(currentTab, scrollPosition);
+                getState().addToScrollPositions(currentTab, scrollPosition);
             }
             currentTab = tab;
             refresh();

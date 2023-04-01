@@ -88,7 +88,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettingsConnecte
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (sourceCompilerSettings.localCompilerSettings != null) {
                         assert sourceSettings != null;
-                        state.getLocalCompilerSettings().put(new LocalCompilerPath(sourceSettings.compilerPath), sourceCompilerSettings.localCompilerSettings);
+                        state.addToLocalCompilerSettings(new LocalCompilerPath(sourceSettings.compilerPath), sourceCompilerSettings.localCompilerSettings);
                     }
                     sourceCompilerSettingsConsumer.accept(sourceCompilerSettings);
                 });
@@ -100,7 +100,7 @@ public class CompilerSettingsProducer implements Consumer<SourceSettingsConnecte
     public Consumer<RefreshSignal> asResetSignalConsumer() {
         return refreshSignal -> {
             SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
-            state.setLocalCompilerSettings(SettingsState.EMPTY.getLocalCompilerSettings());
+            state.clearLocalCompilerSettings();
         };
     }
 
