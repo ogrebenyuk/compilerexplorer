@@ -1,7 +1,7 @@
 package com.compilerexplorer.project.clion.oc;
 
 import com.compilerexplorer.common.PathNormalizer;
-import com.compilerexplorer.datamodel.ProjectSettings;
+import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
@@ -28,7 +28,7 @@ import java.util.Vector;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
+public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
     @NotNull
     private final Project project;
 
@@ -38,19 +38,19 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSettings> {
 
     @Override
     @NotNull
-    public ProjectSettings get() {
+    public ProjectSources get() {
         return collect(project);
     }
 
     @NotNull
-    private static ProjectSettings collect(@NotNull Project project) {
+    private static ProjectSources collect(@NotNull Project project) {
         OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(project);
-        return (configuration != null) ? collect(project, configuration) : new ProjectSettings(new Vector<>());
+        return (configuration != null) ? collect(project, configuration) : new ProjectSources(new Vector<>());
     }
 
     @NotNull
-    private static ProjectSettings collect(@NotNull Project project, @NotNull OCResolveConfiguration configuration) {
-        return new ProjectSettings(configuration.getSources().stream().sorted(Comparator.comparing(VirtualFile::getName)).map(virtualFile -> {
+    private static ProjectSources collect(@NotNull Project project, @NotNull OCResolveConfiguration configuration) {
+        return new ProjectSources(configuration.getSources().stream().sorted(Comparator.comparing(VirtualFile::getName)).map(virtualFile -> {
             OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
             if (language != null) {
                 OCCompilerSettings compilerSettings = configuration.getCompilerSettings(language, virtualFile);

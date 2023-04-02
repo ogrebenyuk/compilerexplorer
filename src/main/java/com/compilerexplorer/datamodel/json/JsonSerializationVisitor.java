@@ -1,6 +1,6 @@
 package com.compilerexplorer.datamodel.json;
 
-import com.compilerexplorer.datamodel.ProjectSettings;
+import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.compilerexplorer.datamodel.Visitable;
 import com.compilerexplorer.datamodel.Visitor;
@@ -30,7 +30,7 @@ public class JsonSerializationVisitor implements Visitor {
             builder.serializeNulls();
         }
         builder.registerTypeAdapter(SourceSettings.class, SourceSettingsSerializer.INSTANCE);
-        builder.registerTypeAdapter(ProjectSettings.class, ProjectSettingsSerializer.INSTANCE);
+        builder.registerTypeAdapter(ProjectSources.class, ProjectSettingsSerializer.INSTANCE);
         gson = builder.create();
     }
 
@@ -47,8 +47,8 @@ public class JsonSerializationVisitor implements Visitor {
     public void visit(@NotNull Visitable visitable) {
         if (visitable instanceof SourceSettings sourceSettings) {
             output = gson.toJson(sourceSettings);
-        } else if (visitable instanceof ProjectSettings projectSettings) {
-            output = gson.toJson(projectSettings);
+        } else if (visitable instanceof ProjectSources projectSources) {
+            output = gson.toJson(projectSources);
         } else {
             unexpected(visitable);
         }

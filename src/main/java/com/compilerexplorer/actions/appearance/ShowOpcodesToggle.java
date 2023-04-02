@@ -4,7 +4,6 @@ import com.compilerexplorer.actions.common.BaseActionWithEditorGui;
 import com.compilerexplorer.actions.common.BaseActionWithFilters;
 import com.compilerexplorer.actions.common.BaseAppearanceToggleAction;
 import com.compilerexplorer.datamodel.state.SettingsState;
-import com.compilerexplorer.gui.EditorGui;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -16,7 +15,7 @@ public class ShowOpcodesToggle extends BaseAppearanceToggleAction implements Bas
 
     @Override
     public void setSelected(@NotNull AnActionEvent event, boolean selected) {
-        setSelected(event, selected, SettingsState::setShowOpcodes, withEditorGuiRun(event, EditorGui::refresh));
+        setSelected(event, selected, SettingsState::setShowOpcodes, withEditorGuiRun(event, editorGui -> editorGui.refresh(false)));
     }
 
     @Override

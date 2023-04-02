@@ -10,14 +10,23 @@ import java.util.function.Function;
 
 public interface BaseActionWithFilters extends BaseActionWithState {
     default <ReturnType> ReturnType withFilters(@NotNull AnActionEvent event, @NotNull Function<Filters, ReturnType> consumer, ReturnType defaultValue) {
-        return withProject(event, project -> consumer.apply(getState(project).getFilters()), defaultValue);
+        return withProject(event, project -> withFilters(project, consumer), defaultValue);
     }
 
     default void withFilters(@NotNull AnActionEvent event, @NotNull Consumer<Filters> consumer) {
-        withProject(event, project -> consumer.accept(getState(project).getFilters()));
+        withProject(event, project -> withFilters(project, consumer));
+    }
+
+    default <ReturnType> ReturnType withFilters(@NotNull Project project, @NotNull Function<Filters, ReturnType> consumer) {
+        Filters filters = getState(project).getFilters();
+        ReturnType ret = consumer.apply(filters);
+        getState(project).setFilters(filters);
+        return ret;
     }
 
     default void withFilters(@NotNull Project project, @NotNull Consumer<Filters> consumer) {
-        consumer.accept(getState(project).getFilters());
+        Filters filters = getState(project).getFilters();
+        consumer.accept(filters);
+        getState(project).setFilters(filters);
     }
 }

@@ -21,7 +21,7 @@ import java.awt.*;
 import java.util.stream.Collectors;
 
 public class SettingsGui {
-    public static final Key<SettingsGui> KEY = Key.create(Constants.PROJECT_TITLE + ".SettingsGui");
+    public static final Key<SettingsGui> KEY = Key.create("compilerexplorer.SettingsGui");
     private static final int GAP = 2;
 
     @NotNull
@@ -195,10 +195,10 @@ public class SettingsGui {
     public void testConnection() {
         SettingsState testState = new SettingsState();
         populateStateFromGui(testState);
+        testState.setConnected(false);
         (new RemoteCompilersProducer(
                 project,
                 testState,
-                s -> {},
                 url -> {
                     testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
                     testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("<br/>")));

@@ -1,58 +1,50 @@
 package com.compilerexplorer.datamodel;
 
-import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 
 public class PreprocessedSource {
-    public static final int CODE_GOOD = 0;
-    public static final int CODE_REGULAR_BAD = 1;
-    public static final int CODE_NOT_PREPROCESSED = -1;
+    public static final Key<PreprocessedSource> KEY = Key.create(PreprocessedSource.class.getName());
 
-    @NotNull
-    public final SourceCompilerSettings sourceCompilerSettings;
+    private final boolean preprocessLocally;
+    private final boolean canceled;
+    @Nullable
+    private final CompilerResult result;
+    @Nullable
+    private final String preprocessedText;
 
-    public boolean preprocessLocally;
-    @Nullable
-    public File compilerWorkingDir;
-    @Nullable
-    public String[] preprocessorCommandLine;
-    public int preprocessorExitCode = CODE_NOT_PREPROCESSED;
-    @Nullable
-    public String preprocessorStderr;
-    @Nullable
-    public Exception preprocessorException;
-    @Nullable
-    public String preprocessedText;
+    public PreprocessedSource(boolean preprocessLocally_, boolean canceled_, @Nullable CompilerResult result_, @Nullable String preprocessedText_) {
+        preprocessLocally = preprocessLocally_;
+        canceled = canceled_;
+        result = result_;
+        preprocessedText = preprocessedText_;
+    }
 
-    public PreprocessedSource(@NotNull SourceCompilerSettings sourceCompilerSettings_) {
-        sourceCompilerSettings = sourceCompilerSettings_;
+    public boolean getPreprocessLocally() {
+        return preprocessLocally;
+    }
+
+    public boolean getCanceled() {
+        return canceled;
     }
 
     @NotNull
-    public SourceCompilerSettings getSourceCompilerSettings() {
-        return sourceCompilerSettings;
+    public Optional<CompilerResult> getResult() {
+        return Optional.ofNullable(result);
     }
 
-    public boolean isValid() {
-        return !preprocessLocally || preprocessorExitCode == CODE_GOOD;
+    @NotNull
+    public Optional<String> getPreprocessedText() {
+        return Optional.ofNullable(preprocessedText);
     }
 
     @Override
     public int hashCode() {
-        return sourceCompilerSettings.hashCode()
-                + (preprocessLocally ? 1 : 0)
-                + FileUtil.fileHashCode(compilerWorkingDir)
-                + (preprocessorCommandLine != null ? Arrays.hashCode(preprocessorCommandLine) : 0)
-                + preprocessorExitCode
-                + (preprocessorStderr != null ? preprocessorStderr.hashCode() : 0)
-                + (preprocessorException != null ? preprocessorException.hashCode() : 0)
-                + (preprocessedText != null ? preprocessedText.hashCode() : 0)
-                ;
+        return (preprocessLocally ? 1 : 0) + (canceled ? 1 : 0) + Objects.hashCode(result) + Objects.hashCode(preprocessedText);
     }
 
     @Override
@@ -60,14 +52,6 @@ public class PreprocessedSource {
         if (!(obj instanceof PreprocessedSource other)) {
             return false;
         }
-        return sourceCompilerSettings.equals(other.sourceCompilerSettings)
-                && preprocessLocally == other.preprocessLocally
-                && FileUtil.filesEqual(compilerWorkingDir, other.compilerWorkingDir)
-                && Arrays.equals(preprocessorCommandLine, other.preprocessorCommandLine)
-                && preprocessorExitCode == other.preprocessorExitCode
-                && Objects.equals(preprocessorStderr, other.preprocessorStderr)
-                && Objects.equals(preprocessorException, other.preprocessorException)
-                && Objects.equals(preprocessedText, other.preprocessedText)
-                ;
+        return preprocessLocally == other.preprocessLocally && canceled == other.canceled && Objects.equals(result, other.result) && Objects.equals(preprocessedText, other.preprocessedText);
     }
 }

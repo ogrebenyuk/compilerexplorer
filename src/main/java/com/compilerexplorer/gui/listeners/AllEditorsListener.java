@@ -34,7 +34,6 @@ public class AllEditorsListener {
 
         handleExistingEditors();
         subscribeToNewEditors();
-        subscribeToSelectedEditorChanges();
     }
 
     private void handleExistingEditors() {
@@ -45,24 +44,6 @@ public class AllEditorsListener {
 
     private void subscribeToNewEditors() {
         EditorFactory.getInstance().addEditorFactoryListener(new EditorLifetimeListener(this::addListeners, this::removeListeners), DisposableParentProjectService.getInstance(project));
-    }
-
-    private void subscribeToSelectedEditorChanges() {
-        project.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
-            @Override
-            public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-                if (event.getNewFile() != null) {
-                    for (Editor editor : EditorFactory.getInstance().getAllEditors()) {
-                        VirtualFile file = findFile(editor);
-                        if (event.getNewFile().equals(file)) {
-                            editorEventConsumer.accept(file, editor);
-                        }
-                    }
-                } else if (event.getOldFile() != null) {
-                    editorEventConsumer.accept(event.getOldFile(), null);
-                }
-            }
-        });
     }
 
     private void addListeners(@NotNull Editor editor) {

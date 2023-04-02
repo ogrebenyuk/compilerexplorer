@@ -1,7 +1,11 @@
 package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
+import com.compilerexplorer.datamodel.PreprocessedSource;
+import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.*;
 import com.compilerexplorer.gui.listeners.CaretPositionChangeListener;
@@ -35,7 +39,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ExplorerOutputTabProvider extends ExplorerTabProvider {
+public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     private static class EndAndSource {
         final int end;
         @NotNull
@@ -76,112 +80,118 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
     }
 
     @Override
-    public boolean isEnabled(@NotNull CompiledText compiledText) {
-        return state.getConnected()
-                && compiledText.sourceRemoteMatched.isValid()
-                && compiledText.sourceRemoteMatched.preprocessedSource.isValid();
+    public boolean isEnabled(@NotNull DataHolder data) {
+        return shouldHaveRun(data).isPresent();
     }
 
     @Override
-    public boolean isError(@NotNull CompiledText compiledText) {
-        return !compiledText.isValid();
+    public boolean isError(@NotNull DataHolder data) {
+        return compiledText(data).isEmpty();
     }
 
     @Override
-    public void provide(@NotNull CompiledText compiledText, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
         locationsFromSourceMap.clear();
         locationsToSourceMap.clear();
         lineNumberToByteOffsetMap.clear();
         highlighters.clear();
 
-        if (compiledText.isValid()) {
-            assert compiledText.compiledResult != null;
-
-            SettingsState state = getState();
-            boolean shortenTemplates = state.getShortenTemplates();
-            List<Range> newHighlighterRanges = new ArrayList<>();
-            StringBuilder asmBuilder = new StringBuilder();
-            int currentOffset = 0;
-            CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
-            int lastRangeBegin = 0;
-            BiConsumer<CompiledText.SourceLocation, Range> rangeAdder = (source, range) -> {
-                newHighlighterRanges.add(range);
-                locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
-                locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
-            };
-            int[] chunkToOffset = new int[(compiledText.compiledResult.asm != null ? compiledText.compiledResult.asm.size() : 0) + 1];
-            int line = 0;
-            for (int i = 0; compiledText.compiledResult.asm != null && i < compiledText.compiledResult.asm.size(); ++i) {
-                CompiledText.CompiledChunk chunk = compiledText.compiledResult.asm.get(i);
-                chunkToOffset[i] = currentOffset;
-                if (chunk.opcodes != null && state.getShowOpcodes()) {
-                    parseOpcodes(asmBuilder, chunk.opcodes);
-                    ++line;
-                }
-                if (chunk.address != CompiledText.CompiledChunk.NO_ADDRESS) {
-                    lineNumberToByteOffsetMap.put(line, chunk.address);
-                }
-                if (chunk.text != null) {
-                    parseChunk(asmBuilder, chunk.text, shortenTemplates);
-                    ++line;
-                    if (chunk.source != null && chunk.source.file != null) {
-                        String currentChunkFile = chunk.source.file;
-                        if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
-                            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+        shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResult().ifPresentOrElse(
+            compiledResult -> {
+                SettingsState state = getState();
+                boolean shortenTemplates = state.getShortenTemplates();
+                List<Range> newHighlighterRanges = new ArrayList<>();
+                StringBuilder asmBuilder = new StringBuilder();
+                int currentOffset = 0;
+                CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
+                int lastRangeBegin = 0;
+                BiConsumer<CompiledText.SourceLocation, Range> rangeAdder = (source, range) -> {
+                    newHighlighterRanges.add(range);
+                    locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
+                    locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
+                };
+                int[] chunkToOffset = new int[(compiledResult.asm != null ? compiledResult.asm.size() : 0) + 1];
+                int line = 0;
+                for (int i = 0; compiledResult.asm != null && i < compiledResult.asm.size(); ++i) {
+                    CompiledText.CompiledChunk chunk = compiledResult.asm.get(i);
+                    chunkToOffset[i] = currentOffset;
+                    if (chunk.opcodes != null && state.getShowOpcodes()) {
+                        parseOpcodes(asmBuilder, chunk.opcodes);
+                        ++line;
+                    }
+                    if (chunk.address != CompiledText.CompiledChunk.NO_ADDRESS) {
+                        lineNumberToByteOffsetMap.put(line, chunk.address);
+                    }
+                    if (chunk.text != null) {
+                        parseChunk(asmBuilder, chunk.text, shortenTemplates);
+                        ++line;
+                        if (chunk.source != null && chunk.source.file != null) {
+                            String currentChunkFile = chunk.source.file;
+                            if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
+                                if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
+                                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                                }
+                                lastRangeBegin = currentOffset;
+                                lastChunk.file = currentChunkFile;
+                                lastChunk.line = chunk.source.line;
                             }
-                            lastRangeBegin = currentOffset;
-                            lastChunk.file = currentChunkFile;
-                            lastChunk.line = chunk.source.line;
+                        } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
+                            rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                            lastChunk.file = "";
                         }
-                    } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                        rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
-                        lastChunk.file = "";
+                    }
+                    currentOffset = asmBuilder.length();
+                }
+                if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
+                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                }
+                chunkToOffset[compiledResult.asm != null ? compiledResult.asm.size() : 0] = currentOffset;
+
+                List<Pair<String, Range>> labels = new ArrayList<>();
+                if (state.getEnableFolding() && compiledResult.labelDefinitions != null) {
+                    List<Pair<Integer, String>> labelEntries = compiledResult.labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
+                    for (int i = 0; i < labelEntries.size(); ++i) {
+                        Pair<Integer, String> entry = labelEntries.get(i);
+                        int beginOffset = chunkToOffset[entry.getFirst() - 1];
+                        int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
+                        if (beginOffset < endOffset) {
+                            labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
+                        }
                     }
                 }
-                currentOffset = asmBuilder.length();
-            }
-            if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
-            }
-            chunkToOffset[compiledText.compiledResult.asm != null ? compiledText.compiledResult.asm.size() : 0] = currentOffset;
 
-            List<Pair<String, Range>> labels = new ArrayList<>();
-            if (state.getEnableFolding() && compiledText.compiledResult.labelDefinitions != null) {
-                List<Pair<Integer, String>> labelEntries = compiledText.compiledResult.labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
-                for (int i = 0; i < labelEntries.size(); ++i) {
-                    Pair<Integer, String> entry = labelEntries.get(i);
-                    int beginOffset = chunkToOffset[entry.getFirst() - 1];
-                    int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
-                    if (beginOffset < endOffset) {
-                        labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
-                    }
-                }
-            }
+                provideAndGetEditor(textConsumer, asmBuilder.toString(), ed -> {
+                    ed.getCaretModel().addCaretListener(new CaretPositionChangeListener(newCaretPosition -> {
+                        if (getState().getAutoscrollToSource()) {
+                            scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
+                        }
+                    }));
+                    ed.getSettings().setLineMarkerAreaShown(true);
+                    setupGutter(ed);
+                    updateGutter(ed);
+                    updateFolding(ed);
+                    ed.getFoldingModel().addListener(foldingChangeListener, DisposableParentProjectService.getInstance(project));
 
-            provideAndGetEditor(textConsumer, asmBuilder.toString(), ed -> {
-                ed.getCaretModel().addCaretListener(new CaretPositionChangeListener(newCaretPosition -> {
-                    if (getState().getAutoscrollToSource()) {
-                        scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
-                    }
-                }));
-                ed.getSettings().setLineMarkerAreaShown(true);
-                setupGutter(ed);
-                updateGutter(ed);
-                updateFolding(ed);
-                ed.getFoldingModel().addListener(foldingChangeListener, DisposableParentProjectService.getInstance(project));
+                    MarkupModelEx markupModel = ed.getMarkupModel();
+                    markupModel.removeAllHighlighters();
+                    newHighlighterRanges.forEach(range -> {
+                        RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+                        highlighter.setLineMarkerRenderer(lineMarkerRenderer);
+                    });
 
-                MarkupModelEx markupModel = ed.getMarkupModel();
-                markupModel.removeAllHighlighters();
-                newHighlighterRanges.forEach(range -> {
-                    RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
-                    highlighter.setLineMarkerRenderer(lineMarkerRenderer);
+                    addFolding(ed, labels, state.getFoldedLabels());
                 });
+            },
+            () -> showExplorerError(compiledText, textConsumer)
+        )), () -> textConsumer.apply("Compiler Explorer was not run"));
+    }
 
-                addFolding(ed, labels, state.getFoldedLabels());
-            });
+    @NotNull
+    private Optional<String> shouldHaveRun(@NotNull DataHolder data) {
+        if (state.getConnected() && data.get(SourceRemoteMatched.SELECTED_KEY).isPresent()) {
+            return data.get(PreprocessedSource.KEY).flatMap(PreprocessedSource::getPreprocessedText);
         } else {
-            showExplorerError(compiledText, textConsumer);
+            return Optional.empty();
         }
     }
 
@@ -212,7 +222,8 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
         gutter.setCanCloseAnnotations(false);
 
         SettingsState state = getState();
-        boolean isDisassembled = state.getFilters().getBinary() || state.getFilters().getBinaryObject();
+        Filters filters = state.getFilters();
+        boolean isDisassembled = filters.getBinary() || filters.getBinaryObject();
 
         if (!isDisassembled && state.getShowLineNumbers()) {
             gutter.registerTextAnnotation(new LineNumberAnnotationProvider());
@@ -360,8 +371,8 @@ public class ExplorerOutputTabProvider extends ExplorerTabProvider {
     }
 
     @Override
-    @Nullable
+    @NotNull
     public List<Range> getRangesForLocation(@NotNull CompiledText.SourceLocation location) {
-        return locationsFromSourceMap.get(location);
+        return locationsFromSourceMap.getOrDefault(location, super.getRangesForLocation(location));
     }
 }

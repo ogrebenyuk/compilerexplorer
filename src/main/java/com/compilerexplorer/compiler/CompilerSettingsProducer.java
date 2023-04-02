@@ -1,14 +1,18 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.datamodel.SourceCompilerSettings;
+import com.compilerexplorer.common.component.BaseComponent;
+import com.compilerexplorer.common.component.CEComponent;
+import com.compilerexplorer.common.component.DataHolder;
+import com.compilerexplorer.datamodel.CompilerResult;
+import com.compilerexplorer.datamodel.SelectedSource;
+import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.compilerexplorer.datamodel.SourceSettings;
-import com.compilerexplorer.datamodel.SourceSettingsConnected;
 import com.compilerexplorer.datamodel.state.LocalCompilerPath;
 import com.compilerexplorer.datamodel.state.LocalCompilerSettings;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -16,92 +20,114 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class CompilerSettingsProducer implements Consumer<SourceSettingsConnected> {
+public class CompilerSettingsProducer extends BaseComponent {
+    private static final Logger LOG = Logger.getInstance(CompilerSettingsProducer.class);
+
     @NotNull
     private final Project project;
     @NotNull
-    private final Consumer<SourceCompilerSettings> sourceCompilerSettingsConsumer;
-    @NotNull
     private final TaskRunner taskRunner;
+    boolean needRefreshNext;
 
-    public CompilerSettingsProducer(@NotNull Project project_,
-                                    @NotNull Consumer<SourceCompilerSettings> sourceCompilerSettingsConsumer_,
-                                    @NotNull TaskRunner taskRunner_) {
+    public CompilerSettingsProducer(@NotNull CEComponent nextComponent, @NotNull Project project_, @NotNull TaskRunner taskRunner_) {
+        super(nextComponent);
+        LOG.debug("created");
+
         project = project_;
-        sourceCompilerSettingsConsumer = sourceCompilerSettingsConsumer_;
         taskRunner = taskRunner_;
     }
 
     @Override
-    public void accept(@NotNull SourceSettingsConnected sourceSettingsConnected) {
+    public void doClear(@NotNull DataHolder data) {
+        LOG.debug("doClear");
+        data.remove(SelectedSourceCompiler.KEY);
+    }
+
+    @Override
+    public void doReset(@NotNull DataHolder data) {
+        LOG.debug("doReset");
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+        state.clearLocalCompilerSettings();
+    }
 
-        if (!state.getEnabled()) {
-            return;
-        }
-
-        taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for "
-                + (sourceSettingsConnected.sourceSettings.selectedSourceSettings != null ? sourceSettingsConnected.sourceSettings.selectedSourceSettings.sourceName : null)) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                SourceCompilerSettings sourceCompilerSettings = new SourceCompilerSettings(sourceSettingsConnected);
-                SourceSettings sourceSettings = sourceSettingsConnected.sourceSettings.selectedSourceSettings;
-
-                if (sourceSettingsConnected.isValid() && sourceSettingsConnected.sourceSettings.isValid()) {
-                    assert(sourceSettings != null);
-
-                    LocalCompilerSettings existingSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(sourceSettings.compilerPath));
-                    if (existingSettings != null) {
-                        sourceCompilerSettings.localCompilerSettings = existingSettings;
-                    } else {
-                        if (isSupportedCompilerType(sourceSettings.compilerKind)) {
-                            sourceCompilerSettings.isSupportedCompilerType = true;
-                            String[] versionCommandLine = getVersionCommandLine(sourceSettings);
-                            sourceCompilerSettings.versionerCommandLine = versionCommandLine;
+    @Override
+    public void doRefresh(@NotNull DataHolder data) {
+        LOG.debug("doRefresh");
+        needRefreshNext = true;
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+        data.get(SelectedSource.KEY).ifPresentOrElse(selectedSource -> {
+            SourceSettings source = selectedSource.getSelectedSource();
+            LocalCompilerSettings cachedSettings = state.getLocalCompilerSettings().get(new LocalCompilerPath(source.compilerPath));
+            if (cachedSettings != null) {
+                LOG.debug("found cached " + source.compilerPath + " -> " + cachedSettings.getName() + " " + cachedSettings.getVersion());
+                data.put(SelectedSourceCompiler.KEY, new SelectedSourceCompiler(true, false, true, null, cachedSettings));
+            } else {
+                needRefreshNext = false;
+                taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + selectedSource.getSelectedSource().sourceName) {
+                    @Override
+                    public void run(@NotNull ProgressIndicator indicator) {
+                        boolean canceled = false;
+                        boolean isSupportedCompilerType = true;
+                        CompilerResult.Output output = null;
+                        File workingDir = source.compilerWorkingDir;
+                        String[] versionCommandLine = getVersionCommandLine(source);
+                        LocalCompilerSettings localCompilerSettings = null;
+                        if (isSupportedCompilerType(source.compilerKind)) {
+                            int exitCode = -1;
+                            String stdout = "";
+                            String stderr = "";
+                            Exception exception = null;
                             try {
-                                File versionerWorkingDir =  sourceSettings.compilerWorkingDir;
-                                sourceCompilerSettings.versionerWorkingDir = versionerWorkingDir;
-                                CompilerRunner versionRunner = new CompilerRunner(sourceSettings.host, versionCommandLine, versionerWorkingDir, "", indicator, state.getCompilerTimeoutMillis());
-                                sourceCompilerSettings.versionerExitCode = versionRunner.getExitCode();
-                                sourceCompilerSettings.versionerStdout = versionRunner.getStdout();
-                                sourceCompilerSettings.versionerStderr = versionRunner.getStderr();
+                                CompilerRunner versionRunner = new CompilerRunner(source.host, versionCommandLine, workingDir, "", indicator, state.getCompilerTimeoutMillis());
+                                exitCode = versionRunner.getExitCode();
+                                stdout = versionRunner.getStdout();
+                                stderr = versionRunner.getStderr();
 
                                 String versionText = versionRunner.getStderr();
                                 if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
-                                    String compilerVersion = parseCompilerVersion(sourceSettings.compilerKind, versionText);
+                                    String compilerVersion = parseCompilerVersion(source.compilerKind, versionText);
                                     String compilerTarget = parseCompilerTarget(versionText);
                                     if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
-                                        sourceCompilerSettings.localCompilerSettings = new LocalCompilerSettings(sourceSettings.compilerKind, compilerVersion, compilerTarget);
+                                        LOG.debug("parsed \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
+                                        localCompilerSettings = new LocalCompilerSettings(source.compilerKind, compilerVersion, compilerTarget);
+                                    } else {
+                                        LOG.debug("bad parse \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
                                     }
+                                } else {
+                                    LOG.debug("bad exit " + versionRunner.getExitCode());
                                 }
                             } catch (ProcessCanceledException canceledException) {
-                                // empty
-                            } catch (Exception exception) {
-                                sourceCompilerSettings.versionerException = exception;
+                                LOG.debug("canceled");
+                                canceled = true;
+                            } catch (Exception exception_) {
+                                LOG.debug("exception " + exception_);
+                                exception = exception_;
                             }
+                            output = new CompilerResult.Output(exitCode, stdout, stderr, exception);
+                        } else {
+                            LOG.debug("unsupported compiler kind " + source.compilerKind);
+                            isSupportedCompilerType = false;
                         }
+                        CompilerResult result = new CompilerResult(workingDir, versionCommandLine, output);
+                        if (localCompilerSettings != null) {
+                            state.addToLocalCompilerSettings(new LocalCompilerPath(source.compilerPath), localCompilerSettings);
+                        }
+                        data.put(SelectedSourceCompiler.KEY, new SelectedSourceCompiler(true, canceled, isSupportedCompilerType, result, localCompilerSettings));
+                        CompilerSettingsProducer.super.refreshNext(data);
                     }
-                }
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (sourceCompilerSettings.localCompilerSettings != null) {
-                        assert sourceSettings != null;
-                        state.addToLocalCompilerSettings(new LocalCompilerPath(sourceSettings.compilerPath), sourceCompilerSettings.localCompilerSettings);
-                    }
-                    sourceCompilerSettingsConsumer.accept(sourceCompilerSettings);
                 });
             }
-        });
+        }, () -> LOG.debug("cannot find input"));
+        if (needRefreshNext) {
+            CompilerSettingsProducer.super.refreshNext(data);
+        }
     }
 
-    @NotNull
-    public Consumer<RefreshSignal> asResetSignalConsumer() {
-        return refreshSignal -> {
-            SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
-            state.clearLocalCompilerSettings();
-        };
+    @Override
+    protected void refreshNext(@NotNull DataHolder data) {
+        // empty
     }
 
     @NotNull

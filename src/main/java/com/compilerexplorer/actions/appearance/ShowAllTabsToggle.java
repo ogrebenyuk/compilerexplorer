@@ -3,7 +3,6 @@ package com.compilerexplorer.actions.appearance;
 import com.compilerexplorer.actions.common.BaseActionWithEditorGui;
 import com.compilerexplorer.actions.common.BaseAppearanceToggleAction;
 import com.compilerexplorer.datamodel.state.SettingsState;
-import com.compilerexplorer.gui.EditorGui;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 
@@ -15,6 +14,6 @@ public class ShowAllTabsToggle extends BaseAppearanceToggleAction implements Bas
 
     @Override
     public void setSelected(@NotNull AnActionEvent event, boolean selected) {
-        setSelected(event, selected, SettingsState::setShowAllTabs, withEditorGuiRun(event, EditorGui::refresh));
+        setSelected(event, selected, SettingsState::setShowAllTabs, withEditorGuiRun(event, editorGui -> editorGui.refresh(false)));
     }
 }

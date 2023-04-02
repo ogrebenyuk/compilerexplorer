@@ -1,13 +1,16 @@
 package com.compilerexplorer.datamodel;
 
+import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class CompiledText {
+    public static final Key<CompiledText> KEY = Key.create(CompiledText.class.getName());
 
     public static class SourceLocation {
         @Nullable
@@ -122,10 +125,6 @@ public class CompiledText {
         @Nullable
         public ExecResult execResult;
 
-        public boolean isValid() {
-            return code == CODE_GOOD;
-        }
-
         @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
@@ -154,52 +153,63 @@ public class CompiledText {
         }
     }
 
+    private final boolean canceled;
     @NotNull
-    public final SourceRemoteMatched sourceRemoteMatched;
+    private final String rawInput;
+    @NotNull
+    private final String rawOutput;
+    @Nullable
+    private final Exception exception;
+    @Nullable
+    private final CompiledResult compiledResult;
 
-    @Nullable
-    public String rawInput;
-    @Nullable
-    public String rawOutput;
-    @Nullable
-    public Exception exception;
-    @Nullable
-    public CompiledResult compiledResult;
-
-    public CompiledText(@NotNull SourceRemoteMatched sourceRemoteMatched_) {
-        sourceRemoteMatched = sourceRemoteMatched_;
+    public CompiledText(boolean canceled_, @NotNull String rawInput_, @NotNull String rawOutput_, @Nullable Exception exception_, @Nullable CompiledResult compiledResult_) {
+        canceled = canceled_;
+        rawInput = rawInput_;
+        rawOutput = rawOutput_;
+        exception = exception_;
+        compiledResult = compiledResult_;
     }
 
-    public boolean isValid() {
-        return compiledResult != null && compiledResult.isValid();
+    public boolean getCanceled() {
+        return canceled;
     }
 
-    public boolean isValidExecResult() {
-        return compiledResult != null && compiledResult.isValid() && compiledResult.execResult != null;
+    @NotNull
+    public String getRawInput() {
+        return rawInput;
     }
 
-    @SuppressWarnings("unused")
+    @NotNull
+    public String getRawOutput() {
+        return rawOutput;
+    }
+
+    @NotNull
+    public Optional<Exception> getException() {
+        return Optional.ofNullable(exception);
+    }
+
+    @NotNull
+    public Optional<CompiledResult> getCompiledResult() {
+        return Optional.ofNullable(compiledResult);
+    }
+
+    @NotNull
+    public Optional<ExecResult> getExecResult() {
+        return compiledResult != null ? Optional.ofNullable(compiledResult.execResult) : Optional.empty();
+    }
+
     @Override
     public int hashCode() {
-        return sourceRemoteMatched.hashCode()
-                + (rawInput != null ? rawInput.hashCode() : 0)
-                + (rawOutput != null ? rawOutput.hashCode() : 0)
-                + (exception != null ? exception.hashCode() : 0)
-                + (compiledResult != null ? compiledResult.hashCode() : 0)
-                ;
+        return (canceled ? 1 : 0) + rawInput.hashCode() + rawOutput.hashCode() + Objects.hashCode(exception) + Objects.hashCode(compiledResult);
     }
 
-    @SuppressWarnings("unused")
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof CompiledText other)) {
             return false;
         }
-        return sourceRemoteMatched.equals(other.sourceRemoteMatched)
-                && Objects.equals(rawInput, other.rawInput)
-                && Objects.equals(rawOutput, other.rawOutput)
-                && Objects.equals(exception, other.exception)
-                && Objects.equals(compiledResult, other.compiledResult)
-                ;
+        return canceled == other.canceled && rawInput.equals(other.rawInput) && rawOutput.equals(other.rawOutput) && Objects.equals(exception, other.exception) && Objects.equals(compiledResult, other.compiledResult);
     }
 }

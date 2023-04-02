@@ -1,10 +1,13 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.component.BaseRefreshableComponent;
+import com.compilerexplorer.common.component.CEComponent;
+import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -18,68 +21,89 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
-public class SourcePreprocessor extends RefreshableComponent<SourceCompilerSettings> {
+public class SourcePreprocessor extends BaseRefreshableComponent {
+    private static final Logger LOG = Logger.getInstance(SourcePreprocessor.class);
+
     @NotNull
     private final Project project;
     @NotNull
-    private final Consumer<PreprocessedSource> preprocessedSourceConsumer;
-    @NotNull
     private final TaskRunner taskRunner;
+    boolean needRefreshNext;
 
-    public SourcePreprocessor(@NotNull Project project_,
-                              @NotNull Consumer<PreprocessedSource> preprocessedSourceConsumer_,
-                              @NotNull TaskRunner taskRunner_) {
+    public SourcePreprocessor(@NotNull CEComponent nextComponent, @NotNull Project project_, @NotNull TaskRunner taskRunner_) {
+        super(nextComponent);
+        LOG.debug("created");
+
         project = project_;
-        preprocessedSourceConsumer = preprocessedSourceConsumer_;
         taskRunner = taskRunner_;
     }
 
     @Override
-    public void accept(@NotNull SourceCompilerSettings sourceCompilerSettings) {
-        super.accept(sourceCompilerSettings);
+    protected void doClear(@NotNull DataHolder data) {
+        LOG.debug("doClear");
+        data.remove(PreprocessedSource.KEY);
+    }
 
+    @Override
+    public void doRefresh(@NotNull DataHolder data) {
+        LOG.debug("doRefresh");
+        needRefreshNext = true;
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
-
-        if (!state.getEnabled()) {
-            return;
-        }
-
-        SourceSettings sourceSettings = sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings;
-        @Nullable Document document = sourceSettings != null ? FileDocumentManager.getInstance().getDocument(sourceSettings.source) : null;
-        taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + (sourceSettings != null ? sourceSettings.sourceName : null)) {
-            @Override
-            public void run(@NotNull ProgressIndicator indicator) {
-                PreprocessedSource preprocessedSource = new PreprocessedSource(sourceCompilerSettings);
-                if (sourceCompilerSettings.isValid()) {
-                    if (document != null) {
-                        String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
-                        preprocessedSource.preprocessLocally = state.getPreprocessLocally();
-                        if (state.getPreprocessLocally()) {
+        data.get(SelectedSource.KEY).ifPresentOrElse(selectedSource -> {
+            SourceSettings sourceSettings = selectedSource.getSelectedSource();
+            @Nullable Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.source);
+            if (document != null) {
+                String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
+                if (state.getPreprocessLocally()) {
+                    needRefreshNext = false;
+                    taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + sourceSettings.sourceName) {
+                        @Override
+                        public void run(@NotNull ProgressIndicator indicator) {
+                            boolean canceled = false;
+                            File workingDir =  sourceSettings.compilerWorkingDir;
                             String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
-                            preprocessedSource.preprocessorCommandLine = preprocessorCommandLine;
+                            int exitCode = -1;
+                            String stdout = "";
+                            String stderr = "";
+                            Exception exception = null;
                             try {
-                                File compilerWorkingDir = sourceSettings.compilerWorkingDir;
-                                preprocessedSource.compilerWorkingDir = compilerWorkingDir;
-                                CompilerRunner compilerRunner = new CompilerRunner(sourceSettings.host, preprocessorCommandLine, compilerWorkingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
-                                preprocessedSource.preprocessorExitCode = compilerRunner.getExitCode();
-                                preprocessedSource.preprocessedText = compilerRunner.getStdout();
-                                preprocessedSource.preprocessorStderr = compilerRunner.getStderr();
+                                LOG.debug("preprocessing " + String.join(" ", preprocessorCommandLine));
+                                CompilerRunner compilerRunner = new CompilerRunner(sourceSettings.host, preprocessorCommandLine, workingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
+                                exitCode = compilerRunner.getExitCode();
+                                stdout = compilerRunner.getStdout();
+                                stderr = compilerRunner.getStderr();
+                                LOG.debug("preprocessed " + sourceSettings.sourcePath);
                             } catch (ProcessCanceledException canceledException) {
-                                // empty
-                            } catch (Exception exception) {
-                                preprocessedSource.preprocessorException = exception;
+                                LOG.debug("canceled");
+                                canceled = true;
+                            } catch (Exception exception_) {
+                                LOG.debug("exception " + exception_);
+                                exception = exception_;
                             }
-                        } else {
-                            preprocessedSource.preprocessedText = sourceText;
+                            CompilerResult.Output output = new CompilerResult.Output(exitCode, stdout, stderr, exception);
+                            CompilerResult result = new CompilerResult(workingDir, preprocessorCommandLine, output);
+                            data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), canceled, result, exitCode == 0 ? stdout : null));
+                            SourcePreprocessor.super.refreshNext(data);
                         }
-                    }
+                    });
+                } else {
+                    LOG.debug("not preprocessed");
+                    data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), false, null, sourceText));
                 }
-                ApplicationManager.getApplication().invokeLater(() -> preprocessedSourceConsumer.accept(preprocessedSource));
+            } else {
+                LOG.debug("cannot get Document from " + sourceSettings.sourceName);
             }
-        });
+        }, () -> LOG.debug("cannot find input"));
+        if (needRefreshNext) {
+            SourcePreprocessor.super.refreshNext(data);
+        }
+    }
+
+    @Override
+    protected void refreshNext(@NotNull DataHolder data) {
+        // empty
     }
 
     @NotNull

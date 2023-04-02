@@ -183,7 +183,7 @@ public class SettingsState {
         return new Filters(filters);
     }
 
-    synchronized private void setFilters(@NotNull Filters filters_) {
+    synchronized public void setFilters(@NotNull Filters filters_) {
         filters = new Filters(filters_);
     }
 

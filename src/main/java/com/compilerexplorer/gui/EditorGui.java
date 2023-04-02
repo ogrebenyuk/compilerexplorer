@@ -1,14 +1,17 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.common.component.BaseRefreshableComponent;
+import com.compilerexplorer.common.component.CEComponent;
+import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.listeners.*;
 import com.compilerexplorer.gui.tabs.*;
 import com.compilerexplorer.gui.tracker.CaretTracker;
-import com.google.common.collect.ImmutableList;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.ex.*;
@@ -16,6 +19,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
 import org.jetbrains.annotations.NotNull;
@@ -27,30 +31,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class EditorGui extends RefreshableComponent<CompiledText> {
-    public static final Key<EditorGui> KEY = Key.create(Constants.PROJECT_TITLE + ".EditorGui");
-
-    @NotNull
-    private static List<TabProvider> allTabs(@NotNull Project project) {
-        return ImmutableList.of(
-                new ProjectInfoTabProvider(project),
-                new PreprocessorVersionStdoutTabProvider(project),
-                new PreprocessorVersionStderrTabProvider(project),
-                new PreprocessorVersionOutputTabProvider(project),
-                new PreprocessorStdoutTabProvider(project),
-                new PreprocessorStderrTabProvider(project),
-                new PreprocessorOutputTabProvider(project),
-                new SourceInfoTabProvider(project),
-                new ExplorerSiteInfoTabProvider(project),
-                new ExplorerSiteRawOutputTabProvider(project),
-                new ExplorerRawInputTabProvider(project),
-                new ExplorerRawOutputTabProvider(project),
-                new ExplorerStdoutTabProvider(project),
-                new ExplorerStderrTabProvider(project),
-                new ExplorerOutputTabProvider(project),
-                new ExplorerExecResultTabProvider(project)
-        );
-    }
+public class EditorGui extends BaseRefreshableComponent {
+    private static final Logger LOG = Logger.getInstance(EditorGui.class);
+    public static final Key<EditorGui> KEY = Key.create("compilerexplorer.EditorGui");
 
     @NotNull
     private final JPanel mainPanel;
@@ -75,7 +58,10 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
     @Nullable
     private Tabs selectedTab;
 
-    public EditorGui(@NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_, @NotNull Runnable notifyWhenEditorReady) {
+    public EditorGui(@NotNull CEComponent nextComponent, @NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_, @NotNull Runnable editorReadyConsumer) {
+        super(nextComponent);
+        LOG.debug("created");
+
         project = project_;
         suppressUpdates = suppressUpdates_;
 
@@ -86,13 +72,14 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
             @Override
             @NotNull
             protected EditorEx createEditor() {
+                LOG.debug("creating editor");
                 EditorEx ed = super.createEditor();
                 ed.setHorizontalScrollbarVisible(true);
                 ed.setVerticalScrollbarVisible(true);
                 ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
                 ed.setViewer(true);
                 setupTabs(ed);
-                notifyWhenEditorReady.run();
+                editorReadyConsumer.run();
                 return ed;
             }
         };
@@ -107,9 +94,10 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
         }));
         new AllEditorsListener(project, caretTracker::update);
 
-        tabs = allTabs(project);
-
-        project.getMessageBus().connect().subscribe(EditorColorsManager.TOPIC, new EditorColorsThemeChangeListener(this::applyThemeColors));
+        tabs = TabsFactory.create(project);
+    }
+    public void updateCaretTracker(@NotNull VirtualFile file, @Nullable Editor editor) {
+        caretTracker.update(file, editor);
     }
 
     public void applyThemeColors() {
@@ -161,57 +149,21 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
     }
 
     @Override
-    public void accept(@NotNull CompiledText compiledText_) {
+    protected void doClear(@NotNull DataHolder data) {
+        LOG.debug("doClear");
+    }
+
+    @Override
+    protected void doRefresh(@NotNull DataHolder data) {
+        LOG.debug("doRefresh");
         suppressUpdates.apply(() -> {
-            super.accept(compiledText_);
             ApplicationManager.getApplication().assertIsDispatchThread();
 
             List<TabProvider> visibleTabs = tabs.stream()
-                    .filter(factory -> getState().getShowAllTabs() || factory.isEnabled(compiledText_))
+                    .filter(provider -> getState().getShowAllTabs() || provider.isEnabled(data))
                     .toList();
 
-            @Nullable Tabs newSelectedTab = null;
-
-            if (selectedTab != null) {
-                newSelectedTab = selectedTab;
-                requestedTab = null;
-            }
-            if (newSelectedTab == null) {
-                @Nullable TabProvider firstErrorTab = tabs.stream()
-                        .filter(factory -> factory.isEnabled(compiledText_) && factory.isError(compiledText_))
-                        .findFirst()
-                        .orElse(null);
-                if (firstErrorTab != null) {
-                    newSelectedTab = firstErrorTab.getTab();
-                    if (requestedTab == null) {
-                        requestedTab = currentTab;
-                    }
-                }
-            }
-            if (newSelectedTab == null) {
-                boolean requestedTabExists = visibleTabs.stream()
-                        .anyMatch(provider -> provider.getTab() == requestedTab);
-                if (requestedTabExists) {
-                    newSelectedTab = requestedTab;
-                    requestedTab = null;
-                }
-            }
-            if (newSelectedTab == null) {
-                boolean currentTabExists = visibleTabs.stream()
-                        .anyMatch(provider -> provider.getTab() == currentTab);
-                if (currentTabExists) {
-                    newSelectedTab = currentTab;
-                }
-            }
-            if (newSelectedTab == null) {
-                @Nullable TabProvider lastEnabledTab = tabs.stream()
-                        .filter(factory -> factory.isEnabled(compiledText_))
-                        .reduce((first, second) -> second)
-                        .orElse(null);
-                if (lastEnabledTab != null) {
-                    newSelectedTab = lastEnabledTab.getTab();
-                }
-            }
+            @Nullable Tabs newSelectedTab = chooseNewTab(data, visibleTabs);
 
             List<AnAction> tabActions = visibleTabs.stream()
                     .map(provider -> findAction(provider.actionId()))
@@ -225,6 +177,51 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
                 clearEditor();
             }
         });
+    }
+
+    private Tabs chooseNewTab(@NotNull DataHolder data, @NotNull List<TabProvider> visibleTabs) {
+        @Nullable Tabs newSelectedTab = null;
+        if (selectedTab != null) {
+            newSelectedTab = selectedTab;
+            requestedTab = null;
+        }
+        if (newSelectedTab == null) {
+            @Nullable TabProvider firstErrorTab = tabs.stream()
+                    .filter(provider -> provider.isEnabled(data) && provider.isError(data))
+                    .findFirst()
+                    .orElse(null);
+            if (firstErrorTab != null) {
+                newSelectedTab = firstErrorTab.getTab();
+                if (requestedTab == null) {
+                    requestedTab = currentTab;
+                }
+            }
+        }
+        if (newSelectedTab == null) {
+            boolean requestedTabExists = visibleTabs.stream()
+                    .anyMatch(provider -> provider.getTab() == requestedTab);
+            if (requestedTabExists) {
+                newSelectedTab = requestedTab;
+                requestedTab = null;
+            }
+        }
+        if (newSelectedTab == null) {
+            boolean currentTabExists = visibleTabs.stream()
+                    .anyMatch(provider -> provider.getTab() == currentTab);
+            if (currentTabExists) {
+                newSelectedTab = currentTab;
+            }
+        }
+        if (newSelectedTab == null) {
+            @Nullable TabProvider lastEnabledTab = tabs.stream()
+                    .filter(provider -> provider.isEnabled(data))
+                    .reduce((first, second) -> second)
+                    .orElse(null);
+            if (lastEnabledTab != null) {
+                newSelectedTab = lastEnabledTab.getTab();
+            }
+        }
+        return newSelectedTab;
     }
 
     public void showTab(@NotNull Tabs tab) {
@@ -241,7 +238,7 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
                 getState().addToScrollPositions(currentTab, scrollPosition);
             }
             currentTab = tab;
-            refresh();
+            refresh(false);
             if (currentTab != null) {
                 int scrollPosition = getState().getScrollPositions().getOrDefault(currentTab, 0);
                 withEditor(ed -> scrollToPosition(ed, scrollPosition));
@@ -250,15 +247,19 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
     }
 
     @Override
-    public void refresh() {
+    public void refresh(boolean reset) {
+        LOG.debug("refresh " + reset);
         suppressRefresh.unlessApplied(() ->
             suppressRefresh.apply(() -> {
-                suppressUpdates.unlessApplied(super::refresh);
-                if (lastT != null) {
+                suppressUpdates.unlessApplied(() -> super.refresh(reset));
+                //DataHolder.get(getLastData(), CompiledText.KEY).ifPresentOrElse(compiledText ->
                     withCurrentTabProvider(provider -> {
-                        FileType fileType = provider.getFileType(lastT);
+                        DataHolder data = getLastData();
+                        assert data != null;
+
+                        FileType fileType = provider.getFileType(data);
                         Boolean[] provided = new Boolean[]{false};
-                        provider.provide(lastT, text -> {
+                        provider.provide(data, text -> {
                             final int oldScrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
 
                             editor.setNewDocumentAndFileType(fileType, editor.getDocument());
@@ -274,8 +275,8 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
                         } else {
                             clearEditor();
                         }
-                    });
-                }
+                    });//, () -> LOG.debug("cannot find input")
+                //);
             })
         );
     }
@@ -306,23 +307,21 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
             Integer[] closestPosition = new Integer[]{-1};
             for (@NotNull CompiledText.SourceLocation location : locations) {
                 withCurrentTabProvider(provider -> {
-                    List<TabProvider.Range> ranges = provider.getRangesForLocation(location);
-                    if (ranges != null) {
-                        final int currentScrollPosition = findCurrentScrollPosition(ed);
-                        int closestPositionDistance = -1;
-                        for (TabProvider.Range range : ranges) {
-                            int positionBegin = ed.offsetToXY(range.begin).y;
-                            int diffBegin = Math.abs(positionBegin - currentScrollPosition);
-                            if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
-                                closestPositionDistance = diffBegin;
-                                closestPosition[0] = positionBegin;
-                            }
-                            int positionEnd = ed.offsetToXY(range.end).y + ed.getLineHeight();
-                            int diffEnd = Math.abs(positionEnd - currentScrollPosition);
-                            if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
-                                closestPositionDistance = diffEnd;
-                                closestPosition[0] = positionEnd;
-                            }
+                    @NotNull List<TabProvider.Range> ranges = provider.getRangesForLocation(location);
+                    final int currentScrollPosition = findCurrentScrollPosition(ed);
+                    int closestPositionDistance = -1;
+                    for (TabProvider.Range range : ranges) {
+                        int positionBegin = ed.offsetToXY(range.begin).y;
+                        int diffBegin = Math.abs(positionBegin - currentScrollPosition);
+                        if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
+                            closestPositionDistance = diffBegin;
+                            closestPosition[0] = positionBegin;
+                        }
+                        int positionEnd = ed.offsetToXY(range.end).y + ed.getLineHeight();
+                        int diffEnd = Math.abs(positionEnd - currentScrollPosition);
+                        if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
+                            closestPositionDistance = diffEnd;
+                            closestPosition[0] = positionEnd;
                         }
                     }
                 });
@@ -342,7 +341,7 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
                         region.setExpanded(isExpanded);
                     }
                 });
-                refresh();
+                refresh(false);
             }
         });
     }
@@ -378,6 +377,6 @@ public class EditorGui extends RefreshableComponent<CompiledText> {
     }
 
     public boolean isTabEnabled(@NotNull Tabs tab) {
-        return lastT != null && (getState().getShowAllTabs() || findTabProvider(tab).isEnabled(lastT));
+        return getLastData() != null && (getState().getShowAllTabs() || findTabProvider(tab).isEnabled(getLastData()));
     }
 }

@@ -23,6 +23,16 @@
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
     </extensions>
 
+    <projectListeners>
+        <listener class="com.compilerexplorer.project.clion.oc.OCWorkspaceListener" topic="com.jetbrains.cidr.lang.workspace.OCWorkspaceListener"/>
+        <listener class="com.compilerexplorer.project.idea.ExecutionTargetListener" topic="com.intellij.execution.ExecutionTargetListener"/>
+        <listener class="com.compilerexplorer.project.idea.ModuleListener" topic="com.intellij.openapi.project.ModuleListener"/>
+        <listener class="com.compilerexplorer.project.idea.ModuleRootListener" topic="com.intellij.openapi.roots.ModuleRootListener"/>
+        <listener class="com.compilerexplorer.project.idea.RunManagerListener" topic="com.intellij.execution.RunManagerListener"/>
+        <listener class="com.compilerexplorer.gui.listeners.EditorColorsThemeChangeListener" topic="com.intellij.openapi.editor.colors.EditorColorsListener"/>
+        <listener class="com.compilerexplorer.gui.listeners.FileSelectionListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
+
     <resource-bundle>messages.compilerexplorerBundle</resource-bundle>
 
     <actions>

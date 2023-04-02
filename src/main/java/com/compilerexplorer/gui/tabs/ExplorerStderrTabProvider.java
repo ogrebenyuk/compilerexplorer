@@ -1,6 +1,7 @@
 package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Tabs;
+import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
@@ -9,25 +10,27 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public class ExplorerStderrTabProvider extends ExplorerTabProvider {
+public class ExplorerStderrTabProvider extends BaseExplorerUtilProvider {
     public ExplorerStderrTabProvider(@NotNull Project project) {
         super(project, Tabs.EXPLORER_STDERR, "compilerexplorer.ShowExplorerStderrTab", PlainTextFileType.INSTANCE);
     }
 
     @Override
-    public boolean isEnabled(@NotNull CompiledText compiledText) {
-        return compiledText.compiledResult != null && hasText(compiledText.compiledResult.stderr);
+    public boolean isEnabled(@NotNull DataHolder data) {
+        return compiledResult(data).map(compiledResult -> hasText(compiledResult.stderr)).orElse(false);
     }
 
     @Override
-    public boolean isError(@NotNull CompiledText compiledText) {
-        return false;
+    public boolean isError(@NotNull DataHolder data) {
+        return compiledResult(data).isEmpty();
     }
 
     @Override
-    public void provide(@NotNull CompiledText compiledText, @NotNull Function<String, EditorEx> textConsumer) {
-        if (compiledText.compiledResult != null && compiledText.compiledResult.stderr != null) {
-            textConsumer.apply(getTextFromChunks(compiledText.compiledResult.stderr));
-        }
+    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
+        compiledResult(data).ifPresentOrElse(compiledResult -> {
+            if (hasText(compiledResult.stderr)) {
+                textConsumer.apply(getTextFromChunks(compiledResult.stderr));
+            }
+        }, () -> textConsumer.apply("Compiler Explorer was not run"));
     }
 }

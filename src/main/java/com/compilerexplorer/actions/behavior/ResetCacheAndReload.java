@@ -1,14 +1,14 @@
 package com.compilerexplorer.actions.behavior;
 
+import com.compilerexplorer.Pipeline;
 import com.compilerexplorer.actions.common.BaseAction;
-import com.compilerexplorer.actions.common.BaseActionWithToolWindowGui;
-import com.compilerexplorer.gui.ToolWindowGui;
+import com.compilerexplorer.actions.common.BaseActionWithPipeline;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 
-public class ResetCacheAndReload extends BaseAction implements BaseActionWithToolWindowGui {
+public class ResetCacheAndReload extends BaseAction implements BaseActionWithPipeline {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        withToolWindowGui(event, ToolWindowGui::resetCacheAndReload);
+        withPipeline(event, Pipeline::reset);
     }
 }

@@ -1,37 +1,36 @@
 package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Tabs;
-import com.compilerexplorer.datamodel.CompiledText;
+import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.json.JsonSerializationVisitor;
 import com.compilerexplorer.datamodel.state.RemoteCompilerInfo;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
-import com.intellij.json.JsonFileType;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public class ExplorerSiteInfoTabProvider extends TabProvider {
+public class ExplorerSiteInfoTabProvider extends BaseExplorerSiteUtilProvider {
     public ExplorerSiteInfoTabProvider(@NotNull Project project) {
-        super(project, Tabs.EXPLORER_SITE_INFO, "compilerexplorer.ShowExplorerSiteInfoTab", JsonFileType.INSTANCE);
+        super(project, Tabs.EXPLORER_SITE_INFO, "compilerexplorer.ShowExplorerSiteInfoTab");
     }
 
     @Override
-    public boolean isEnabled(@NotNull CompiledText compiledText) {
+    public boolean isEnabled(@NotNull DataHolder data) {
         return !state.getConnected();
     }
 
     @Override
-    public boolean isError(@NotNull CompiledText compiledText) {
+    public boolean isError(@NotNull DataHolder data) {
         return !state.getConnected();
     }
 
     @Override
-    public void provide(@NotNull CompiledText compiledText, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
         if (state.getConnected()) {
             Gson gson = JsonSerializationVisitor.createDebugSerializer().getGson();
             JsonArray array = new JsonArray();
@@ -42,25 +41,7 @@ public class ExplorerSiteInfoTabProvider extends TabProvider {
             String text = gson.toJson(array);
             textConsumer.apply(text);
         } else {
-            if (compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersQueried) {
-                if (compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersException != null) {
-                    String errorMessage = "Error from Compiler Explorer endpoint \""
-                            + compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersEndpoint
-                            + "\":\n"
-                            + compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersException;
-                    textConsumer.apply(errorMessage);
-                } else {
-                    String errorMessage = "Unknown error from Compiler Explorer endpoint \""
-                            + compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersEndpoint
-                            + "\"";
-                    textConsumer.apply(errorMessage);
-                }
-            } else {
-                String errorMessage = "Compiler Explorer endpoint \""
-                        + compiledText.sourceRemoteMatched.preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.remoteCompilersEndpoint
-                        + "\" was not queried";
-                textConsumer.apply(errorMessage);
-            }
+            showError(data, textConsumer);
         }
     }
 }

@@ -32,7 +32,14 @@ public class SourceSettings implements Visitable {
     @NotNull
     public final HostMachine host;
 
-    public SourceSettings(@NotNull VirtualFile source_, @NotNull String sourcePath_, @NotNull String language_, @NotNull String languageSwitch_, @NotNull File compiler_, @NotNull String compilerKind_, @NotNull List<String> switches_, @NotNull HostMachine host_) {
+    public SourceSettings(@NotNull VirtualFile source_,
+                          @NotNull String sourcePath_,
+                          @NotNull String language_,
+                          @NotNull String languageSwitch_,
+                          @NotNull File compiler_,
+                          @NotNull String compilerKind_,
+                          @NotNull List<String> switches_,
+                          @NotNull HostMachine host_) {
         source = source_;
         sourcePath = sourcePath_;
         sourceName = source_.getPresentableName();

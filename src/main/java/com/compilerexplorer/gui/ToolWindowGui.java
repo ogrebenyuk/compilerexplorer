@@ -2,43 +2,39 @@ package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.datamodel.state.*;
-import com.compilerexplorer.gui.listeners.*;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.*;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.markup.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
-import com.intellij.util.Producer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.function.Consumer;
 
 public class ToolWindowGui {
-    public static final Key<ToolWindowGui> KEY = Key.create(Constants.PROJECT_TITLE + ".ToolWindowGui");
+    public static final Key<ToolWindowGui> KEY = Key.create("compilerexplorer.ToolWindowGui");
 
     @NotNull
     private final Project project;
     @NotNull
     private final JPanel content;
     @NotNull
-    private final Consumer<RefreshSignal> refreshSignalConsumer;
-    @NotNull
     private final TimerScheduler timerScheduler = new TimerScheduler();
     @NotNull
     private final SuppressionFlag suppressUpdates = new SuppressionFlag();
+    @NotNull
+    private final Runnable preprocessRequest;
 
-    public ToolWindowGui(@NotNull Project project_, @NotNull Consumer<RefreshSignal> refreshSignalConsumer_,
-                         @NotNull Component projectSettingsGuiComponent,
+    public ToolWindowGui(@NotNull Project project_,
+                         @NotNull Component projectSourcesGuiComponent,
                          @NotNull Component matchesGuiComponent,
                          @NotNull Component editorGuiComponent,
-                         @NotNull Producer<EditorEx> editorProducer) {
+                         @NotNull Runnable preprocessRequest_) {
         project = project_;
-        refreshSignalConsumer = refreshSignalConsumer_;
+        preprocessRequest = preprocessRequest_;
 
         project.putUserData(ToolWindowGui.KEY, this);
 
@@ -49,7 +45,7 @@ public class ToolWindowGui {
         JPanel headPanel = new JPanel();
         headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
 
-        headPanel.add(projectSettingsGuiComponent);
+        headPanel.add(projectSourcesGuiComponent);
 
         headPanel.add(matchesGuiComponent);
 
@@ -64,13 +60,7 @@ public class ToolWindowGui {
 
         content.add(editorGuiComponent, BorderLayout.CENTER);
 
-        new EditorChangeListener(project, editorProducer, this::programTextChanged);
-
         maybeShowInitialNotice();
-    }
-
-    public void resetCacheAndReload() {
-        refreshSignalConsumer.accept(RefreshSignal.RESET);
     }
 
     private void additionalSwitchesUpdated(@NotNull String text) {
@@ -80,26 +70,20 @@ public class ToolWindowGui {
         }
     }
 
-    private void programTextChanged() {
-        unlessUpdatesSuppressed(() ->
-            ApplicationManager.getApplication().invokeLater(() -> {
-                SettingsState state = getState();
-                if (state.getEnabled() && state.getAutoupdateFromSource()) {
-                    schedulePreprocess();
-                }
-        }));
+    public void programTextChanged() {
+        unlessUpdatesSuppressed(() -> {
+            if (getState().getAutoupdateFromSource()) {
+                schedulePreprocess();
+            }
+        });
     }
 
     private void schedulePreprocess() {
         timerScheduler.schedule(this::preprocess, getState().getDelayMillis());
     }
 
-    public void recompile() {
-        ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.COMPILE));
-    }
-
-    public void preprocess() {
-        ApplicationManager.getApplication().invokeLater(() -> refreshSignalConsumer.accept(RefreshSignal.PREPROCESS));
+    private void preprocess() {
+        ApplicationManager.getApplication().invokeLater(preprocessRequest);
     }
 
     @NotNull

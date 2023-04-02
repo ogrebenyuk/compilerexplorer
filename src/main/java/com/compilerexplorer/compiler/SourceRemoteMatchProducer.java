@@ -1,59 +1,68 @@
 package com.compilerexplorer.compiler;
 
 import com.compilerexplorer.common.*;
-import com.compilerexplorer.datamodel.PreprocessedSource;
+import com.compilerexplorer.common.component.BaseComponent;
+import com.compilerexplorer.common.component.CEComponent;
+import com.compilerexplorer.common.component.DataHolder;
+import com.compilerexplorer.datamodel.SelectedSource;
+import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.*;
 import com.google.common.annotations.VisibleForTesting;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-public class SourceRemoteMatchProducer implements Consumer<PreprocessedSource> {
+public class SourceRemoteMatchProducer extends BaseComponent {
+    private static final Logger LOG = Logger.getInstance(SourceRemoteMatchProducer.class);
+
     @NotNull
     private final Project project;
-    @NotNull
-    private final Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer;
 
-    public SourceRemoteMatchProducer(@NotNull Project project_, @NotNull Consumer<SourceRemoteMatched> sourceRemoteMatchedConsumer_) {
+    public SourceRemoteMatchProducer(@NotNull CEComponent nextComponent, @NotNull Project project_) {
+        super(nextComponent);
+        LOG.debug("created");
+
         project = project_;
-        sourceRemoteMatchedConsumer = sourceRemoteMatchedConsumer_;
     }
 
     @Override
-    public void accept(@NotNull PreprocessedSource preprocessedSource) {
+    protected void doClear(@NotNull DataHolder data) {
+        LOG.debug("doClear");
+        data.remove(SourceRemoteMatched.KEY);
+    }
+
+    @Override
+    protected void doReset(@NotNull DataHolder data) {
+        LOG.debug("doReset");
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+        state.clearCompilerMatches();
+    }
 
-        if (!state.getEnabled()) {
-            return;
-        }
-
-        SourceRemoteMatched sourceRemoteMatched = new SourceRemoteMatched(preprocessedSource);
-
-        if (preprocessedSource.isValid() && preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.isValid()) {
-            assert preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings != null;
-
-            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.compilerPath));
+    @Override
+    protected void doRefresh(@NotNull DataHolder data) {
+        LOG.debug("doRefresh");
+        SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+        data.get(SelectedSource.KEY).ifPresentOrElse(selectedSource -> {
+            CompilerMatches existingMatches = state.getCompilerMatches().get(new LocalCompilerPath(selectedSource.getSelectedSource().compilerPath));
             if (existingMatches != null) {
-                sourceRemoteMatched.remoteCompilerMatches = existingMatches;
-                sourceRemoteMatched.cached = true;
+                LOG.debug("found cached " + selectedSource.getSelectedSource().compilerPath + " -> " + existingMatches.getChosenMatch().getRemoteCompilerInfo().getName());
+                data.put(SourceRemoteMatched.KEY, new SourceRemoteMatched(true, existingMatches));
             } else {
-                if (preprocessedSource.sourceCompilerSettings.isValid() && preprocessedSource.sourceCompilerSettings.localCompilerSettings != null) {
-                    String localName = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getName().toLowerCase();
-                    String localVersionFull = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getVersion();
+                data.get(SelectedSourceCompiler.KEY).flatMap(SelectedSourceCompiler::getLocalCompilerSettings).ifPresentOrElse(localCompilerSettings -> {
+                    String localName = localCompilerSettings.getName().toLowerCase();
+                    String localVersionFull = localCompilerSettings.getVersion();
                     String localVersion = localName.equals("gcc") ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
-                    String localTarget = preprocessedSource.sourceCompilerSettings.localCompilerSettings.getTarget();
-                    String language = preprocessedSource.sourceCompilerSettings.sourceSettingsConnected.sourceSettings.selectedSourceSettings.language;
+                    String localTarget = localCompilerSettings.getTarget();
+                    String language = selectedSource.getSelectedSource().language;
                     List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);
-                    sourceRemoteMatched.remoteCompilerMatches = new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches);
-                }
+                    data.put(SourceRemoteMatched.KEY, new SourceRemoteMatched(false, new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches)));
+                }, () -> LOG.debug("cannot find input: local compiler"));
             }
-        }
-
-        sourceRemoteMatchedConsumer.accept(sourceRemoteMatched);
+        }, () -> LOG.debug("cannot find input: source"));
     }
 
     @NotNull

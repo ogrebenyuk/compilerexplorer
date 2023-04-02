@@ -8,8 +8,6 @@ import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Consumer;
-
 @State(name = "CompilerExplorerSettingsProvider", storages = @Storage(value = "compilerexplorer.settings.xml"))
 public class CompilerExplorerSettingsProvider implements PersistentStateComponent<SettingsState> {
     @NotNull
@@ -17,7 +15,9 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
     @NotNull
     private final SettingsState state;
     @Nullable
-    private Consumer<RefreshSignal> refreshSignalConsumer;
+    private Runnable reconnectRequest;
+    @Nullable
+    private Runnable preprocessRequest;
 
     public static CompilerExplorerSettingsProvider getInstance(@NotNull Project project) {
         return project.getService(CompilerExplorerSettingsProvider.class);
@@ -29,8 +29,12 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
         state = new SettingsState();
     }
 
-    public void setRefreshSignalConsumer(@NotNull Consumer<RefreshSignal> refreshSignalConsumer_) {
-        refreshSignalConsumer = refreshSignalConsumer_;
+    public void setReconnectRequest(@NotNull Runnable reconnectRequest_) {
+        reconnectRequest = reconnectRequest_;
+    }
+
+    public void setPreprocessRequest(@NotNull Runnable preprocessRequest_) {
+        preprocessRequest = preprocessRequest_;
     }
 
     @NotNull
@@ -54,11 +58,13 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
         boolean urlChanged = !state.getUrl().equals(state_.getUrl());
         boolean preprocessChanged = (state.getPreprocessLocally() != state_.getPreprocessLocally()) || !state.getIgnoreSwitches().equals(state_.getIgnoreSwitches());
         state.copyFrom(state_);
-        if (refreshSignalConsumer != null) {
-            if (urlChanged) {
-                refreshSignalConsumer.accept(RefreshSignal.RECONNECT);
-            } else if (preprocessChanged) {
-                refreshSignalConsumer.accept(RefreshSignal.PREPROCESS);
+        if (urlChanged) {
+            if (reconnectRequest != null) {
+                reconnectRequest.run();
+            }
+        } else if (preprocessChanged) {
+            if (preprocessRequest != null) {
+                preprocessRequest.run();
             }
         }
     }
