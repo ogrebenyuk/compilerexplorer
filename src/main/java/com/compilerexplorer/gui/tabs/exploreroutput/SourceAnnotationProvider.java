@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.compilerexplorer.datamodel.CompiledText;
 import com.intellij.openapi.editor.Editor;

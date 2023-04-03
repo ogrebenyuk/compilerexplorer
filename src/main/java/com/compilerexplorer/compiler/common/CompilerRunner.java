@@ -10,6 +10,7 @@ import com.intellij.execution.process.*;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.util.ShutDownTracker;
 import com.jetbrains.cidr.system.HostMachine;
+import org.jetbrains.annotations.Nullable;
 
 public class CompilerRunner {
     @NotNull
@@ -18,7 +19,7 @@ public class CompilerRunner {
     private final String stderr;
     private final int exitCode;
 
-    public CompilerRunner(@NotNull HostMachine host, @NotNull String[] commandArray, @NotNull File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator, int compilerTimeoutMillis) {
+    public CompilerRunner(@NotNull HostMachine host, @NotNull String[] commandArray, @Nullable File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator, int compilerTimeoutMillis) {
         ProcessOutput output;
         try {
             GeneralCommandLine cl = new GeneralCommandLine();
@@ -47,6 +48,8 @@ public class CompilerRunner {
                 ShutDownTracker.getInstance().unregisterShutdownTask(shutdownHook);
                 shutdownHook.run();
             }
+        } catch (ProcessCanceledException canceledException) {
+            throw canceledException;
         }
         catch (Exception e) {
             throw(new RuntimeException("Failed to run compiler: " + e.getMessage()));

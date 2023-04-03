@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.intellij.openapi.editor.Editor;
 import org.jetbrains.annotations.NotNull;

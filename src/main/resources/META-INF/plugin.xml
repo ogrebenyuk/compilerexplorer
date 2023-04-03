@@ -24,7 +24,7 @@
     </extensions>
 
     <projectListeners>
-        <listener class="com.compilerexplorer.project.clion.oc.OCWorkspaceListener" topic="com.jetbrains.cidr.lang.workspace.OCWorkspaceListener"/>
+        <listener class="com.compilerexplorer.project.oc.OCWorkspaceListener" topic="com.jetbrains.cidr.lang.workspace.OCWorkspaceListener"/>
         <listener class="com.compilerexplorer.project.idea.ExecutionTargetListener" topic="com.intellij.execution.ExecutionTargetListener"/>
         <listener class="com.compilerexplorer.project.idea.ModuleListener" topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="com.compilerexplorer.project.idea.ModuleRootListener" topic="com.intellij.openapi.roots.ModuleRootListener"/>
@@ -73,6 +73,7 @@
         <action id="compilerexplorer.ShowExplorerStderrTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerStderrTab"/>
         <action id="compilerexplorer.ShowExplorerOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputTab"/>
         <action id="compilerexplorer.ShowExplorerExecResultTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerExecResultTab"/>
+        <action id="compilerexplorer.ShowEverythingTab" class="com.compilerexplorer.actions.appearance.tabs.ShowEverythingTab"/>
         <action id="compilerexplorer.ShowAllTabsToggle" class="com.compilerexplorer.actions.appearance.ShowAllTabsToggle"/>
 
         <action id="compilerexplorer.AutoscrollToSourceToggle" class="com.compilerexplorer.actions.behavior.AutoscrollToSourceToggle"/>
@@ -84,6 +85,7 @@
         <action id="compilerexplorer.ShowSettings" class="com.compilerexplorer.actions.behavior.ShowSettings" icon="AllIcons.General.Settings"/>
         <action id="compilerexplorer.ShowUrlHistoryInSettings" class="com.compilerexplorer.actions.behavior.ShowUrlHistoryInSettings" icon="AllIcons.General.Settings"/>
         <action id="compilerexplorer.ShowColorSettings" class="com.compilerexplorer.actions.behavior.ShowColorSettings" icon="AllIcons.Actions.Colors"/>
+        <action id="compilerexplorer.SaveCurrentTabAs" class="com.compilerexplorer.actions.behavior.SaveCurrentTabAs" icon="AllIcons.Actions.MenuSaveall"/>
         <action id="compilerexplorer.ResetCacheAndReload" class="com.compilerexplorer.actions.behavior.ResetCacheAndReload" icon="AllIcons.Actions.ForceRefresh"/>
         <action id="compilerexplorer.TestConnection" class="com.compilerexplorer.actions.behavior.TestConnection"/>
         <action id="compilerexplorer.ClearUrlHistory" class="com.compilerexplorer.actions.behavior.ClearUrlHistory"/>
@@ -129,6 +131,7 @@
             <reference ref="compilerexplorer.ShowExplorerStderrTab"/>
             <reference ref="compilerexplorer.ShowExplorerOutputTab"/>
             <reference ref="compilerexplorer.ShowExplorerExecResultTab"/>
+            <reference ref="compilerexplorer.ShowEverythingTab"/>
         </group>
 
         <group id="compilerexplorer.TabsPopupGroup" popup="true">
@@ -137,19 +140,41 @@
             <reference ref="compilerexplorer.ShowAllTabsToggle"/>
         </group>
 
+        <group id="compilerexplorer.FoldingGroup" popup="false">
+            <reference ref="compilerexplorer.EnableFoldingToggle"/>
+            <reference ref="compilerexplorer.ExpandAllFolding"/>
+            <reference ref="compilerexplorer.CollapseAllFolding"/>
+        </group>
+
         <group id="compilerexplorer.AppearanceGroup" popup="false">
             <reference ref="compilerexplorer.ShowLineNumbersToggle"/>
             <reference ref="compilerexplorer.ShowByteOffsetsToggle"/>
             <reference ref="compilerexplorer.ShowSourceAnnotationsToggle"/>
             <reference ref="compilerexplorer.ShowOpcodesToggle"/>
             <reference ref="compilerexplorer.ShortenTemplatesToggle"/>
-            <reference ref="compilerexplorer.EnableFoldingToggle"/>
-            <reference ref="compilerexplorer.ExpandAllFolding"/>
-            <reference ref="compilerexplorer.CollapseAllFolding"/>
+        </group>
+
+        <group id="compilerexplorer.EditorPopupGroup" popup="false">
+            <reference ref="EditorCopy"/>
+        </group>
+
+        <group id="compilerexplorer.FoldingEditorPopupGroup" popup="false">
+            <reference ref="compilerexplorer.EditorPopupGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.FoldingGroup"/>
+        </group>
+
+        <group id="compilerexplorer.ExplorerOutputEditorPopupGroup" popup="false">
+            <reference ref="compilerexplorer.FoldingEditorPopupGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.AppearanceGroup"/>
         </group>
 
         <group id="compilerexplorer.AppearancePopupGroup" popup="true">
             <reference ref="compilerexplorer.AppearanceGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.FoldingGroup"/>
+            <separator/>
             <reference ref="compilerexplorer.TabsPopupGroup"/>
         </group>
 
@@ -158,6 +183,7 @@
             <reference ref="compilerexplorer.AutoscrollFromSourceToggle"/>
             <reference ref="compilerexplorer.ScrollFromSource"/>
             <reference ref="compilerexplorer.AutoupdateFromSourceToggle"/>
+            <reference ref="compilerexplorer.SaveCurrentTabAs"/>
             <reference ref="compilerexplorer.ShowSettings"/>
             <reference ref="compilerexplorer.ResetCacheAndReload"/>
         </group>
@@ -168,6 +194,7 @@
             <reference ref="compilerexplorer.ScrollFromSource"/>
             <reference ref="compilerexplorer.AutoupdateFromSourceToggle"/>
             <reference ref="compilerexplorer.RecompileCurrentSource"/>
+            <reference ref="compilerexplorer.SaveCurrentTabAs"/>
             <reference ref="compilerexplorer.ShowSettings"/>
             <reference ref="compilerexplorer.ShowColorSettings"/>
             <reference ref="compilerexplorer.ResetCacheAndReload"/>
@@ -186,6 +213,7 @@
             <separator/>
             <separator key="compilerexplorer.AppearanceGroupTitle"/>
             <reference ref="compilerexplorer.AppearanceGroup"/>
+            <reference ref="compilerexplorer.FoldingGroup"/>
             <separator/>
             <separator key="compilerexplorer.BehaviorGroupTitle"/>
             <reference ref="compilerexplorer.ShortBehaviorGroup"/>

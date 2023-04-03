@@ -1,4 +1,4 @@
-package com.compilerexplorer.project.clion.oc;
+package com.compilerexplorer.project.oc;
 
 import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.datamodel.ProjectSources;
@@ -20,6 +20,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.system.HostMachine;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.Comparator;
@@ -55,10 +56,20 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
             if (language != null) {
                 OCCompilerSettings compilerSettings = configuration.getCompilerSettings(language, virtualFile);
                 File compiler = compilerSettings.getCompilerExecutable();
+                @Nullable File compilerWorkingDir = compilerSettings.getCompilerWorkingDir();
                 OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
                 CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
                 if (compiler != null && compilerKind != null && switches != null) {
-                    return new SourceSettings(virtualFile, PathNormalizer.normalizePath(virtualFile.getPath()), language.getDisplayName(), GCCCompiler.getLanguageOption(language), compiler, compilerKind.toString(), switches.getList(CidrCompilerSwitches.Format.RAW), getHostMachine(project));
+                    return new SourceSettings(
+                            PathNormalizer.normalizePath(virtualFile.getPath()),
+                            virtualFile.getPresentableName(),
+                            language.getDisplayName(),
+                            GCCCompiler.getLanguageOption(language),
+                            compiler.getPath(),
+                            compilerWorkingDir != null ? compilerWorkingDir.getPath() : "",
+                            compilerKind.toString(),
+                            switches.getList(CidrCompilerSwitches.Format.RAW),
+                            getHostMachine(project));
                 }
             }
             return null;

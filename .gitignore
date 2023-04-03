@@ -16,6 +16,7 @@ gradle-app.setting
 # gradle/wrapper/gradle-wrapper.properties
 
 .idea
+.run
 
 gradle.properties
 local.properties

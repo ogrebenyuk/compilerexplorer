@@ -4,7 +4,7 @@ import com.compilerexplorer.common.component.BaseLinkedComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.ProjectSources;
-import com.compilerexplorer.project.clion.oc.OCProjectSettingsProducer;
+import com.compilerexplorer.project.oc.OCProjectSettingsProducer;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;

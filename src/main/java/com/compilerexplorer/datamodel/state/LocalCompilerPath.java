@@ -51,4 +51,10 @@ public class LocalCompilerPath {
         }
         return getPath().equals(other.getPath());
     }
+
+    @Override
+    @NotNull
+    public String toString() {
+        return getPath();
+    }
 }

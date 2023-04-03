@@ -18,6 +18,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.util.stream.Stream;
@@ -71,7 +72,7 @@ public class CompilerSettingsProducer extends BaseComponent {
                         boolean canceled = false;
                         boolean isSupportedCompilerType = true;
                         CompilerResult.Output output = null;
-                        File workingDir = source.compilerWorkingDir;
+                        @Nullable File workingDir = source.compilerWorkingDir.isEmpty() ? null : new File(source.compilerWorkingDir);
                         String[] versionCommandLine = getVersionCommandLine(source);
                         LocalCompilerSettings localCompilerSettings = null;
                         if (isSupportedCompilerType(source.compilerKind)) {
@@ -81,12 +82,14 @@ public class CompilerSettingsProducer extends BaseComponent {
                             Exception exception = null;
                             try {
                                 CompilerRunner versionRunner = new CompilerRunner(source.host, versionCommandLine, workingDir, "", indicator, state.getCompilerTimeoutMillis());
+                                indicator.checkCanceled();
+
                                 exitCode = versionRunner.getExitCode();
                                 stdout = versionRunner.getStdout();
                                 stderr = versionRunner.getStderr();
 
-                                String versionText = versionRunner.getStderr();
-                                if (versionRunner.getExitCode() == 0 && !versionText.isEmpty()) {
+                                String versionText = stderr;
+                                if (exitCode == 0 && !versionText.isEmpty()) {
                                     String compilerVersion = parseCompilerVersion(source.compilerKind, versionText);
                                     String compilerTarget = parseCompilerTarget(versionText);
                                     if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
@@ -96,7 +99,7 @@ public class CompilerSettingsProducer extends BaseComponent {
                                         LOG.debug("bad parse \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
                                     }
                                 } else {
-                                    LOG.debug("bad exit " + versionRunner.getExitCode());
+                                    LOG.debug("bad exit " + exitCode);
                                 }
                             } catch (ProcessCanceledException canceledException) {
                                 LOG.debug("canceled");
@@ -110,11 +113,11 @@ public class CompilerSettingsProducer extends BaseComponent {
                             LOG.debug("unsupported compiler kind " + source.compilerKind);
                             isSupportedCompilerType = false;
                         }
-                        CompilerResult result = new CompilerResult(workingDir, versionCommandLine, output);
+                        CompilerResult result = new CompilerResult(source.compilerWorkingDir, versionCommandLine, output);
                         if (localCompilerSettings != null) {
                             state.addToLocalCompilerSettings(new LocalCompilerPath(source.compilerPath), localCompilerSettings);
                         }
-                        data.put(SelectedSourceCompiler.KEY, new SelectedSourceCompiler(true, canceled, isSupportedCompilerType, result, localCompilerSettings));
+                        data.put(SelectedSourceCompiler.KEY, new SelectedSourceCompiler(false, canceled, isSupportedCompilerType, result, localCompilerSettings));
                         CompilerSettingsProducer.super.refreshNext(data);
                     }
                 });

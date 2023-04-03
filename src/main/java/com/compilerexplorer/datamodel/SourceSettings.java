@@ -1,16 +1,11 @@
 package com.compilerexplorer.datamodel;
 
-import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.system.HostMachine;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.util.List;
 
-public class SourceSettings implements Visitable {
-    @NotNull
-    public final VirtualFile source;
+public class SourceSettings {
     @NotNull
     public final String sourcePath;
     @NotNull
@@ -20,11 +15,9 @@ public class SourceSettings implements Visitable {
     @NotNull
     public final String languageSwitch;
     @NotNull
-    public final File compiler;
-    @NotNull
     public final String compilerPath;
     @NotNull
-    public final File compilerWorkingDir;
+    public final String compilerWorkingDir;
     @NotNull
     public final String compilerKind;
     @NotNull
@@ -32,38 +25,34 @@ public class SourceSettings implements Visitable {
     @NotNull
     public final HostMachine host;
 
-    public SourceSettings(@NotNull VirtualFile source_,
-                          @NotNull String sourcePath_,
+    public SourceSettings(@NotNull String sourcePath_,
+                          @NotNull String sourceName_,
                           @NotNull String language_,
                           @NotNull String languageSwitch_,
-                          @NotNull File compiler_,
+                          @NotNull String compilerPath_,
+                          @NotNull String compilerWorkingDir_,
                           @NotNull String compilerKind_,
                           @NotNull List<String> switches_,
                           @NotNull HostMachine host_) {
-        source = source_;
         sourcePath = sourcePath_;
-        sourceName = source_.getPresentableName();
+        sourceName = sourceName_;
         language = language_;
         languageSwitch = languageSwitch_;
-        compiler = compiler_;
-        compilerPath = compiler_.getPath();
-        compilerWorkingDir = compiler_.getParentFile();
+        compilerPath = compilerPath_;
+        compilerWorkingDir = compilerWorkingDir_;
         compilerKind = compilerKind_;
         switches = switches_;
         host = host_;
     }
 
     @Override
-    public void accept(@NotNull Visitor visitor) {
-        visitor.visit(this);
-    }
-
-    @Override
     public int hashCode() {
-        return source.hashCode()
+        return sourcePath.hashCode()
+                + sourceName.hashCode()
                 + language.hashCode()
                 + languageSwitch.hashCode()
-                + FileUtil.fileHashCode(compiler)
+                + compilerPath.hashCode()
+                + compilerWorkingDir.hashCode()
                 + compilerKind.hashCode()
                 + switches.hashCode()
                 + host.hashCode()
@@ -75,10 +64,12 @@ public class SourceSettings implements Visitable {
         if (!(obj instanceof SourceSettings other)) {
             return false;
         }
-        return source.equals(other.source)
+        return sourcePath.equals(other.sourcePath)
+                && sourceName.equals(other.sourceName)
                 && language.equals(other.language)
                 && languageSwitch.equals(other.languageSwitch)
-                && FileUtil.filesEqual(compiler, other.compiler)
+                && compilerPath.equals(other.compilerPath)
+                && compilerWorkingDir.equals(other.compilerWorkingDir)
                 && compilerKind.equals(other.compilerKind)
                 && switches.equals(other.switches)
                 && host.equals(other.host)

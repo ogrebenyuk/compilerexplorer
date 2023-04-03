@@ -1,4 +1,4 @@
-package com.compilerexplorer.project.clion.oc;
+package com.compilerexplorer.project.oc;
 
 import com.compilerexplorer.Pipeline;
 import com.intellij.openapi.diagnostic.Logger;

@@ -110,7 +110,6 @@ public class CompiledText {
 
     public static class CompiledResult {
         public static final int CODE_GOOD = 0;
-        public static final int CODE_REGULAR_BAD = 1;
         public static final int CODE_NOT_COMPILED = -1;
 
         public int code = CODE_NOT_COMPILED;
@@ -193,6 +192,11 @@ public class CompiledText {
     @NotNull
     public Optional<CompiledResult> getCompiledResult() {
         return Optional.ofNullable(compiledResult);
+    }
+
+    @NotNull
+    public Optional<CompiledResult> getCompiledResultIfGood() {
+        return compiledResult != null && compiledResult.code == CompiledResult.CODE_GOOD ? Optional.of(compiledResult) : Optional.empty();
     }
 
     @NotNull

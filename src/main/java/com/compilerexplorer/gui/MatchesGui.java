@@ -9,7 +9,9 @@ import com.compilerexplorer.common.component.ResetFlag;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.CompilerMatch;
 import com.compilerexplorer.datamodel.state.CompilerMatchKind;
+import com.compilerexplorer.gui.json.JsonSerializer;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
+import com.google.gson.JsonParser;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ComboBox;
@@ -121,7 +123,16 @@ public class MatchesGui extends BaseComponent {
                 + "<br/>Name: " + compilerMatch.getRemoteCompilerInfo().getName()
                 + "<br/>Version: " + compilerMatch.getRemoteCompilerInfo().getVersion()
                 + "<br/>Match kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind())
-                + "<br/>Raw data: " + compilerMatch.getRemoteCompilerInfo().getRawData();
+                + "<br/>Raw data: " + prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData());
+    }
+
+    @NotNull
+    private static String prettifyJson(@NotNull String uglyJson) {
+        return JsonSerializer
+                .createSerializer()
+                .toJson(JsonParser.parseString(uglyJson))
+                .replaceAll("\n", "<br/>")
+                .replaceAll("  ", "&nbsp;&nbsp;&nbsp;&nbsp;");
     }
 
     private void selectCompilerMatch(@NotNull DataHolder data, @NotNull SourceRemoteMatched sourceRemoteMatched, @Nullable CompilerMatch compilerMatch, boolean needRefreshNext) {

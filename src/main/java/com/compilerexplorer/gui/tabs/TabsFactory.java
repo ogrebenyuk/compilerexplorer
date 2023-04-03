@@ -25,7 +25,8 @@ public class TabsFactory {
                 new ExplorerStdoutTabProvider(project),
                 new ExplorerStderrTabProvider(project),
                 new ExplorerOutputTabProvider(project),
-                new ExplorerExecResultTabProvider(project)
+                new ExplorerExecResultTabProvider(project),
+                new EverythingTabProvider(project)
         );
     }
 }

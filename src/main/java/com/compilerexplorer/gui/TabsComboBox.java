@@ -1,9 +1,9 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.ActionUtil;
 import com.compilerexplorer.common.SuppressionFlag;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
-import com.intellij.ide.DataManager;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.PopupMenuListenerAdapter;
@@ -135,13 +135,11 @@ public class TabsComboBox extends ComboBox<AnAction> {
 
     @NotNull
     private AnActionEvent createEvent(@NotNull AnAction action) {
-        return AnActionEvent.createFromAnAction(action, null, ActionPlaces.UNKNOWN, DataManager.getInstance().getDataContext(combobox()));
+        return ActionUtil.createEvent(action, combobox());
     }
 
     @NotNull
     private Presentation createPresentation(@NotNull AnAction action) {
-        AnActionEvent event = createEvent(action);
-        action.update(event);
-        return event.getPresentation();
+        return ActionUtil.createPresentation(action, combobox());
     }
 }

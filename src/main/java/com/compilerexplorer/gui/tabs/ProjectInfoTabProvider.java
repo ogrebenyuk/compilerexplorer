@@ -3,13 +3,13 @@ package com.compilerexplorer.gui.tabs;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.ProjectSources;
-import com.compilerexplorer.datamodel.json.JsonSerializationVisitor;
+import com.compilerexplorer.gui.json.JsonSerializer;
 import com.intellij.json.JsonFileType;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Function;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 public class ProjectInfoTabProvider extends BaseTabProvider {
     public ProjectInfoTabProvider(@NotNull Project project) {
@@ -17,28 +17,30 @@ public class ProjectInfoTabProvider extends BaseTabProvider {
     }
 
     @Override
+    public boolean isSourceSpecific() {
+        return false;
+    }
+
+    @Override
     public boolean isEnabled(@NotNull DataHolder data) {
-        return !sourcesPresent(data);
+        return sources(data).isEmpty();
     }
 
     @Override
     public boolean isError(@NotNull DataHolder data) {
-        return !sourcesPresent(data);
+        return sources(data).isEmpty();
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
-        if (sourcesPresent(data)) {
-            JsonSerializationVisitor gsonSerializer = JsonSerializationVisitor.createDebugSerializer();
-            data.get(ProjectSources.KEY).ifPresent(sources -> sources.accept(gsonSerializer));
-            textConsumer.apply(gsonSerializer.output());
-        } else {
-            String errorMessage = "No sources found";
-            textConsumer.apply(errorMessage);
-        }
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
+        sources(data).ifPresentOrElse(
+                sources -> textConsumer.accept(JsonSerializer.createSerializer().toJson(sources)),
+                () -> textConsumer.accept("No sources found")
+        );
     }
 
-    boolean sourcesPresent(@NotNull DataHolder data) {
-        return data.get(ProjectSources.KEY).map(sources -> !sources.getSources().isEmpty()).orElse(false);
+    @NotNull
+    private static Optional<ProjectSources> sources(@NotNull DataHolder data) {
+        return data.get(ProjectSources.KEY).filter(sources -> !sources.getSources().isEmpty());
     }
 }

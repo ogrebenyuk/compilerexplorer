@@ -126,8 +126,8 @@ public class RemoteCompilersProducer extends BaseRefreshableComponent {
                         httpClient.close();
                         indicator.checkCanceled();
 
-                        output = outputBuilder.toString();
-                        JsonArray array = JsonParser.parseString(output).getAsJsonArray();
+                        String rawOutput = outputBuilder.toString();
+                        JsonArray array = JsonParser.parseString(rawOutput).getAsJsonArray();
                         Gson gson = new Gson();
                         List<RemoteCompilerInfo> compilers = new ArrayList<>();
                         for (JsonElement elem : array) {
@@ -136,7 +136,9 @@ public class RemoteCompilersProducer extends BaseRefreshableComponent {
                             compilers.add(info);
                         }
                         indicator.checkCanceled();
+
                         LOG.debug("found " + compilers.size() + " remote compilers");
+                        output = rawOutput;
                         state.setRemoteCompilers(compilers);
                         state.setConnected(true);
                     } catch (ProcessCanceledException canceledException) {

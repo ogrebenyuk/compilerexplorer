@@ -127,10 +127,15 @@ public class Pipeline {
         return editorGui::getEditor;
     }
 
+    private void setPipelineReady(boolean ready) {
+        pipelineReady = ready;
+        editorGui.setSpinningIndicatorVisible(!ready);
+    }
+
     public void reset() {
         if (readyToRun()) {
             LOG.debug("reset");
-            pipelineReady = false;
+            setPipelineReady(false);
             initiator.refresh(false, ResetLevel.RESET);
             firstRefreshDone = true;
         } else {
@@ -143,11 +148,11 @@ public class Pipeline {
         if (readyToRun()) {
             if (firstRefreshDone) {
                 LOG.debug("reconnect");
-                pipelineReady = false;
+                setPipelineReady(false);
                 remoteCompilersProducer.refresh(true);
             } else {
                 LOG.debug("refresh with reset on reconnect");
-                pipelineReady = false;
+                setPipelineReady(false);
                 initiator.refresh(false, ResetLevel.RECONNECT);
                 firstRefreshDone = true;
             }
@@ -162,11 +167,11 @@ public class Pipeline {
             if (state.getConnected()) {
                 if (firstRefreshDone) {
                     LOG.debug("preprocess");
-                    pipelineReady = false;
+                    setPipelineReady(false);
                     preprocessor.refresh(true);
                 } else {
                     LOG.debug("refresh with reset on preprocess");
-                    pipelineReady = false;
+                    setPipelineReady(false);
                     initiator.refresh(false, ResetLevel.PREPROCESS);
                     firstRefreshDone = true;
                 }
@@ -185,11 +190,11 @@ public class Pipeline {
             if (state.getConnected()) {
                 if (firstRefreshDone) {
                     LOG.debug("compile");
-                    pipelineReady = false;
+                    setPipelineReady(false);
                     explorer.refresh(true);
                 } else {
                     LOG.debug("refresh with reset on compile");
-                    pipelineReady = false;
+                    setPipelineReady(false);
                     initiator.refresh(false, ResetLevel.COMPILE);
                     firstRefreshDone = true;
                 }
@@ -206,7 +211,7 @@ public class Pipeline {
     public void refresh() {
         if (readyToRun()) {
             LOG.debug("refresh");
-            pipelineReady = false;
+            setPipelineReady(false);
             initiator.refresh(false);
             firstRefreshDone = true;
         } else {
@@ -231,7 +236,7 @@ public class Pipeline {
     private void pipelineReady() {
         if (!pipelineReady) {
             LOG.debug("pipelineReady");
-            pipelineReady = true;
+            setPipelineReady(true);
             runQueuedRequests();
         }
     }
@@ -249,7 +254,7 @@ public class Pipeline {
     }
 
     private void runQueuedRequests() {
-        if (editorReady && pipelineReady && enabled) {
+        if (readyToRun()) {
             if (resetRequested) {
                 LOG.debug("running requested reset");
                 cleanRequests();

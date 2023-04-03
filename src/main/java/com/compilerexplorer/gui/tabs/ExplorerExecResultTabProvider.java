@@ -3,13 +3,12 @@ package com.compilerexplorer.gui.tabs;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
     public ExplorerExecResultTabProvider(@NotNull Project project) {
@@ -23,23 +22,29 @@ public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
 
     @Override
     public boolean isError(@NotNull DataHolder data) {
-        return expectExecResult() && execResult(data).isEmpty();
+        return expectExecResult() && execResult(data).isEmpty() || compiledText(data).map(CompiledText::getCanceled).orElse(true);
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
         compiledText(data).ifPresentOrElse(
-                compiledText -> compiledText.getExecResult().ifPresentOrElse(
-                        execResult -> textConsumer.apply(getTextFromChunks(execResult.stdout)),
+            compiledText -> {
+                if (!compiledText.getCanceled()) {
+                    compiledText.getExecResult().ifPresentOrElse(
+                        execResult -> textConsumer.accept(getTextFromChunks(execResult.stdout)),
                         () -> {
                             if (expectExecResult()) {
                                 showExplorerError(compiledText, textConsumer);
                             } else {
-                                textConsumer.apply("Compiler Explorer was not asked to execute the code");
+                                textConsumer.accept("Compiler Explorer was not asked to execute the code");
                             }
                         }
-                ),
-                () -> textConsumer.apply("Compiler Explorer was not run")
+                    );
+                } else {
+                    textConsumer.accept("Compiler Explorer was canceled");
+                }
+            },
+            () -> textConsumer.accept("Compiler Explorer was not run")
         );
     }
 

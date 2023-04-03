@@ -119,10 +119,10 @@ intellij {
 publishPlugin {
     token.set(System.getenv("ORG_GRADLE_PROJECT_intellijPublishToken"))
 }
+
 runIde {
     jvmArgs = ['-Xms2048m', '-Xmx8192m']
 }
-
 
 allprojects {
     tasks.withType(JavaCompile).tap {

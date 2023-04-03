@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui;
+package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.intellij.openapi.editor.EditorGutterAction;
 import com.intellij.openapi.editor.TextAnnotationGutterProvider;

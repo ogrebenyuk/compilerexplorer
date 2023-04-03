@@ -9,23 +9,32 @@ import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.listeners.*;
 import com.compilerexplorer.gui.tabs.*;
 import com.compilerexplorer.gui.tracker.CaretTracker;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.ex.*;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.PlainTextFileType;
+import com.intellij.openapi.fileChooser.FileChooserFactory;
+import com.intellij.openapi.fileChooser.FileSaverDescriptor;
+import com.intellij.openapi.fileChooser.FileSaverDialog;
+import com.intellij.openapi.fileTypes.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.SpinningProgressIcon;
 import com.intellij.ui.components.JBScrollPane;
+import com.twelvemonkeys.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.PrintWriter;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -39,6 +48,8 @@ public class EditorGui extends BaseRefreshableComponent {
     @NotNull
     private final Project project;
     @NotNull
+    private final SettingsState state;
+    @NotNull
     private final EditorTextField editor;
     @NotNull
     private final SuppressionFlag suppressUpdates;
@@ -49,6 +60,8 @@ public class EditorGui extends BaseRefreshableComponent {
     @NotNull
     private final TabsComboBox tabsCombobox = new TabsComboBox();
     @NotNull
+    private final JLabel spinningLabel = new JLabel();
+    @NotNull
     private final List<TabProvider> tabs;
     @Nullable
     private Tabs currentTab;
@@ -56,32 +69,33 @@ public class EditorGui extends BaseRefreshableComponent {
     private Tabs requestedTab;
     @Nullable
     private Tabs selectedTab;
+    @NotNull
+    private final FoldingManager foldingManager;
+    @Nullable
+    List<TabProvider.FoldingRegion> lastFoldingRegions = null;
 
     public EditorGui(@NotNull CEComponent nextComponent, @NotNull Project project_, @NotNull SuppressionFlag suppressUpdates_, @NotNull Runnable editorReadyConsumer) {
         super(nextComponent);
         LOG.debug("created");
 
         project = project_;
+        state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         suppressUpdates = suppressUpdates_;
+        foldingManager = new FoldingManager(project, state);
 
         project.putUserData(EditorGui.KEY, this);
 
+        spinningLabel.setIcon(new SpinningProgressIcon());
+        spinningLabel.setVisible(false);
+
         mainPanel = new JPanel(new BorderLayout());
-        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false) {
-            @Override
-            @NotNull
-            protected EditorEx createEditor() {
-                LOG.debug("creating editor");
-                EditorEx ed = super.createEditor();
-                ed.setHorizontalScrollbarVisible(true);
-                ed.setVerticalScrollbarVisible(true);
-                ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
-                ed.setViewer(true);
-                setupTabs(ed);
-                editorReadyConsumer.run();
-                return ed;
-            }
-        };
+        editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
+        editor.addSettingsProvider(ed -> {
+            LOG.debug("creating editor");
+            suppressRefresh.unlessApplied(() -> editorCreated(ed, lastFoldingRegions));
+            editorReadyConsumer.run();
+        });
+
         editor.setFont(new Font("monospaced", editor.getFont().getStyle(), editor.getFont().getSize()));
         mainPanel.add(editor, BorderLayout.CENTER);
 
@@ -94,19 +108,20 @@ public class EditorGui extends BaseRefreshableComponent {
         new AllEditorsListener(project, caretTracker::update);
 
         tabs = TabsFactory.create(project);
+
+        requestTab(state.getLastOpenTab());
     }
     public void updateCaretTracker(@NotNull VirtualFile file, @Nullable Editor editor) {
         caretTracker.update(file, editor);
     }
 
+    public void setSpinningIndicatorVisible(boolean visible) {
+        spinningLabel.setVisible(visible);
+    }
+
     public void applyThemeColors() {
         withCurrentTabProvider(TabProvider::applyThemeColors);
         tabsCombobox.applyThemeColors();
-    }
-
-    @NotNull
-    private static AnAction findAction(@NotNull String id) {
-        return ActionManager.getInstance().getAction(id);
     }
 
     @NotNull
@@ -119,7 +134,10 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     private void setupTabs(@NotNull EditorEx ed) {
-        ((JBScrollPane) ed.getScrollPane()).setStatusComponent(tabsCombobox);
+        JPanel panel = new JPanel();
+        panel.add(spinningLabel);
+        panel.add(tabsCombobox);
+        ((JBScrollPane) ed.getScrollPane()).setStatusComponent(panel);
     }
 
     @Nullable
@@ -144,7 +162,7 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     public void updateFolding() {
-        withEditor(ed -> withCurrentTabProvider(provider -> provider.updateFolding(ed)));
+        withEditor(foldingManager::updateFolding);
     }
 
     @Override
@@ -165,7 +183,7 @@ public class EditorGui extends BaseRefreshableComponent {
             @Nullable Tabs newSelectedTab = chooseNewTab(data, visibleTabs);
 
             List<AnAction> tabActions = visibleTabs.stream()
-                    .map(provider -> findAction(provider.actionId()))
+                    .map(provider -> ActionUtil.findAction(provider.actionId()))
                     .toList();
             @Nullable AnAction newSelectedTabAction = newSelectedTab != null ? findTabAction(newSelectedTab) : null;
             tabsCombobox.refreshModel(tabActions, newSelectedTabAction);
@@ -232,16 +250,43 @@ public class EditorGui extends BaseRefreshableComponent {
     private void showTab(@NotNull Tabs tab, boolean forceRefresh) {
         tabsCombobox.selectAction(findTabAction(tab), true);
         if (currentTab != tab || forceRefresh) {
-            if (currentTab != null && currentTab != tab) {
-                int scrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
-                getState().addToScrollPositions(currentTab, scrollPosition);
-            }
             currentTab = tab;
+            state.setLastOpenTab(tab);
             refresh(false);
-            if (currentTab != null) {
-                int scrollPosition = getState().getScrollPositions().getOrDefault(currentTab, 0);
-                withEditor(ed -> scrollToPosition(ed, scrollPosition));
-            }
+            withEditor(this::restoreCurrentTabScrollPosition);
+        }
+    }
+
+    public void saveCurrentTabScrollPosition() {
+        DataHolder data = getLastData();
+        if (data != null) {
+            withCurrentTabProvider(provider -> {
+                assert currentTab != null;
+
+                int scrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
+                if (provider.isError(data)) {
+                    getState().addToScrollPositionsError(currentTab, scrollPosition);
+                } else {
+                    getState().addToScrollPositions(currentTab, scrollPosition);
+                }
+            });
+        }
+    }
+
+    private void restoreCurrentTabScrollPosition(@NotNull EditorEx ed) {
+        DataHolder data = getLastData();
+        if (data != null) {
+            withCurrentTabProvider(provider -> {
+                assert currentTab != null;
+
+                int scrollPosition;
+                if (provider.isError(data)) {
+                    scrollPosition = getState().getScrollPositionsError().getOrDefault(currentTab, 0);
+                } else {
+                    scrollPosition = getState().getScrollPositions().getOrDefault(currentTab, 0);
+                }
+                scrollToPosition(ed, scrollPosition);
+            });
         }
     }
 
@@ -251,33 +296,48 @@ public class EditorGui extends BaseRefreshableComponent {
         suppressRefresh.unlessApplied(() ->
             suppressRefresh.apply(() -> {
                 suppressUpdates.unlessApplied(() -> super.refresh(reset));
-                //DataHolder.get(getLastData(), CompiledText.KEY).ifPresentOrElse(compiledText ->
-                    withCurrentTabProvider(provider -> {
-                        DataHolder data = getLastData();
-                        assert data != null;
+                withCurrentTabProvider(provider -> {
+                    DataHolder data = getLastData();
+                    assert data != null;
 
-                        FileType fileType = provider.getFileType(data);
-                        Boolean[] provided = new Boolean[]{false};
-                        provider.provide(data, text -> {
-                            final int oldScrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
+                    FileType fileType = provider.getFileType(data);
+                    Boolean[] provided = new Boolean[]{false};
+                    provider.provide(data, (text, foldingRegions) -> {
+                        editor.setNewDocumentAndFileType(fileType, editor.getDocument());
+                        editor.setText(fileType == PlainTextFileType.INSTANCE ? filterOutTerminalEscapeSequences(text) : text);
+                        editor.setEnabled(true);
 
-                            editor.setNewDocumentAndFileType(fileType, editor.getDocument());
-                            editor.setText(fileType == PlainTextFileType.INSTANCE ? filterOutTerminalEscapeSequences(text) : text);
-                            editor.setEnabled(true);
-
-                            withEditor(ed -> scrollToPosition(ed, oldScrollPosition));
-                            provided[0] = true;
-                            return editor.getEditor(false);
-                        });
-                        if (provided[0]) {
-                            withEditor(ed -> provider.highlightLocations(ed, caretTracker.getLocations()));
-                        } else {
-                            clearEditor();
+                        if (foldingRegions.isEmpty()) {
+                            foldingRegions = FoldingUtil.getFoldingForFileType(fileType, project, editor.getDocument());
                         }
-                    });//, () -> LOG.debug("cannot find input")
-                //);
+                        lastFoldingRegions = foldingRegions.orElse(null);
+
+                        withEditor(ed -> editorCreated(ed, lastFoldingRegions));
+                        provided[0] = true;
+                    });
+                    if (!provided[0]) {
+                        lastFoldingRegions = null;
+                        clearEditor();
+                    }
+                });
             })
         );
+    }
+
+    private void editorCreated(@NotNull EditorEx ed, @Nullable List<TabProvider.FoldingRegion> foldingRegions) {
+        ed.setHorizontalScrollbarVisible(true);
+        ed.setVerticalScrollbarVisible(true);
+        ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
+        ed.setViewer(true);
+        setupTabs(ed);
+        foldingManager.editorCreated(ed);
+        foldingManager.set(getCurrentSourceFilename(getLastData()), currentTab, foldingRegions, ed);
+        withCurrentTabProvider(provider -> {
+            provider.editorCreated(ed);
+            provider.highlightLocations(ed, caretTracker.getLocations());
+        });
+        restoreCurrentTabScrollPosition(ed);
+        ed.getScrollingModel().addVisibleAreaListener(e -> saveCurrentTabScrollPosition());
     }
 
     public void requestTab(@NotNull Tabs tab) {
@@ -288,6 +348,12 @@ public class EditorGui extends BaseRefreshableComponent {
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText("");
         editor.setEnabled(false);
+        foldingManager.set(getCurrentSourceFilename(getLastData()), currentTab, null, getEditor());
+    }
+
+    @Nullable
+    private String getCurrentSourceFilename(@Nullable DataHolder data) {
+        return data != null ? data.get(SelectedSource.KEY).map(SelectedSource::getSelectedSource).map(s -> s.sourcePath).orElse(null) : null;
     }
 
     @NotNull
@@ -297,7 +363,7 @@ public class EditorGui extends BaseRefreshableComponent {
 
     @NotNull
     private SettingsState getState() {
-        return CompilerExplorerSettingsProvider.getInstance(project).getState();
+        return state;
     }
 
     private void scrollToClosestLocation(@NotNull List<CompiledText.SourceLocation> locations) {
@@ -306,17 +372,17 @@ public class EditorGui extends BaseRefreshableComponent {
             Integer[] closestPosition = new Integer[]{-1};
             for (@NotNull CompiledText.SourceLocation location : locations) {
                 withCurrentTabProvider(provider -> {
-                    @NotNull List<TabProvider.Range> ranges = provider.getRangesForLocation(location);
+                    @NotNull List<TextRange> ranges = provider.getRangesForLocation(location);
                     final int currentScrollPosition = findCurrentScrollPosition(ed);
                     int closestPositionDistance = -1;
-                    for (TabProvider.Range range : ranges) {
-                        int positionBegin = ed.offsetToXY(range.begin).y;
+                    for (TextRange range : ranges) {
+                        int positionBegin = ed.offsetToXY(range.getStartOffset()).y;
                         int diffBegin = Math.abs(positionBegin - currentScrollPosition);
                         if ((closestPositionDistance < 0) || (diffBegin < closestPositionDistance)) {
                             closestPositionDistance = diffBegin;
                             closestPosition[0] = positionBegin;
                         }
-                        int positionEnd = ed.offsetToXY(range.end).y + ed.getLineHeight();
+                        int positionEnd = ed.offsetToXY(range.getEndOffset()).y + ed.getLineHeight();
                         int diffEnd = Math.abs(positionEnd - currentScrollPosition);
                         if ((closestPositionDistance < 0) || (diffEnd < closestPositionDistance)) {
                             closestPositionDistance = diffEnd;
@@ -333,13 +399,8 @@ public class EditorGui extends BaseRefreshableComponent {
 
     public void expandAllFolding(boolean isExpanded) {
         withEditor(ed -> {
+            foldingManager.expandAllFolding(ed, isExpanded);
             if (getState().getEnableFolding()) {
-                FoldingModelEx foldingModel = ed.getFoldingModel();
-                foldingModel.runBatchFoldingOperation(() -> {
-                    for (FoldRegion region : foldingModel.getAllFoldRegions()) {
-                        region.setExpanded(isExpanded);
-                    }
-                });
                 refresh(false);
             }
         });
@@ -372,10 +433,47 @@ public class EditorGui extends BaseRefreshableComponent {
 
     @NotNull
     private AnAction findTabAction(@NotNull Tabs tab) {
-        return findAction(findTabProvider(tab).actionId());
+        return ActionUtil.findAction(findTabProvider(tab).actionId());
     }
 
     public boolean isTabEnabled(@NotNull Tabs tab) {
         return getLastData() != null && (getState().getShowAllTabs() || findTabProvider(tab).isEnabled(getLastData()));
+    }
+
+    public void saveCurrentTabAs() {
+        @Nullable final DataHolder data = getLastData();
+        @Nullable final EditorEx ed = getEditor();
+        if (currentTab != null && data != null && ed != null) {
+            @Nullable Path directory = null;
+            @NotNull final TabProvider currentTabProvider = findTabProvider(currentTab);
+            Presentation presentation = ActionUtil.createPresentation(ActionUtil.findAction(currentTabProvider.actionId()), getComponent());
+            @Nullable String filenameWithPrefix = presentation.getText();
+
+            @Nullable final String sourceFilename = getCurrentSourceFilename(data);
+            if (sourceFilename != null) {
+                @NotNull final Path path = Path.of(sourceFilename);
+                directory = path.getParent();
+                if (currentTabProvider.isSourceSpecific()) {
+                    filenameWithPrefix = filenameWithPrefix + " for " + FileUtil.getBasename(path.getFileName().toString());
+                }
+            }
+
+            @NotNull final Presentation saveAsPresentation = ActionUtil.createPresentation(ActionUtil.findAction("compilerexplorer.SaveCurrentTabAs"), getComponent());
+            @NotNull final FileSaverDescriptor descriptor = new FileSaverDescriptor(saveAsPresentation.getText(), saveAsPresentation.getDescription(), currentTabProvider.defaultExtension(data), null);
+            @NotNull final FileSaverDialog dialog = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project);
+            @Nullable final VirtualFileWrapper file = dialog.save(directory, filenameWithPrefix);
+            if (file != null) {
+                @NotNull final String filename = file.getFile().getPath();
+                try (PrintWriter out = new PrintWriter(filename)) {
+                    out.println(ed.getDocument().getText());
+                } catch (Exception exception) {
+                    String errorMessage = "Error while saving tab to file \"" + filename + "\": " + exception.getMessage();
+                    LOG.error(errorMessage);
+                    Constants.NOTIFICATION_GROUP
+                            .createNotification(errorMessage, NotificationType.ERROR)
+                            .notify(project);
+                }
+            }
+        }
     }
 }

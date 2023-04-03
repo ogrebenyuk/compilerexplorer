@@ -1,10 +1,8 @@
 package com.compilerexplorer.datamodel;
 
-import com.intellij.openapi.util.io.FileUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -61,20 +59,20 @@ public class CompilerResult {
     }
 
     @NotNull
-    private final File workingDir;
+    private final String workingDir;
     @NotNull
     private final String[] commandLine;
     @Nullable
     private final Output output;
 
-    public CompilerResult(@NotNull File workingDir_, @NotNull String[] commandLine_, @Nullable Output output_) {
+    public CompilerResult(@NotNull String workingDir_, @NotNull String[] commandLine_, @Nullable Output output_) {
         workingDir = workingDir_;
         commandLine = commandLine_;
         output = output_;
     }
 
     @NotNull
-    public File getWorkingDir() {
+    public String getWorkingDir() {
         return workingDir;
     }
 
@@ -90,7 +88,7 @@ public class CompilerResult {
 
     @Override
     public int hashCode() {
-        return FileUtil.fileHashCode(workingDir) + Arrays.hashCode(commandLine) + Objects.hashCode(output);
+        return workingDir.hashCode() + Arrays.hashCode(commandLine) + Objects.hashCode(output);
     }
 
     @Override
@@ -98,6 +96,6 @@ public class CompilerResult {
         if (!(obj instanceof CompilerResult other)) {
             return false;
         }
-        return FileUtil.filesEqual(workingDir, other.workingDir) && Arrays.equals(commandLine, other.commandLine) && Objects.equals(output, other.output);
+        return workingDir.equals(other.workingDir) && Arrays.equals(commandLine, other.commandLine) && Objects.equals(output, other.output);
     }
 }

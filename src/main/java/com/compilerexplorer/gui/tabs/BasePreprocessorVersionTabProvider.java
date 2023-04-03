@@ -5,13 +5,12 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
 import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.intellij.json.JsonFileType;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public abstract class BasePreprocessorVersionTabProvider extends BasePreprocessorUtilProvider {
     @NotNull
@@ -24,16 +23,21 @@ public abstract class BasePreprocessorVersionTabProvider extends BasePreprocesso
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
-        data.get(SelectedSourceCompiler.KEY).ifPresentOrElse(selectedSourceCompiler ->
-                selectedSourceCompiler.getResult().ifPresentOrElse(
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
+        data.get(SelectedSourceCompiler.KEY).ifPresentOrElse(selectedSourceCompiler -> {
+                if (!selectedSourceCompiler.getCanceled()) {
+                    selectedSourceCompiler.getResult().ifPresentOrElse(
                         result -> result.getOutput().ifPresentOrElse(
-                                output -> textConsumer.apply(textProducer.apply(selectedSourceCompiler, output)),
-                                () -> textConsumer.apply("Preprocessor was not run because of unsupported compiler type")
+                            output -> textConsumer.accept(textProducer.apply(selectedSourceCompiler, output)),
+                            () -> textConsumer.accept("Preprocessor was not run because of unsupported compiler type")
                         ),
-                        () -> textConsumer.apply("Preprocessor was not run because its version was found in cache")
-                ),
-                () -> textConsumer.apply("Preprocessor was not run")
+                        () -> textConsumer.accept("Preprocessor was not run because its version was found in cache")
+                    );
+                } else {
+                    textConsumer.accept("Preprocessor was canceled");
+                }
+            },
+            () -> textConsumer.accept("Preprocessor was not run")
         );
     }
 
@@ -42,11 +46,11 @@ public abstract class BasePreprocessorVersionTabProvider extends BasePreprocesso
         return preprocessorRanButProducedNoResult(data);
     }
 
-    private static boolean preprocessorRanButProducedNoResult(@NotNull DataHolder data) {
-        return data.get(SelectedSourceCompiler.KEY).map(BasePreprocessorVersionTabProvider::producedNoResult).orElse(false);
+    private boolean preprocessorRanButProducedNoResult(@NotNull DataHolder data) {
+        return data.get(SelectedSourceCompiler.KEY).map(this::producedNoResult).orElse(false);
     }
 
-    protected static boolean producedNoResult(@NotNull SelectedSourceCompiler selectedSourceCompiler) {
+    protected boolean producedNoResult(@NotNull SelectedSourceCompiler selectedSourceCompiler) {
         return selectedSourceCompiler.getLocalCompilerSettings().isEmpty();
     }
 }

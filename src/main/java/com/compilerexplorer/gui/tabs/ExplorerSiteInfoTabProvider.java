@@ -2,21 +2,22 @@ package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
-import com.compilerexplorer.datamodel.json.JsonSerializationVisitor;
+import com.compilerexplorer.gui.json.JsonSerializer;
 import com.compilerexplorer.datamodel.state.RemoteCompilerInfo;
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import com.intellij.openapi.editor.ex.EditorEx;
+import com.google.gson.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public class ExplorerSiteInfoTabProvider extends BaseExplorerSiteUtilProvider {
     public ExplorerSiteInfoTabProvider(@NotNull Project project) {
         super(project, Tabs.EXPLORER_SITE_INFO, "compilerexplorer.ShowExplorerSiteInfoTab");
+    }
+
+    @Override
+    public boolean isSourceSpecific() {
+        return false;
     }
 
     @Override
@@ -30,16 +31,17 @@ public class ExplorerSiteInfoTabProvider extends BaseExplorerSiteUtilProvider {
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
         if (state.getConnected()) {
-            Gson gson = JsonSerializationVisitor.createDebugSerializer().getGson();
+            Gson gson = JsonSerializer.createSerializer();
             JsonArray array = new JsonArray();
             for (RemoteCompilerInfo info : state.getRemoteCompilers()) {
-                JsonElement element = JsonParser.parseString(info.getRawData());
+                JsonObject element = gson.toJsonTree(info).getAsJsonObject();
+                element.remove("rawData");
+                element.add("rawData", JsonParser.parseString(info.getRawData()));
                 array.add(element);
             }
-            String text = gson.toJson(array);
-            textConsumer.apply(text);
+            textConsumer.accept(gson.toJson(array));
         } else {
             showError(data, textConsumer);
         }

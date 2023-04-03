@@ -14,10 +14,13 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
@@ -53,16 +56,18 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         data.get(SelectedSource.KEY).ifPresentOrElse(selectedSource -> {
             SourceSettings sourceSettings = selectedSource.getSelectedSource();
-            @Nullable Document document = FileDocumentManager.getInstance().getDocument(sourceSettings.source);
-            if (document != null) {
-                String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + document.getText();
+            @Nullable VirtualFile virtualFile = VfsUtil.findFile(Path.of(sourceSettings.sourcePath), true);
+            @Nullable Document document = virtualFile != null ? FileDocumentManager.getInstance().getDocument(virtualFile) : null;
+            @Nullable String content = document != null ? document.getText() : null;
+            if (content != null) {
+                String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + content;
                 if (state.getPreprocessLocally()) {
                     needRefreshNext = false;
                     taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + sourceSettings.sourceName) {
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
                             boolean canceled = false;
-                            File workingDir =  sourceSettings.compilerWorkingDir;
+                            @Nullable File workingDir = sourceSettings.compilerWorkingDir.isEmpty() ? null : new File(sourceSettings.compilerWorkingDir);
                             String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
                             int exitCode = -1;
                             String stdout = "";
@@ -71,6 +76,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                             try {
                                 LOG.debug("preprocessing " + String.join(" ", preprocessorCommandLine));
                                 CompilerRunner compilerRunner = new CompilerRunner(sourceSettings.host, preprocessorCommandLine, workingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
+                                indicator.checkCanceled();
                                 exitCode = compilerRunner.getExitCode();
                                 stdout = compilerRunner.getStdout();
                                 stderr = compilerRunner.getStderr();
@@ -83,7 +89,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                                 exception = exception_;
                             }
                             CompilerResult.Output output = new CompilerResult.Output(exitCode, stdout, stderr, exception);
-                            CompilerResult result = new CompilerResult(workingDir, preprocessorCommandLine, output);
+                            CompilerResult result = new CompilerResult(sourceSettings.compilerWorkingDir, preprocessorCommandLine, output);
                             data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), canceled, result, exitCode == 0 ? stdout : null));
                             SourcePreprocessor.super.refreshNext(data);
                         }
@@ -93,7 +99,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                     data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), false, null, sourceText));
                 }
             } else {
-                LOG.debug("cannot get Document from " + sourceSettings.sourceName);
+                LOG.debug("cannot get content from " + sourceSettings.sourceName);
             }
         }, () -> LOG.debug("cannot find input"));
         if (needRefreshNext) {

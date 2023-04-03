@@ -1,4 +1,4 @@
-package com.compilerexplorer.gui.tabs;
+package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NotNull;
@@ -6,20 +6,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-class TemplateShortener {
+public class TemplateShortener {
     @NotNull
     private static final List<String> EXCEPTIONS = ImmutableList.of(
             "<built-in>",
             "<command-line>",
             "<__static_initialization_and_destruction_0(int, int)>",
-            "<_GLOBAL__sub_I_main>"
+            "<_GLOBAL__sub_I_main>",
+            "<Compilation failed>"
     );
     @NotNull
     private static final List<String> ADDRESS_SUFFIXES = ImmutableList.of(
             "@plt"
     );
 
-    static void shortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
+    public static void shortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
         int length = text.length();
         int depth = 0;
         boolean isAddress = false;

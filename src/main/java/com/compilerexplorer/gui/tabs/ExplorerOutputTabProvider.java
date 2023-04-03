@@ -7,14 +7,12 @@ import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
-import com.compilerexplorer.gui.*;
 import com.compilerexplorer.gui.listeners.CaretPositionChangeListener;
-import com.compilerexplorer.gui.listeners.FoldingChangeListener;
 import com.compilerexplorer.gui.listeners.MousePopupClickListener;
+import com.compilerexplorer.gui.tabs.exploreroutput.*;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.FoldRegion;
 import com.intellij.openapi.editor.LogicalPosition;
 import com.intellij.openapi.editor.ScrollType;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
@@ -26,6 +24,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Pair;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
@@ -36,8 +35,6 @@ import java.awt.*;
 import java.util.*;
 import java.util.List;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     private static class EndAndSource {
@@ -52,28 +49,22 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     }
 
     @NotNull
-    private static final DefaultActionGroup gutterActions = new DefaultActionGroup(ActionManager.getInstance().getAction("compilerexplorer.AppearanceGroup"));
+    private static final String POPUP_ACTIONS_GROUP_ID = "compilerexplorer.ExplorerOutputEditorPopupGroup";
+    @NotNull
+    private static final DefaultActionGroup POPUP_ACTIONS = new DefaultActionGroup(ActionManager.getInstance().getAction(POPUP_ACTIONS_GROUP_ID));
 
     @NotNull
-    private final Map<CompiledText.SourceLocation, List<Range>> locationsFromSourceMap = new HashMap<>();
+    private final Map<CompiledText.SourceLocation, List<TextRange>> locationsFromSourceMap = new HashMap<>();
     @NotNull
     private final SortedMap<Integer, EndAndSource> locationsToSourceMap = new TreeMap<>();
     @NotNull
     private final Map<Integer, Integer> lineNumberToByteOffsetMap = new HashMap<>();
     @NotNull
+    private final List<TextRange> highlighterRanges = new ArrayList<>();
+    @NotNull
     private final List<RangeHighlighter> highlighters = new ArrayList<>();
     @NotNull
     private final ColoredLineMarkerRenderer lineMarkerRenderer = new ColoredLineMarkerRenderer();
-    @NotNull
-    private final SuppressionFlag suppressFoldingUpdates = new SuppressionFlag();
-    @NotNull
-    private final FoldingChangeListener foldingChangeListener = new FoldingChangeListener((label, isExpanded) -> unlessFoldingUpdatesSuppressed(() -> {
-        if (isExpanded) {
-            getState().removeFoldedLabel(label);
-        } else {
-            getState().addFoldedLabel(label);
-        }
-    }));
 
     public ExplorerOutputTabProvider(@NotNull Project project) {
         super(project, Tabs.EXPLORER_OUTPUT, "compilerexplorer.ShowExplorerOutputTab", AsmFileType.INSTANCE);
@@ -86,29 +77,29 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
 
     @Override
     public boolean isError(@NotNull DataHolder data) {
-        return compiledText(data).isEmpty();
+        return compiledText(data).map(compiledText -> compiledText.getCanceled() || compiledText.getCompiledResultIfGood().isEmpty()).orElse(true);
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull BiConsumer<String, Optional<List<FoldingRegion>>> textAndFoldingConsumer) {
         locationsFromSourceMap.clear();
         locationsToSourceMap.clear();
         lineNumberToByteOffsetMap.clear();
+        highlighterRanges.clear();
         highlighters.clear();
 
-        shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResult().ifPresentOrElse(
+        shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResultIfGood().ifPresentOrElse(
             compiledResult -> {
                 SettingsState state = getState();
                 boolean shortenTemplates = state.getShortenTemplates();
-                List<Range> newHighlighterRanges = new ArrayList<>();
                 StringBuilder asmBuilder = new StringBuilder();
                 int currentOffset = 0;
                 CompiledText.SourceLocation lastChunk = new CompiledText.SourceLocation("", 0);
                 int lastRangeBegin = 0;
-                BiConsumer<CompiledText.SourceLocation, Range> rangeAdder = (source, range) -> {
-                    newHighlighterRanges.add(range);
+                BiConsumer<CompiledText.SourceLocation, TextRange> rangeAdder = (source, range) -> {
+                    highlighterRanges.add(range);
                     locationsFromSourceMap.computeIfAbsent(source, unused -> new ArrayList<>()).add(range);
-                    locationsToSourceMap.put(range.begin, new EndAndSource(range.end, source));
+                    locationsToSourceMap.put(range.getStartOffset(), new EndAndSource(range.getEndOffset(), source));
                 };
                 int[] chunkToOffset = new int[(compiledResult.asm != null ? compiledResult.asm.size() : 0) + 1];
                 int line = 0;
@@ -129,61 +120,67 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
                             String currentChunkFile = chunk.source.file;
                             if ((!currentChunkFile.equals(lastChunk.file)) || (chunk.source.line != lastChunk.line)) {
                                 if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new TextRange(lastRangeBegin, currentOffset - 1));
                                 }
                                 lastRangeBegin = currentOffset;
                                 lastChunk.file = currentChunkFile;
                                 lastChunk.line = chunk.source.line;
                             }
                         } else if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                            rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                            rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new TextRange(lastRangeBegin, currentOffset - 1));
                             lastChunk.file = "";
                         }
                     }
                     currentOffset = asmBuilder.length();
                 }
                 if (lastChunk.file != null && !lastChunk.file.isEmpty()) {
-                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new Range(lastRangeBegin, currentOffset - 1));
+                    rangeAdder.accept(new CompiledText.SourceLocation(lastChunk), new TextRange(lastRangeBegin, currentOffset - 1));
                 }
                 chunkToOffset[compiledResult.asm != null ? compiledResult.asm.size() : 0] = currentOffset;
 
-                List<Pair<String, Range>> labels = new ArrayList<>();
-                if (state.getEnableFolding() && compiledResult.labelDefinitions != null) {
+                List<FoldingRegion> foldingRegions = new ArrayList<>();
+                if (compiledResult.labelDefinitions != null) {
                     List<Pair<Integer, String>> labelEntries = compiledResult.labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
                     for (int i = 0; i < labelEntries.size(); ++i) {
                         Pair<Integer, String> entry = labelEntries.get(i);
                         int beginOffset = chunkToOffset[entry.getFirst() - 1];
                         int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
                         if (beginOffset < endOffset) {
-                            labels.add(new Pair<>(entry.getSecond(), new Range(beginOffset, endOffset)));
+                            foldingRegions.add(new FoldingRegion(new TextRange(beginOffset, endOffset), entry.getSecond(), entry.getSecond()));
                         }
                     }
                 }
 
-                provideAndGetEditor(textConsumer, asmBuilder.toString(), ed -> {
-                    ed.getCaretModel().addCaretListener(new CaretPositionChangeListener(newCaretPosition -> {
-                        if (getState().getAutoscrollToSource()) {
-                            scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
-                        }
-                    }));
-                    ed.getSettings().setLineMarkerAreaShown(true);
-                    setupGutter(ed);
-                    updateGutter(ed);
-                    updateFolding(ed);
-                    ed.getFoldingModel().addListener(foldingChangeListener, DisposableParentProjectService.getInstance(project));
-
-                    MarkupModelEx markupModel = ed.getMarkupModel();
-                    markupModel.removeAllHighlighters();
-                    newHighlighterRanges.forEach(range -> {
-                        RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
-                        highlighter.setLineMarkerRenderer(lineMarkerRenderer);
-                    });
-
-                    addFolding(ed, labels, state.getFoldedLabels());
-                });
+                textAndFoldingConsumer.accept(asmBuilder.toString(), Optional.of(foldingRegions));
             },
-            () -> showExplorerError(compiledText, textConsumer)
-        )), () -> textConsumer.apply("Compiler Explorer was not run"));
+            () -> {
+                if (compiledText.getCanceled()) {
+                    textAndFoldingConsumer.accept("Compiler Explorer was canceled", Optional.empty());
+                } else {
+                    showExplorerError(compiledText, text -> textAndFoldingConsumer.accept(text, Optional.empty()));
+                }
+            }
+        )), () -> textAndFoldingConsumer.accept("Compiler Explorer was not run", Optional.empty()));
+    }
+
+    @Override
+    public void editorCreated(@NotNull EditorEx ed) {
+        ed.getCaretModel().addCaretListener(new CaretPositionChangeListener(newCaretPosition -> {
+            if (getState().getAutoscrollToSource()) {
+                scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
+            }
+        }));
+        ed.getSettings().setLineMarkerAreaShown(true);
+        setupGutter(ed);
+        updateGutter(ed);
+
+        MarkupModelEx markupModel = ed.getMarkupModel();
+        markupModel.removeAllHighlighters();
+        highlighterRanges.forEach(range -> {
+            RangeHighlighterEx highlighter = (RangeHighlighterEx) markupModel.addRangeHighlighter(range.getStartOffset(), range.getEndOffset(), HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+            highlighter.setLineMarkerRenderer(lineMarkerRenderer);
+        });
+        highlighters.clear();
     }
 
     @NotNull
@@ -196,18 +193,20 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     }
 
     private void setupGutter(@NotNull EditorEx ed) {
-        ed.getGutterComponentEx().setPaintBackground(true);
-        ed.getGutterComponentEx().setInitialIconAreaWidth(ed.getLineHeight() / 4);
-        ed.getGutterComponentEx().setGutterPopupGroup(null);
-        ed.getGutterComponentEx().setShowDefaultGutterPopup(false);
-        ed.getGutterComponentEx().setCanCloseAnnotations(false);
-        ed.getGutterComponentEx().addMouseListener(new MousePopupClickListener(
-                (x, y) -> showGutterPopupMenu(ed.getGutterComponentEx(), x, y)
+        EditorGutterComponentEx gutter = ed.getGutterComponentEx();
+        gutter.setPaintBackground(true);
+        gutter.setInitialIconAreaWidth(ed.getLineHeight() / 4);
+        gutter.setGutterPopupGroup(null);
+        gutter.setShowDefaultGutterPopup(false);
+        gutter.setCanCloseAnnotations(false);
+        ed.setContextMenuGroupId(POPUP_ACTIONS_GROUP_ID);
+        gutter.addMouseListener(new MousePopupClickListener(
+                (x, y) -> showGutterPopupMenu(gutter, x, y)
         ));
     }
 
     private void showGutterPopupMenu(Component gutter, int x, int y) {
-        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, gutterActions, gutter, x, y);
+        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, POPUP_ACTIONS, gutter, x, y);
     }
 
     public static void showPopupMenu(@NotNull String place, @NotNull ActionGroup actionsGroup, @NotNull Component component, int x, int y) {
@@ -278,13 +277,6 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         return null;
     }
 
-    @Override
-    public void updateFolding(@NotNull EditorEx ed) {
-        boolean enableFolding = getState().getEnableFolding();
-        ed.getFoldingModel().setFoldingEnabled(enableFolding);
-        ed.getSettings().setFoldingOutlineShown(enableFolding);
-    }
-
     private static void parseOpcodes(@NotNull StringBuilder builder, @NotNull List<String> opcodes) {
         builder.append('#');
         for (String opcode : opcodes) {
@@ -307,33 +299,6 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         return text.indexOf('<') >= 0;
     }
 
-    private void addFolding(@NotNull EditorEx ed, @NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
-        removeObsoleteFoldedLabels(labels, foldedLabels);
-        FoldingModelEx foldingModel = ed.getFoldingModel();
-        foldingModel.runBatchFoldingOperation(() -> withFoldingUpdatesSuppressed(() -> {
-            foldingModel.clearFoldRegions();
-            for (Pair<String, Range> label : labels) {
-                @Nullable FoldRegion region = foldingModel.addFoldRegion(label.getSecond().begin, label.getSecond().end, label.getFirst());
-                if (region != null) {
-                    region.setExpanded(!state.containsFoldedLabel(label.getFirst()));
-                }
-            }
-        }));
-    }
-
-    private void removeObsoleteFoldedLabels(@NotNull List<Pair<String, Range>> labels, @NotNull Set<String> foldedLabels) {
-        Set<String> existingLabels = labels.stream().map(p -> p.getFirst()).collect(Collectors.toSet());
-        foldedLabels.stream().filter(l -> !existingLabels.contains(l)).collect(Collectors.toSet()).forEach(state::removeFoldedLabel);
-    }
-
-    private void unlessFoldingUpdatesSuppressed(Runnable runnable) {
-        suppressFoldingUpdates.unlessApplied(runnable);
-    }
-
-    private void withFoldingUpdatesSuppressed(Runnable runnable) {
-        suppressFoldingUpdates.apply(runnable);
-    }
-
     @Override
     public void highlightLocations(@NotNull EditorEx ed, @NotNull List<CompiledText.SourceLocation> highlightedLocations) {
         ApplicationManager.getApplication().assertIsDispatchThread();
@@ -345,10 +310,10 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         }
         highlighters.clear();
         for (CompiledText.SourceLocation location : highlightedLocations) {
-            List<Range> ranges = locationsFromSourceMap.get(location);
+            List<TextRange> ranges = locationsFromSourceMap.get(location);
             if (ranges != null) {
-                for (Range range : ranges) {
-                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(Constants.HIGHLIGHT_COLOR, range.begin, range.end, HighlighterLayer.ADDITIONAL_SYNTAX, HighlighterTargetArea.LINES_IN_RANGE);
+                for (TextRange range : ranges) {
+                    RangeHighlighter highlighter = markupModel.addRangeHighlighter(Constants.HIGHLIGHT_COLOR, range.getStartOffset(), range.getEndOffset(), HighlighterLayer.ADDITIONAL_SYNTAX, HighlighterTargetArea.LINES_IN_RANGE);
                     highlighters.add(highlighter);
                 }
             }
@@ -372,7 +337,7 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
 
     @Override
     @NotNull
-    public List<Range> getRangesForLocation(@NotNull CompiledText.SourceLocation location) {
+    public List<TextRange> getRangesForLocation(@NotNull CompiledText.SourceLocation location) {
         return locationsFromSourceMap.getOrDefault(location, super.getRangesForLocation(location));
     }
 }

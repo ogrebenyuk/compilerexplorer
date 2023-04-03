@@ -5,16 +5,18 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
 import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SelectedSource;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.lang.OCFileType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilProvider {
+    @NotNull
+    private static final String DEFAULT_PREPROCESSED_TEXT_EXTENSION = "ii";
+
     private final boolean showWhenSourcePresent;
     @NotNull
     private final BiFunction<PreprocessedSource, CompilerResult.Output, String> textProducer;
@@ -27,15 +29,20 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
-        data.get(PreprocessedSource.KEY).ifPresentOrElse(preprocessedSource ->
-                preprocessedSource.getResult().ifPresentOrElse(
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
+        data.get(PreprocessedSource.KEY).ifPresentOrElse(preprocessedSource -> {
+                if (!preprocessedSource.getCanceled()) {
+                    preprocessedSource.getResult().ifPresentOrElse(
                         result -> result.getOutput().ifPresent(
-                                output -> textConsumer.apply(textProducer.apply(preprocessedSource, output))
+                            output -> textConsumer.accept(textProducer.apply(preprocessedSource, output))
                         ),
-                        () -> textConsumer.apply("Preprocessor was not run because local preprocessing is disabled")
-                ),
-                () -> textConsumer.apply("Preprocessor was not run")
+                        () -> textConsumer.accept("Preprocessor was not run because local preprocessing is disabled")
+                    );
+                } else {
+                    textConsumer.accept("Preprocessor was canceled");
+                }
+            },
+            () -> textConsumer.accept("Preprocessor was not run")
         );
     }
 
@@ -46,8 +53,14 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
 
     @Override
     protected boolean shouldShowError(@NotNull DataHolder data) {
-        return showWhenSourcePresent ? data.get(PreprocessedSource.KEY).map(BasePreprocessorTabProvider::producedNoResult).orElse(true)
+        return showWhenSourcePresent ? data.get(PreprocessedSource.KEY).map(ps -> producedNoResult(ps) || ps.getResult().flatMap(CompilerResult::getOutput).isEmpty()).orElse(true)
                                      : data.get(PreprocessedSource.KEY).flatMap(PreprocessedSource::getResult).flatMap(CompilerResult::getOutput).isEmpty();
+    }
+
+    @Override
+    @NotNull
+    public String defaultExtension(@NotNull DataHolder data) {
+        return getFileType(data) == PlainTextFileType.INSTANCE ? super.defaultExtension(data) : DEFAULT_PREPROCESSED_TEXT_EXTENSION;
     }
 
     private static boolean preprocessorShouldHaveRun(@NotNull DataHolder data) {

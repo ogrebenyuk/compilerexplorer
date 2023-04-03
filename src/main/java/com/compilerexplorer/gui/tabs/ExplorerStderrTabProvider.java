@@ -2,12 +2,11 @@ package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public class ExplorerStderrTabProvider extends BaseExplorerUtilProvider {
     public ExplorerStderrTabProvider(@NotNull Project project) {
@@ -25,11 +24,11 @@ public class ExplorerStderrTabProvider extends BaseExplorerUtilProvider {
     }
 
     @Override
-    public void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
         compiledResult(data).ifPresentOrElse(compiledResult -> {
             if (hasText(compiledResult.stderr)) {
-                textConsumer.apply(getTextFromChunks(compiledResult.stderr));
+                textConsumer.accept(getTextFromChunks(compiledResult.stderr));
             }
-        }, () -> textConsumer.apply("Compiler Explorer was not run"));
+        }, () -> textConsumer.accept("Compiler Explorer did not produce output"));
     }
 }

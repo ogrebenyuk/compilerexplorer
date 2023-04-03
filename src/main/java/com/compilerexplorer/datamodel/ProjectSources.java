@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Vector;
 
-public class ProjectSources implements Visitable {
+public class ProjectSources {
     public static final Key<ProjectSources> KEY = Key.create(ProjectSources.class.getName());
 
     @NotNull
@@ -19,11 +19,6 @@ public class ProjectSources implements Visitable {
     @NotNull
     public List<SourceSettings> getSources() {
         return sources;
-    }
-
-    @Override
-    public void accept(@NotNull Visitor visitor) {
-        visitor.visit(this);
     }
 
     @Override

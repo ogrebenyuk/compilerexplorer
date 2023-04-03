@@ -5,19 +5,26 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.util.TextRange;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.function.Function;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 
 public interface TabProvider {
-    class Range {
-        public final int begin;
-        public final int end;
+    class FoldingRegion {
+        @NotNull
+        public final TextRange range;
+        @NotNull
+        public final String label;
+        @NotNull
+        public final String placeholderText;
 
-        Range(int begin_, int end_) {
-            begin = begin_;
-            end = end_;
+        public FoldingRegion(@NotNull TextRange range_, @NotNull String label_, @NotNull String placeholderText_) {
+            range = range_;
+            label = label_;
+            placeholderText = placeholderText_;
         }
     }
 
@@ -34,16 +41,21 @@ public interface TabProvider {
 
     boolean isError(@NotNull DataHolder data);
 
-    void provide(@NotNull DataHolder data, @NotNull Function<String, EditorEx> textConsumer);
+    void provide(@NotNull DataHolder data, @NotNull BiConsumer<String, Optional<List<FoldingRegion>>> textAndFoldingConsumer);
 
     void highlightLocations(@NotNull EditorEx ed, @NotNull List<CompiledText.SourceLocation> highlightedLocations);
 
     @NotNull
-    List<Range> getRangesForLocation(@NotNull CompiledText.SourceLocation location);
+    List<TextRange> getRangesForLocation(@NotNull CompiledText.SourceLocation location);
+
+    void editorCreated(@NotNull EditorEx ed);
 
     void updateGutter(@NotNull EditorEx ed);
 
-    void updateFolding(@NotNull EditorEx ed);
-
     void applyThemeColors();
+
+    boolean isSourceSpecific();
+
+    @NotNull
+    String defaultExtension(@NotNull DataHolder data);
 }

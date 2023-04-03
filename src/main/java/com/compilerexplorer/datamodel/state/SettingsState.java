@@ -5,9 +5,11 @@ import com.compilerexplorer.common.Tabs;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
+import java.io.Serializable;
 import java.util.*;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
@@ -78,9 +80,20 @@ public class SettingsState {
     private boolean showOpcodes = true;
     @Property
     private boolean enableFolding = false;
+    private static class FileTabPair implements Serializable {
+        @NotNull @Property final String file;
+        @NotNull @Property final Tabs tab;
+        FileTabPair() {file = ""; tab = Tabs.EVERYTHING;}
+        FileTabPair(@NotNull String file_, @NotNull Tabs tab_) {file = file_; tab = tab_;}
+        @Override public int hashCode() {return file.hashCode() + tab.hashCode();}
+        @Override public boolean equals(Object obj) {
+            if (!(obj instanceof FileTabPair other)) return false;
+            return file.equals(other.file) && tab.equals(other.tab);
+        }
+    }
     @NotNull
     @Property
-    private Set<String> foldedLabels = new HashSet<>();
+    private Map<FileTabPair, Set<String>> fileTabFoldedLabels = new HashMap<>();
     @Property
     private int highlightColorRGB = NO_SAVED_COLOR;
     @Property
@@ -91,6 +104,11 @@ public class SettingsState {
     private boolean showAllTabs = false;
     @Property
     private Map<Tabs, Integer> scrollPositions = new HashMap<>();
+    @Property
+    private Map<Tabs, Integer> scrollPositionsError = new HashMap<>();
+    @NotNull
+    @Property
+    private Tabs lastOpenTab = Tabs.EXPLORER_OUTPUT;
     @Property
     private boolean initialNoticeShown = false;
 
@@ -306,24 +324,46 @@ public class SettingsState {
     }
 
     @NotNull
-    synchronized public Set<String> getFoldedLabels() {
-        return new HashSet<>(foldedLabels);
+    synchronized public Map<FileTabPair, Set<String>> getFoldedLabels() {
+        Map<FileTabPair, Set<String>> copy = new HashMap<>();
+        fileTabFoldedLabels.forEach((key, value) -> copy.put(new FileTabPair(key.file, key.tab), new HashSet<>(value)));
+        return copy;
     }
 
-    synchronized public void setFoldedLabels(@NotNull Set<String> foldedLabels_) {
-        foldedLabels = new HashSet<>(foldedLabels_);
+    synchronized public void setFoldedLabels(@NotNull Map<FileTabPair, Set<String>> foldedLabels_) {
+        fileTabFoldedLabels = new HashMap<>();
+        foldedLabels_.forEach((key, value) -> fileTabFoldedLabels.put(new FileTabPair(key.file, key.tab), new HashSet<>(value)));
     }
 
-    synchronized public void addFoldedLabel(@NotNull String label) {
-        foldedLabels.add(label);
+    @Nullable
+    synchronized public Set<String> findFoldedLabels(@NotNull String file, @NotNull Tabs tab) {
+        @Nullable Set<String> labels = fileTabFoldedLabels.get(new FileTabPair(file, tab));
+        return labels != null ? new HashSet<>(labels) : null;
     }
 
-    synchronized public void removeFoldedLabel(@NotNull String label) {
-        foldedLabels.remove(label);
+    synchronized public void clearFoldedLabels(@NotNull String file, @NotNull Tabs tab) {
+        fileTabFoldedLabels.remove(new FileTabPair(file, tab));
     }
 
-    synchronized public boolean containsFoldedLabel(@NotNull String label) {
-        return foldedLabels.contains(label);
+    synchronized public void addFoldedLabel(@NotNull String file, @NotNull Tabs tab, @NotNull String label) {
+        FileTabPair key = new FileTabPair(file, tab);
+        @Nullable Set<String> labels = fileTabFoldedLabels.get(key);
+        if (labels != null) {
+            labels.add(label);
+        } else {
+            fileTabFoldedLabels.put(key, new HashSet<>(List.of(label)));
+        }
+    }
+
+    synchronized public void removeFoldedLabel(@NotNull String file, @NotNull Tabs tab, @NotNull String label) {
+        FileTabPair key = new FileTabPair(file, tab);
+        @Nullable Set<String> labels = fileTabFoldedLabels.get(key);
+        if (labels != null) {
+            labels.remove(label);
+            if (labels.isEmpty()) {
+                fileTabFoldedLabels.remove(key);
+            }
+        }
     }
 
     synchronized public int getHighlightColorRGB() {
@@ -371,6 +411,28 @@ public class SettingsState {
         scrollPositions.put(tab, position);
     }
 
+    @NotNull
+    synchronized public Map<Tabs, Integer> getScrollPositionsError() {
+        return new HashMap<>(scrollPositionsError);
+    }
+
+    synchronized public void setScrollPositionsError(@NotNull Map<Tabs, Integer> scrollPositionsError_) {
+        scrollPositionsError = new HashMap<>(scrollPositionsError_);
+    }
+
+    synchronized public void addToScrollPositionsError(@NotNull Tabs tab, int position) {
+        scrollPositionsError.put(tab, position);
+    }
+
+    @NotNull
+    synchronized public Tabs getLastOpenTab() {
+        return lastOpenTab;
+    }
+
+    synchronized public void setLastOpenTab(@NotNull Tabs tab) {
+        lastOpenTab = tab;
+    }
+
     synchronized public boolean getInitialNoticeShown() {
         return initialNoticeShown;
     }
@@ -406,6 +468,8 @@ public class SettingsState {
         setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
         setShowAllTabs(other.getShowAllTabs());
         setScrollPositions(other.getScrollPositions());
+        setScrollPositionsError(other.getScrollPositionsError());
+        setLastOpenTab(other.getLastOpenTab());
         setInitialNoticeShown(other.getInitialNoticeShown());
     }
 
@@ -437,6 +501,8 @@ public class SettingsState {
                 + getCompilerTimeoutMillis()
                 + (getShowAllTabs() ? 1 : 0)
                 + getScrollPositions().hashCode()
+                + getScrollPositionsError().hashCode()
+                + getLastOpenTab().hashCode()
                 + (getInitialNoticeShown() ? 1 : 0)
         ;
     }
@@ -472,6 +538,8 @@ public class SettingsState {
                 && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()
                 && getShowAllTabs() == other.getShowAllTabs()
                 && getScrollPositions().equals(other.getScrollPositions())
+                && getScrollPositionsError().equals(other.getScrollPositionsError())
+                && getLastOpenTab().equals(other.getLastOpenTab())
                 && getInitialNoticeShown() == other.getInitialNoticeShown()
         ;
     }
