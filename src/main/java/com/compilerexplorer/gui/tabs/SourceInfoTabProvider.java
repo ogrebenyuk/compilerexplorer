@@ -4,7 +4,6 @@ import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.SelectedSource;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.datamodel.SourceSettings;
 import com.compilerexplorer.datamodel.json.JsonSerializationVisitor;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

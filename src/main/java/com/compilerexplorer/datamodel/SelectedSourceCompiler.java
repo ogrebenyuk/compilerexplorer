@@ -13,7 +13,7 @@ public class SelectedSourceCompiler {
 
     private final boolean cached;
     private final boolean canceled;
-    private boolean isSupportedCompilerType;
+    private final boolean isSupportedCompilerType;
     @Nullable
     private final CompilerResult result;
     @Nullable

@@ -1,6 +1,5 @@
 package com.compilerexplorer.common.component;
 
-import com.compilerexplorer.gui.EditorGui;
 import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

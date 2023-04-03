@@ -30,8 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static java.lang.Thread.sleep;
-
 public class RemoteCompilersProducer extends BaseRefreshableComponent {
     private static final Logger LOG = Logger.getInstance(RemoteCompilersProducer.class);
 

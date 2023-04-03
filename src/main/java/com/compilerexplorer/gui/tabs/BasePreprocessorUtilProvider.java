@@ -3,16 +3,9 @@ package com.compilerexplorer.gui.tabs;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
-import com.compilerexplorer.datamodel.SelectedSourceCompiler;
-import com.intellij.json.JsonFileType;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 public abstract class BasePreprocessorUtilProvider extends BaseTabProvider {
     private final boolean showError;

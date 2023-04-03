@@ -2,7 +2,6 @@ package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.Constants;
 import com.google.common.collect.ImmutableMap;
-import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.AttributesDescriptor;

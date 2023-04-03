@@ -5,8 +5,6 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
 import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SelectedSource;
-import com.compilerexplorer.datamodel.SelectedSourceCompiler;
-import com.intellij.json.JsonFileType;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;

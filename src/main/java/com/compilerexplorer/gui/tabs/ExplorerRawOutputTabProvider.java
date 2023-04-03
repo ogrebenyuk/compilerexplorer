@@ -2,7 +2,6 @@ package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
-import com.compilerexplorer.datamodel.CompiledText;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;

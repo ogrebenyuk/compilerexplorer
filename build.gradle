@@ -5,10 +5,12 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '1.21'
+version '2.0'
 
 patchPluginXml {
     changeNotes = """
+        2.0:<br/>
+        Added editor tabs that show varios stages of the compilation pipeline.<br/>
         Added the ability to show line numbers and byte offsets.<br/>
         Updated tool window icons to conform to IntelliJ UI guidelines.<br/>
         Moved highlight color setting to editor color scheme.<br/>
