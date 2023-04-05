@@ -7,11 +7,13 @@ import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.project.oc.OCProjectSettingsProducer;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Supplier;
 
 public class ProjectListener extends BaseLinkedComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(ProjectListener.class);
 
     @NotNull

@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
@@ -36,15 +37,15 @@ public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
                             if (expectExecResult()) {
                                 showExplorerError(compiledText, textConsumer);
                             } else {
-                                textConsumer.accept("Compiler Explorer was not asked to execute the code");
+                                textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Disabled"));
                             }
                         }
                     );
                 } else {
-                    textConsumer.accept("Compiler Explorer was canceled");
+                    textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Canceled"));
                 }
             },
-            () -> textConsumer.accept("Compiler Explorer was not run")
+            () -> textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"))
         );
     }
 

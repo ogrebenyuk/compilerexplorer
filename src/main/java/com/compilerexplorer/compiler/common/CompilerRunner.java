@@ -2,6 +2,7 @@ package com.compilerexplorer.compiler.common;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.jetbrains.cidr.execution.CidrRunProcessUtil;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -19,7 +20,7 @@ public class CompilerRunner {
     private final String stderr;
     private final int exitCode;
 
-    public CompilerRunner(@NotNull HostMachine host, @NotNull String[] commandArray, @Nullable File workingDir, @NotNull String stdin, @NotNull ProgressIndicator progressIndicator, int compilerTimeoutMillis) {
+    public CompilerRunner(@NotNull HostMachine host, @NotNull String @NonNls @NotNull [] commandArray, @Nullable File workingDir, @NonNls @NotNull String stdin, @NotNull ProgressIndicator progressIndicator, int compilerTimeoutMillis) {
         ProcessOutput output;
         try {
             GeneralCommandLine cl = new GeneralCommandLine();
@@ -60,11 +61,13 @@ public class CompilerRunner {
         exitCode = output.isExitCodeSet() ? output.getExitCode() : 0;
     }
 
+    @NonNls
     @NotNull
     public String getStdout() {
         return stdout;
     }
 
+    @NonNls
     @NotNull
     public String getStderr() {
         return stderr;

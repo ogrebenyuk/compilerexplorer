@@ -5,10 +5,12 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.colors.EditorColorsListener;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EditorColorsThemeChangeListener implements EditorColorsListener {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(EditorColorsThemeChangeListener.class);
 
     @NotNull

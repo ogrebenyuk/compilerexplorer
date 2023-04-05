@@ -1,7 +1,9 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.LaterConsumerUnlessSuppressed;
 import com.compilerexplorer.common.SuppressionFlag;
+import com.compilerexplorer.common.TooltipUtil;
 import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
@@ -16,6 +18,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.SimpleListCellRenderer;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,6 +32,7 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 
 public class MatchesGui extends BaseComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(MatchesGui.class);
 
     @NotNull
@@ -51,7 +56,9 @@ public class MatchesGui extends BaseComponent {
             }
             @NotNull
             private String getText(@NotNull CompilerMatch value) {
-                return value.getRemoteCompilerInfo().getName() + (value.getCompilerMatchKind() != CompilerMatchKind.NO_MATCH ? " (" + CompilerMatchKind.asString(value.getCompilerMatchKind()) + ")" : "");
+                return value.getCompilerMatchKind() != CompilerMatchKind.NO_MATCH
+                        ? Bundle.format("compilerexplorer.MatchesGui.TextWithMatch", "Name", value.getRemoteCompilerInfo().getName(), "MatchKind", CompilerMatchKind.asString(value.getCompilerMatchKind()))
+                        : value.getRemoteCompilerInfo().getName();
             }
         });
     }
@@ -116,23 +123,24 @@ public class MatchesGui extends BaseComponent {
         comboBox.setEnabled(model.getSize() > 0);
     }
 
+    @Nls
     @NotNull
     private String getMatchTooltip(@NotNull CompilerMatch compilerMatch) {
-        return "Id: " + compilerMatch.getRemoteCompilerInfo().getId()
-                + "<br/>Language: " + compilerMatch.getRemoteCompilerInfo().getLanguage()
-                + "<br/>Name: " + compilerMatch.getRemoteCompilerInfo().getName()
-                + "<br/>Version: " + compilerMatch.getRemoteCompilerInfo().getVersion()
-                + "<br/>Match kind: " + CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind())
-                + "<br/>Raw data: " + prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData());
+        return TooltipUtil.prettify(Bundle.format("compilerexplorer.MatchesGui.Tooltip",
+                "Id", compilerMatch.getRemoteCompilerInfo().getId(),
+                "Language", compilerMatch.getRemoteCompilerInfo().getId(),
+                "Name", compilerMatch.getRemoteCompilerInfo().getName(),
+                "Version", compilerMatch.getRemoteCompilerInfo().getVersion(),
+                "MatchKind", CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind()),
+                "RawData", prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData())));
     }
 
+    @NonNls
     @NotNull
-    private static String prettifyJson(@NotNull String uglyJson) {
+    private static String prettifyJson(@NonNls @NotNull String uglyJson) {
         return JsonSerializer
                 .createSerializer()
-                .toJson(JsonParser.parseString(uglyJson))
-                .replaceAll("\n", "<br/>")
-                .replaceAll("  ", "&nbsp;&nbsp;&nbsp;&nbsp;");
+                .toJson(JsonParser.parseString(uglyJson));
     }
 
     private void selectCompilerMatch(@NotNull DataHolder data, @NotNull SourceRemoteMatched sourceRemoteMatched, @Nullable CompilerMatch compilerMatch, boolean needRefreshNext) {

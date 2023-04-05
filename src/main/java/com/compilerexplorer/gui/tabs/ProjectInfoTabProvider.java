@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.ProjectSources;
@@ -35,7 +36,7 @@ public class ProjectInfoTabProvider extends BaseTabProvider {
     public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
         sources(data).ifPresentOrElse(
                 sources -> textConsumer.accept(JsonSerializer.createSerializer().toJson(sources)),
-                () -> textConsumer.accept("No sources found")
+                () -> textConsumer.accept(Bundle.get("compilerexplorer.ProjectInfoTabProvider.NoSources"))
         );
     }
 

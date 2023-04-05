@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
@@ -8,12 +9,14 @@ import com.compilerexplorer.datamodel.SelectedSource;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.jetbrains.cidr.lang.OCFileType;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilProvider {
+    @NonNls
     @NotNull
     private static final String DEFAULT_PREPROCESSED_TEXT_EXTENSION = "ii";
 
@@ -21,7 +24,7 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
     @NotNull
     private final BiFunction<PreprocessedSource, CompilerResult.Output, String> textProducer;
 
-    public BasePreprocessorTabProvider(@NotNull Project project, @NotNull Tabs tab, @NotNull String actionId, boolean isCpp, boolean showWhenSourcePresent_,
+    public BasePreprocessorTabProvider(@NotNull Project project, @NotNull Tabs tab, @NonNls @NotNull String actionId, boolean isCpp, boolean showWhenSourcePresent_,
                                        @NotNull BiFunction<PreprocessedSource, CompilerResult.Output, String> textProducer_) {
         super(project, tab, actionId, isCpp ? OCFileType.INSTANCE : PlainTextFileType.INSTANCE, false);
         showWhenSourcePresent = showWhenSourcePresent_;
@@ -36,13 +39,13 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
                         result -> result.getOutput().ifPresent(
                             output -> textConsumer.accept(textProducer.apply(preprocessedSource, output))
                         ),
-                        () -> textConsumer.accept("Preprocessor was not run because local preprocessing is disabled")
+                        () -> textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Disabled"))
                     );
                 } else {
-                    textConsumer.accept("Preprocessor was canceled");
+                    textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Canceled"));
                 }
             },
-            () -> textConsumer.accept("Preprocessor was not run")
+            () -> textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorTabProvider.WasNotRun"))
         );
     }
 
@@ -58,6 +61,7 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
     }
 
     @Override
+    @NonNls
     @NotNull
     public String defaultExtension(@NotNull DataHolder data) {
         return getFileType(data) == PlainTextFileType.INSTANCE ? super.defaultExtension(data) : DEFAULT_PREPROCESSED_TEXT_EXTENSION;

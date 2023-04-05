@@ -22,6 +22,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -33,7 +34,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class RemoteCompiler extends BaseRefreshableComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(RemoteCompiler.class);
+    @NonNls
+    @NotNull
+    private static final String COMPILER_API_ROOT = "/api/compiler/";
+    @NonNls
+    @NotNull
+    private static final String COMPILE_ENDPOINT = "/compile";
+    @NonNls
+    @NotNull
+    private static final String ACCEPT_HEADER = "accept";
+    @NonNls
+    @NotNull
+    private static final String JSON_MIME_TYPE = "application/json";
+    @NonNls
+    @NotNull
+    private static final String LOCATION_HEADER = "Location";
 
     @NotNull
     private final Project project;
@@ -69,7 +86,7 @@ public class RemoteCompiler extends BaseRefreshableComponent {
         data.get(PreprocessedSource.KEY).flatMap(PreprocessedSource::getPreprocessedText).ifPresentOrElse(preprocessedText -> {
             SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
             needRefreshNext = false;
-            taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": compiling " + selectedSource.getSelectedSource().sourceName) {
+            taskRunner.runTask(new Task.Backgroundable(project, Bundle.format("compilerexplorer.RemoteCompiler.TaskTitle", "Source", selectedSource.getSelectedSource().sourceName)) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     boolean canceled = false;
@@ -82,12 +99,12 @@ public class RemoteCompiler extends BaseRefreshableComponent {
                     Filters filters = state.getFilters();
                     String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches());
                     String remoteCompilerId = selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getId();
-                    String endpoint = url + "/api/compiler/" + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + "/compile";
+                    String endpoint = url + COMPILER_API_ROOT + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + COMPILE_ENDPOINT;
                     try {
                         CloseableHttpClient httpClient = HttpClients.createDefault();
 
                         HttpPost postRequest = new HttpPost(endpoint);
-                        postRequest.addHeader("accept", "application/json");
+                        postRequest.addHeader(ACCEPT_HEADER, JSON_MIME_TYPE);
 
                         Gson gson = new Gson();
 
@@ -112,7 +129,7 @@ public class RemoteCompiler extends BaseRefreshableComponent {
 
                                     boolean isRedirected = responses[0].getStatusLine().getStatusCode() / 100 == 3;
                                     if (isRedirected) {
-                                        Header[] headers = responses[0].getHeaders("Location");
+                                        Header[] headers = responses[0].getHeaders(LOCATION_HEADER);
                                         if (headers != null && headers.length > 0) {
                                             postRequest.setURI(new URI(headers[0].getValue()));
                                             continue;

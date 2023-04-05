@@ -16,6 +16,8 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +29,23 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class SourcePreprocessor extends BaseRefreshableComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(SourcePreprocessor.class);
+    @NonNls
+    @NonNull
+    private static final String PREPROCESS_FLAG = "-E";
+    @NonNls
+    @NonNull
+    private static final String OUTPUT_FLAG = "-o";
+    @NonNls
+    @NonNull
+    private static final String COMPILE_FLAG = "-c";
+    @NonNls
+    @NonNull
+    private static final String INCLUDE_FLAG = "-I";
+    @NonNls
+    @NonNull
+    private static final String TERMINAL_INDICATOR = "-";
 
     @NotNull
     private final Project project;
@@ -60,10 +78,10 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
             @Nullable Document document = virtualFile != null ? FileDocumentManager.getInstance().getDocument(virtualFile) : null;
             @Nullable String content = document != null ? document.getText() : null;
             if (content != null) {
-                String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + content;
+                @NonNls String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + content;
                 if (state.getPreprocessLocally()) {
                     needRefreshNext = false;
-                    taskRunner.runTask(new Task.Backgroundable(project, "Preprocessing " + sourceSettings.sourceName) {
+                    taskRunner.runTask(new Task.Backgroundable(project, Bundle.format("compilerexplorer.SourcePreprocessor.TaskTitle", "Source", sourceSettings.sourceName)) {
                         @Override
                         public void run(@NotNull ProgressIndicator indicator) {
                             boolean canceled = false;
@@ -113,7 +131,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
     }
 
     @NotNull
-    private static String[] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NotNull String additionalSwitches, @NotNull String ignoreSwitches) {
+    private static String @NonNls @NotNull [] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NonNls @NotNull String additionalSwitches, @NonNls @NotNull String ignoreSwitches) {
         return Stream.concat(
                 Stream.concat(
                         Stream.concat(
@@ -121,7 +139,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                                     Stream.of(
                                             Paths.get(sourceSettings.sourcePath).getParent().toString(),
                                             project.getBasePath() != null ? project.getBasePath() : null
-                                    ).filter(Objects::nonNull).distinct().map(path -> PathNormalizer.resolvePathFromLocalToCompilerHost(path, sourceSettings.host)).map(path -> "-I" + path)
+                                    ).filter(Objects::nonNull).distinct().map(path -> PathNormalizer.resolvePathFromLocalToCompilerHost(path, sourceSettings.host)).map(path -> INCLUDE_FLAG + path)
                                 ),
                                 Stream.concat(
                                         sourceSettings.switches.stream(),
@@ -131,10 +149,10 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                         Arrays.stream(additionalSwitches.split(" "))
                 ).filter(x -> !Arrays.asList(ignoreSwitches.split(" ")).contains(x)),
                 Stream.of(
-                        "-E",
-                        "-o", "-",
+                        PREPROCESS_FLAG,
+                        OUTPUT_FLAG, TERMINAL_INDICATOR,
                         sourceSettings.languageSwitch,
-                        "-c", "-"
+                        COMPILE_FLAG, TERMINAL_INDICATOR
                 )
         ).filter(s -> !s.isEmpty()).toArray(String[]::new);
     }

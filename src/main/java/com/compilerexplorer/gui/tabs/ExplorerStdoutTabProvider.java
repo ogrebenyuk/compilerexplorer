@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
@@ -29,6 +30,6 @@ public class ExplorerStdoutTabProvider extends BaseExplorerUtilProvider {
             if (hasText(compiledResult.stdout)) {
                 textConsumer.accept(getTextFromChunks(compiledResult.stdout));
             }
-        }, () -> textConsumer.accept("Compiler Explorer did not produce output"));
+        }, () -> textConsumer.accept(Bundle.get("compilerexplorer.ExplorerStdoutTabProvider.NoOutput")));
     }
 }

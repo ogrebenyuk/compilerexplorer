@@ -3,41 +3,73 @@ package com.compilerexplorer.datamodel.state;
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NonNls;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Filters {
+    @NonNls
+    @NotNull
+    private static final String BINARY_FIELD = "binary";
+    @NonNls
+    @NotNull
+    private static final String BINARY_OBJECT_FIELD = "binaryObject";
+    @NonNls
+    @NotNull
+    private static final String EXECUTE_FIELD = "execute";
+    @NonNls
+    @NotNull
+    private static final String LABELS_FIELD = "labels";
+    @NonNls
+    @NotNull
+    private static final String LIBRARY_CODE_FIELD = "libraryCode";
+    @NonNls
+    @NotNull
+    private static final String DIRECTIVES_FIELD = "directives";
+    @NonNls
+    @NotNull
+    private static final String COMMENT_ONLY_FIELD = "commentOnly";
+    @NonNls
+    @NotNull
+    private static final String TRIM_FIELD = "trim";
+    @NonNls
+    @NotNull
+    private static final String INTEL_FIELD = "intel";
+    @NonNls
+    @NotNull
+    private static final String DEMANGLE_FIELD = "demangle";
+
     @Property
-    @SerializedName("binary")
+    @SerializedName(BINARY_FIELD)
     private boolean binary = false;
     @Property
-    @SerializedName("binaryObject")
+    @SerializedName(BINARY_OBJECT_FIELD)
     private boolean binaryObject = false;
     @Property
-    @SerializedName("execute")
+    @SerializedName(EXECUTE_FIELD)
     private boolean execute = false;
     @Property
-    @SerializedName("labels")
+    @SerializedName(LABELS_FIELD)
     private boolean labels = true;
     @Property
-    @SerializedName("libraryCode")
+    @SerializedName(LIBRARY_CODE_FIELD)
     private boolean libraryCode = false;
     @Property
-    @SerializedName("directives")
+    @SerializedName(DIRECTIVES_FIELD)
     private boolean directives = true;
     @Property
-    @SerializedName("commentOnly")
+    @SerializedName(COMMENT_ONLY_FIELD)
     private boolean commentOnly = true;
     @Property
-    @SerializedName("trim")
+    @SerializedName(TRIM_FIELD)
     private boolean trim = false;
     @Property
-    @SerializedName("intel")
+    @SerializedName(INTEL_FIELD)
     private boolean intel = true;
     @Property
-    @SerializedName("demangle")
+    @SerializedName(DEMANGLE_FIELD)
     private boolean demangle = false;
 
     Filters() {

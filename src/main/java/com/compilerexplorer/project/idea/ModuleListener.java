@@ -5,11 +5,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.Function;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 public class ModuleListener implements com.intellij.openapi.project.ModuleListener {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(ModuleListener.class);
 
     public ModuleListener(@NotNull Project project) {

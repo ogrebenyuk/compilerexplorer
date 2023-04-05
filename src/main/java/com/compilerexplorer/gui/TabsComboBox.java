@@ -3,6 +3,7 @@ package com.compilerexplorer.gui;
 import com.compilerexplorer.common.ActionUtil;
 import com.compilerexplorer.common.SuppressionFlag;
 import com.compilerexplorer.common.Tabs;
+import com.compilerexplorer.common.TooltipUtil;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.ui.ComboBox;
@@ -37,7 +38,7 @@ public class TabsComboBox extends ComboBox<AnAction> {
                 if (value != null) {
                     Presentation presentation = createPresentation(value);
                     setText(presentation.getText());
-                    setToolTipText(presentation.getDescription());
+                    setToolTipText(TooltipUtil.prettify(presentation.getDescription()));
                     setIcon(presentation.getIcon());
                 }
                 setBorder(JBUI.Borders.empty());

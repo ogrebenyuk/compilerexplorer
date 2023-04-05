@@ -4,9 +4,11 @@ import com.compilerexplorer.Pipeline;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public class RunManagerListener implements com.intellij.execution.RunManagerListener {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(RunManagerListener.class);
 
     @NotNull

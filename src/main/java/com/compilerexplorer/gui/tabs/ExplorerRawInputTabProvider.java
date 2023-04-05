@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.intellij.json.JsonFileType;
@@ -27,7 +28,7 @@ public class ExplorerRawInputTabProvider extends BaseExplorerUtilProvider {
     public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
         compiledText(data).ifPresentOrElse(
                 compiledText -> textConsumer.accept(compiledText.getRawInput()),
-                () -> textConsumer.accept("Compiler Explorer was not run")
+                () -> textConsumer.accept(Bundle.get("compilerexplorer.ExplorerRawInputTabProvider.WasNotRun"))
         );
     }
 }

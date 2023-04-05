@@ -2,6 +2,7 @@ package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
 import com.intellij.util.xmlb.annotations.Property;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,22 +11,39 @@ import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class RemoteCompilerInfo {
+    @NonNls
+    @NotNull
+    private static final String ID_FIELD = "id";
+    @NonNls
+    @NotNull
+    private static final String NAME_FIELD = "name";
+    @NonNls
+    @NotNull
+    private static final String LANG_FIELD = "lang";
+    @NonNls
+    @NotNull
+    private static final String SEMVER_FIELD = "semver";
+    @NonNls
+    @NotNull
+    public static final String RAW_DATA_FIELD = "rawData";
+
     @Nullable
     @Property
-    @SerializedName("id")
+    @SerializedName(ID_FIELD)
     private String id = "";
     @Nullable
     @Property
-    @SerializedName("name")
+    @SerializedName(NAME_FIELD)
     private String name = "";
     @Nullable
     @Property
-    @SerializedName("lang")
+    @SerializedName(LANG_FIELD)
     private String language = "";
     @Nullable
     @Property
-    @SerializedName("semver")
+    @SerializedName(SEMVER_FIELD)
     private String version = "";
+
     @NotNull
     private String rawData = "";
 

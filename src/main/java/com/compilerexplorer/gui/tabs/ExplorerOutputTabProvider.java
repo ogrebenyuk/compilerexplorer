@@ -28,6 +28,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +49,7 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         }
     }
 
+    @NonNls
     @NotNull
     private static final String POPUP_ACTIONS_GROUP_ID = "compilerexplorer.ExplorerOutputEditorPopupGroup";
     @NotNull
@@ -155,12 +157,12 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
             },
             () -> {
                 if (compiledText.getCanceled()) {
-                    textAndFoldingConsumer.accept("Compiler Explorer was canceled", Optional.empty());
+                    textAndFoldingConsumer.accept(Bundle.get("compilerexplorer.ExplorerOutputTabProvider.Canceled"), Optional.empty());
                 } else {
                     showExplorerError(compiledText, text -> textAndFoldingConsumer.accept(text, Optional.empty()));
                 }
             }
-        )), () -> textAndFoldingConsumer.accept("Compiler Explorer was not run", Optional.empty()));
+        )), () -> textAndFoldingConsumer.accept(Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun"), Optional.empty()));
     }
 
     @Override

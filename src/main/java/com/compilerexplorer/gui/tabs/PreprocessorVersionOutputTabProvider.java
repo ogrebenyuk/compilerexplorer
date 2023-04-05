@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
@@ -23,7 +24,7 @@ public class PreprocessorVersionOutputTabProvider extends BasePreprocessorVersio
                         .map(BasePreprocessorUtilProvider::getPreprocessorErrorMessage)
                         .orElse(JsonSerializer.createSerializer().toJson(selectedSourceCompiler))
                 ),
-                () -> textConsumer.accept("Preprocessor was not run")
+                () -> textConsumer.accept(Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.WasNotRun"))
         );
     }
 

@@ -21,15 +21,18 @@ import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import com.intellij.util.Producer;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
 
 public class Pipeline {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(Pipeline.class);
     public static final Key<Pipeline> KEY = Key.create("compilerexplorer.Pipeline");
 
     private static class ResetInjector extends BaseLinkedComponent {
+        @NonNls
         private static final Logger LOG = Logger.getInstance(ResetInjector.class);
 
         @NotNull

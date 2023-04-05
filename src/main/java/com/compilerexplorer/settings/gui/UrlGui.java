@@ -1,5 +1,6 @@
 package com.compilerexplorer.settings.gui;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Constants;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.SimpleListCellRenderer;
@@ -24,7 +25,7 @@ public class UrlGui {
         @NotNull
         private String getText(@NotNull String value) {
             @Nullable String description = Constants.DEFAULT_URLS.get(value);
-            return description != null && !description.isEmpty() ? description + ": " + value : value;
+            return description != null && !description.isEmpty() ? Bundle.format("compilerexplorer.UrlGui.HistoryTextWithDescription", "Description", description, "Value", value) : value;
         }
     }
 

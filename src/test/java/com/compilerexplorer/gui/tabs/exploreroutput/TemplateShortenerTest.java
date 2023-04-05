@@ -1,9 +1,11 @@
 package com.compilerexplorer.gui.tabs.exploreroutput;
 
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+@NonNls
 class TemplateShortenerTest {
     @Test
     void verifyNoTemplatesNotShortened() {

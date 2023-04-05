@@ -1,9 +1,11 @@
 package com.compilerexplorer.common.component;
 
 import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public class Initiator extends BaseLinkedComponent implements Refreshable {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(Initiator.class);
 
     @NotNull

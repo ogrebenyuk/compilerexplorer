@@ -12,12 +12,14 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.List;
 
 public class CompilerExplorerToolWindowFactory implements com.intellij.openapi.wm.ToolWindowFactory {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(CompilerExplorerToolWindowFactory.class);
 
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {

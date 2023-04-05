@@ -11,13 +11,19 @@ import com.compilerexplorer.datamodel.state.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class SourceRemoteMatchProducer extends BaseComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(SourceRemoteMatchProducer.class);
+    @NonNls
+    @NonNull
+    private static final String GCC_NAME = "gcc";
 
     @NotNull
     private final Project project;
@@ -55,7 +61,7 @@ public class SourceRemoteMatchProducer extends BaseComponent {
                 data.get(SelectedSourceCompiler.KEY).flatMap(SelectedSourceCompiler::getLocalCompilerSettings).ifPresentOrElse(localCompilerSettings -> {
                     String localName = localCompilerSettings.getName().toLowerCase();
                     String localVersionFull = localCompilerSettings.getVersion();
-                    String localVersion = localName.equals("gcc") ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
+                    String localVersion = localName.equals(GCC_NAME) ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
                     String localTarget = localCompilerSettings.getTarget();
                     String language = selectedSource.getSelectedSource().language;
                     List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);

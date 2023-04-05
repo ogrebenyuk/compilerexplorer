@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
@@ -30,10 +31,10 @@ public class ExplorerRawOutputTabProvider extends BaseExplorerUtilProvider {
                     if (!compiledText.getCanceled()) {
                         textConsumer.accept(compiledText.getRawOutput());
                     } else {
-                        textConsumer.accept("Compiler Explorer was canceled");
+                        textConsumer.accept(Bundle.get("compilerexplorer.ExplorerRawOutputTabProvider.Canceled"));
                     }
                 },
-                () -> textConsumer.accept("Compiler Explorer was not run")
+                () -> textConsumer.accept(Bundle.get("compilerexplorer.ExplorerRawOutputTabProvider.WasNotRun"))
         );
     }
 }

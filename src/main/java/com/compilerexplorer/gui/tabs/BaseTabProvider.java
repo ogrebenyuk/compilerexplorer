@@ -11,6 +11,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -29,12 +30,13 @@ public abstract class BaseTabProvider implements TabProvider {
     protected final SettingsState state;
     @NotNull
     private final Tabs tab;
+    @NonNls
     @NotNull
     private final String actionId;
     @NotNull
     private final FileType fileType;
 
-    public BaseTabProvider(@NotNull Project project_, @NotNull Tabs tab_, @NotNull String actionId_, @NotNull FileType fileType_) {
+    public BaseTabProvider(@NotNull Project project_, @NotNull Tabs tab_, @NonNls @NotNull String actionId_, @NotNull FileType fileType_) {
         project = project_;
         state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         tab = tab_;
@@ -49,6 +51,7 @@ public abstract class BaseTabProvider implements TabProvider {
     }
 
     @Override
+    @NonNls
     @NotNull
     public String actionId() {
         return actionId;
@@ -101,6 +104,7 @@ public abstract class BaseTabProvider implements TabProvider {
     }
 
     @Override
+    @NonNls
     @NotNull
     public String defaultExtension(@NotNull DataHolder data) {
         return getFileType(data).getDefaultExtension();

@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
@@ -7,6 +8,7 @@ import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BiFunction;
@@ -16,7 +18,7 @@ public abstract class BasePreprocessorVersionTabProvider extends BasePreprocesso
     @NotNull
     private final BiFunction<SelectedSourceCompiler, CompilerResult.Output, String> textProducer;
 
-    public BasePreprocessorVersionTabProvider(@NotNull Project project, @NotNull Tabs tab, @NotNull String actionId, boolean isJson, boolean showError,
+    public BasePreprocessorVersionTabProvider(@NotNull Project project, @NotNull Tabs tab, @NonNls  @NotNull String actionId, boolean isJson, boolean showError,
                                               @NotNull BiFunction<SelectedSourceCompiler, CompilerResult.Output, String> textProducer_) {
         super(project, tab, actionId, isJson ? JsonFileType.INSTANCE : PlainTextFileType.INSTANCE, showError);
         textProducer = textProducer_;
@@ -29,15 +31,15 @@ public abstract class BasePreprocessorVersionTabProvider extends BasePreprocesso
                     selectedSourceCompiler.getResult().ifPresentOrElse(
                         result -> result.getOutput().ifPresentOrElse(
                             output -> textConsumer.accept(textProducer.apply(selectedSourceCompiler, output)),
-                            () -> textConsumer.accept("Preprocessor was not run because of unsupported compiler type")
+                            () -> textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.UnsupportedCompilerType"))
                         ),
-                        () -> textConsumer.accept("Preprocessor was not run because its version was found in cache")
+                        () -> textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.Cached"))
                     );
                 } else {
-                    textConsumer.accept("Preprocessor was canceled");
+                    textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.Canceled"));
                 }
             },
-            () -> textConsumer.accept("Preprocessor was not run")
+            () -> textConsumer.accept(Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.WasNotRun"))
         );
     }
 

@@ -1,7 +1,9 @@
 package com.compilerexplorer.gui;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.LaterConsumerUnlessSuppressed;
 import com.compilerexplorer.common.SuppressionFlag;
+import com.compilerexplorer.common.TooltipUtil;
 import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
@@ -14,6 +16,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.SimpleListCellRenderer;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,6 +27,7 @@ import java.awt.event.ItemListener;
 import java.util.Objects;
 
 public class ProjectSourcesGui extends BaseComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(ProjectSourcesGui.class);
 
     @NotNull
@@ -120,12 +125,14 @@ public class ProjectSourcesGui extends BaseComponent {
         }
     }
 
+    @Nls
     @NotNull
     private String getSourceTooltip(@NotNull SourceSettings sourceSettings) {
-        return "File: " + sourceSettings.sourcePath
-                + "<br/>Language: " + sourceSettings.language
-                + "<br/>Compiler: " + sourceSettings.compilerPath
-                + "<br/>Compiler kind: " + sourceSettings.compilerKind
-                + "<br/>Compiler options: " + String.join(" ", sourceSettings.switches);
+        return TooltipUtil.prettify(Bundle.format("compilerexplorer.ProjectSourcesGui.Tooltip",
+                "Source", sourceSettings.sourcePath,
+                "Language", sourceSettings.language,
+                "CompilerPath", sourceSettings.compilerPath,
+                "CompilerKind", sourceSettings.compilerKind,
+                "CompilerOptions", String.join(" ", sourceSettings.switches)));
     }
 }

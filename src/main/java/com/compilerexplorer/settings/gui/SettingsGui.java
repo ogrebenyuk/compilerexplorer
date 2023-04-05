@@ -1,7 +1,8 @@
 package com.compilerexplorer.settings.gui;
 
-import com.compilerexplorer.common.Constants;
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.TaskRunner;
+import com.compilerexplorer.common.TooltipUtil;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
 import com.intellij.ide.DataManager;
@@ -56,7 +57,7 @@ public class SettingsGui {
         JPanel urlPanel = new JPanel(new BorderLayout(GAP, GAP));
         JLabel urlLabel = new JLabel();
         urlLabel.setVisible(true);
-        urlLabel.setText(Constants.PROJECT_TITLE + " URL: ");
+        urlLabel.setText(Bundle.format("compilerexplorer.SettingsGui.UrlLabel"));
         urlPanel.add(urlLabel, BorderLayout.WEST);
 
         urlGui = new UrlGui();
@@ -64,9 +65,9 @@ public class SettingsGui {
 
         AnAction testConnectionAction = ActionManager.getInstance().getAction("compilerexplorer.TestConnection");
         JButton connectButton = new JButton();
-        connectButton.setText("Test connection");
+        connectButton.setText(Bundle.get("compilerexplorer.SettingsGui.TestConnectionButton"));
         connectButton.setText(testConnectionAction.getTemplatePresentation().getText());
-        connectButton.setToolTipText(testConnectionAction.getTemplatePresentation().getDescription());
+        connectButton.setToolTipText(TooltipUtil.prettify(testConnectionAction.getTemplatePresentation().getDescription()));
         connectButton.setIcon(testConnectionAction.getTemplatePresentation().getIcon());
         connectButton.addActionListener(e -> testConnectionAction.actionPerformed(AnActionEvent.createFromAnAction(testConnectionAction, null, ActionPlaces.UNKNOWN, DataManager.getInstance().getDataContext(connectButton))));
         urlPanel.add(connectButton, BorderLayout.EAST);
@@ -84,7 +85,7 @@ public class SettingsGui {
         JPanel ignoreSwitchesPanel = new JPanel(new BorderLayout(GAP, GAP));
         JLabel ignoreSwitchesLabel = new JLabel();
         ignoreSwitchesLabel.setVisible(true);
-        ignoreSwitchesLabel.setText("Ignore compiler switches: ");
+        ignoreSwitchesLabel.setText(Bundle.get("compilerexplorer.SettingsGui.IgnoreSwitchesLabel"));
         ignoreSwitchesPanel.add(ignoreSwitchesLabel, BorderLayout.WEST);
         ignoreSwitchesField = new JBTextField(20);
         ignoreSwitchesPanel.add(ignoreSwitchesField, BorderLayout.CENTER);
@@ -93,7 +94,7 @@ public class SettingsGui {
 
         JPanel preprocessPanel = new JPanel(new BorderLayout(GAP, GAP));
         preprocessCheckbox = new JCheckBox();
-        preprocessCheckbox.setText("Preprocess locally");
+        preprocessCheckbox.setText(Bundle.get("compilerexplorer.SettingsGui.PreprocessLocallyLabel"));
         preprocessPanel.add(preprocessCheckbox, BorderLayout.WEST);
 
         content.add(preprocessPanel, VerticalLayout.TOP);
@@ -101,7 +102,7 @@ public class SettingsGui {
         JPanel delayMillisPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
         JLabel delayMillisLabel = new JLabel();
         delayMillisLabel.setVisible(true);
-        delayMillisLabel.setText("Autoupdate delay (ms): ");
+        delayMillisLabel.setText(Bundle.get("compilerexplorer.SettingsGui.AutoupdateDelayLabel"));
         delayMillisPanel.add(delayMillisLabel);
         delayMillisField = new JBTextField(6);
         delayMillisPanel.add(delayMillisField);
@@ -111,7 +112,7 @@ public class SettingsGui {
         JPanel compilerTimeoutMillisPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, GAP, GAP));
         JLabel compilerTimeoutMillisLabel = new JLabel();
         compilerTimeoutMillisLabel.setVisible(true);
-        compilerTimeoutMillisLabel.setText("Compiler timeout (ms): ");
+        compilerTimeoutMillisLabel.setText(Bundle.get("compilerexplorer.SettingsGui.CompilerTimeoutLabel"));
         compilerTimeoutMillisPanel.add(compilerTimeoutMillisLabel);
         compilerTimeoutMillisField = new JBTextField(6);
         compilerTimeoutMillisPanel.add(compilerTimeoutMillisField);
@@ -200,14 +201,14 @@ public class SettingsGui {
                 project,
                 testState,
                 url -> {
-                    testResultLabel.setText("Success: found " + testState.getRemoteCompilers().size() + " compilers");
-                    testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining("<br/>")));
+                    testResultLabel.setText(Bundle.format("compilerexplorer.SettingsGui.TestConnectionSuccess", "NumberOfCompilers", Integer.toString(testState.getRemoteCompilers().size())));
+                    testResultLabel.setToolTipText(testState.getRemoteCompilers().stream().map(c -> c.getLanguage() + " " + c.getName()).collect(Collectors.joining(TooltipUtil.HTML_LINE_BREAK)));
                     state.addToUrlHistory(url);
                     refreshUrlHistoryInGui();
                 },
                 taskRunner
         )).testConnection(exception -> {
-            testResultLabel.setText("Error: " + exception.getMessage());
+            testResultLabel.setText(Bundle.format("compilerexplorer.SettingsGui.TestConnectionError", "Exception", exception.getMessage()));
             testResultLabel.setToolTipText("");
         });
     }

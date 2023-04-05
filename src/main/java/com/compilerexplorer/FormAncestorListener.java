@@ -1,6 +1,7 @@
 package com.compilerexplorer;
 
 import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -9,6 +10,7 @@ import javax.swing.event.AncestorListener;
 
 public class FormAncestorListener {
     private static class Listener implements AncestorListener {
+        @NonNls
         private static final Logger LOG = Logger.getInstance(Listener.class);
 
         @NotNull

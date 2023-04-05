@@ -37,8 +37,8 @@ public class ExplorerSiteInfoTabProvider extends BaseExplorerSiteUtilProvider {
             JsonArray array = new JsonArray();
             for (RemoteCompilerInfo info : state.getRemoteCompilers()) {
                 JsonObject element = gson.toJsonTree(info).getAsJsonObject();
-                element.remove("rawData");
-                element.add("rawData", JsonParser.parseString(info.getRawData()));
+                element.remove(RemoteCompilerInfo.RAW_DATA_FIELD);
+                element.add(RemoteCompilerInfo.RAW_DATA_FIELD, JsonParser.parseString(info.getRawData()));
                 array.add(element);
             }
             textConsumer.accept(gson.toJson(array));

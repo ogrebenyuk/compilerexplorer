@@ -10,9 +10,11 @@ import com.compilerexplorer.datamodel.state.LocalCompilerPath;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public class SourceRemoteMatchSaver extends BaseComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(SourceRemoteMatchSaver.class);
 
     @NotNull

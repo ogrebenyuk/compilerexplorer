@@ -1,10 +1,12 @@
 package com.compilerexplorer.common.component;
 
 import com.intellij.openapi.diagnostic.Logger;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class BaseRefreshableComponent extends BaseComponent implements Refreshable {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(BaseRefreshableComponent.class);
 
     @Nullable

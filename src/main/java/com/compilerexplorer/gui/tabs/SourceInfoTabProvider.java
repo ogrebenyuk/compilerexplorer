@@ -1,5 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.SelectedSource;
@@ -9,11 +10,19 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class SourceInfoTabProvider extends BaseTabProvider {
+    @NonNls
+    @NotNull
+    private static final String SOURCE_KEY = "source";
+    @NonNls
+    @NotNull
+    private static final String MATCH_KEY = "matchToRemoteCompiler";
+
     public SourceInfoTabProvider(@NotNull Project project) {
         super(project, Tabs.SOURCE_INFO, "compilerexplorer.ShowSourceInfoTab", JsonFileType.INSTANCE);
     }
@@ -34,12 +43,12 @@ public class SourceInfoTabProvider extends BaseTabProvider {
             Gson gson = JsonSerializer.createSerializer();
             JsonObject object = new JsonObject();
 
-            object.add("source", gson.toJsonTree(selectedSource));
+            object.add(SOURCE_KEY, gson.toJsonTree(selectedSource));
 
-            data.get(SourceRemoteMatched.SELECTED_KEY).ifPresent(sourceRemoteMatched -> object.add("matchToRemoteCompiler", gson.toJsonTree(sourceRemoteMatched)));
+            data.get(SourceRemoteMatched.SELECTED_KEY).ifPresent(sourceRemoteMatched -> object.add(MATCH_KEY, gson.toJsonTree(sourceRemoteMatched)));
 
             String text = gson.toJson(object);
             textConsumer.accept(text);
-        }, () -> textConsumer.accept("No source selected"));
+        }, () -> textConsumer.accept(Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection")));
     }
 }

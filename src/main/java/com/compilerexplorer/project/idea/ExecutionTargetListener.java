@@ -4,9 +4,11 @@ import com.compilerexplorer.Pipeline;
 import com.intellij.execution.ExecutionTarget;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 public class ExecutionTargetListener implements com.intellij.execution.ExecutionTargetListener {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(ExecutionTargetListener.class);
 
     @NotNull

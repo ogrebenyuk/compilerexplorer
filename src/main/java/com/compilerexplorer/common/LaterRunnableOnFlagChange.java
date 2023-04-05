@@ -3,11 +3,13 @@ package com.compilerexplorer.common;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.Producer;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class LaterRunnableOnFlagChange implements Runnable {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(LaterRunnableOnFlagChange.class);
 
     private boolean lastSeen;

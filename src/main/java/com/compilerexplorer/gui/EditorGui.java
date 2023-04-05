@@ -28,6 +28,7 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.SpinningProgressIcon;
 import com.intellij.ui.components.JBScrollPane;
 import com.twelvemonkeys.io.FileUtil;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,8 +41,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class EditorGui extends BaseRefreshableComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(EditorGui.class);
     public static final Key<EditorGui> KEY = Key.create("compilerexplorer.EditorGui");
+    @NonNls
+    @NotNull
+    private static final String TERMINAL_ESCAPE_SEQUENCE_REGEXP = "\u001B\\[[;\\d]*.";
 
     @NotNull
     private final JPanel mainPanel;
@@ -358,7 +363,7 @@ public class EditorGui extends BaseRefreshableComponent {
 
     @NotNull
     private static String filterOutTerminalEscapeSequences(@NotNull String terminalText) {
-        return terminalText.replaceAll("\u001B\\[[;\\d]*.", "");
+        return terminalText.replaceAll(TERMINAL_ESCAPE_SEQUENCE_REGEXP, "");
     }
 
     @NotNull
@@ -454,7 +459,12 @@ public class EditorGui extends BaseRefreshableComponent {
                 @NotNull final Path path = Path.of(sourceFilename);
                 directory = path.getParent();
                 if (currentTabProvider.isSourceSpecific()) {
-                    filenameWithPrefix = filenameWithPrefix + " for " + FileUtil.getBasename(path.getFileName().toString());
+                    @NotNull String sourceBasename = FileUtil.getBasename(path.getFileName().toString());
+                    if (filenameWithPrefix != null) {
+                        filenameWithPrefix = Bundle.format("compilerexplorer.EditorGui.SaveTabFilename", "TabName", filenameWithPrefix, "SourceBasename", sourceBasename);
+                    } else {
+                        filenameWithPrefix = sourceBasename;
+                    }
                 }
             }
 
@@ -467,7 +477,7 @@ public class EditorGui extends BaseRefreshableComponent {
                 try (PrintWriter out = new PrintWriter(filename)) {
                     out.println(ed.getDocument().getText());
                 } catch (Exception exception) {
-                    String errorMessage = "Error while saving tab to file \"" + filename + "\": " + exception.getMessage();
+                    String errorMessage = Bundle.format("compilerexplorer.EditorGui.SaveTabError", "Filename", filename, "Exception", exception.getMessage());
                     LOG.error(errorMessage);
                     Constants.NOTIFICATION_GROUP
                             .createNotification(errorMessage, NotificationType.ERROR)

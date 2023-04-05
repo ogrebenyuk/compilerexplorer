@@ -9,10 +9,12 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class FileSelectionListener implements FileEditorManagerListener {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(FileSelectionListener.class);
 
     @NotNull

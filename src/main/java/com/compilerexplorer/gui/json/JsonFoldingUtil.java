@@ -7,12 +7,14 @@ import com.intellij.psi.TokenType;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.BiFunction;
 
 public class JsonFoldingUtil {
+    @NonNls
     @NotNull
     private static final String ROOT_LABEL = "root";
     private static final BiFunction<String, String, String> CHILD_NAME = (parent, child) -> parent + "." + child;

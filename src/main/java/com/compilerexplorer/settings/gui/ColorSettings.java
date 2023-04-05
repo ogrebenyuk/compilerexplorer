@@ -1,5 +1,6 @@
 package com.compilerexplorer.settings.gui;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Constants;
 import com.google.common.collect.ImmutableMap;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
@@ -11,6 +12,7 @@ import com.intellij.psi.codeStyle.DisplayPriority;
 import com.intellij.psi.codeStyle.DisplayPrioritySortable;
 import com.jetbrains.cidr.lang.asm.AsmSyntaxHighlighter;
 import icons.CompilerExplorerIcons;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,15 +22,19 @@ import java.util.Map;
 import static com.compilerexplorer.common.Constants.HIGHLIGHT_COLOR;
 
 public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable {
+    @NonNls
+    @NotNull
+    private static final String HIGHLIGHT_TAG_NAME = "highlight";
+
     @NotNull
     private static final AttributesDescriptor @NotNull [] DESCRIPTORS = new AttributesDescriptor[] {
-            new AttributesDescriptor(() -> "Highlight", HIGHLIGHT_COLOR)
+            new AttributesDescriptor(() -> Bundle.get("compilerexplorer.ColorSettings.Highlight"), HIGHLIGHT_COLOR)
     };
 
     @NotNull
     private static final Map<String, TextAttributesKey> TAG_TO_DESCRIPTOR_MAP =
             ImmutableMap.<String, TextAttributesKey>builder()
-                    .put("highlight", HIGHLIGHT_COLOR)
+                    .put(HIGHLIGHT_TAG_NAME, HIGHLIGHT_COLOR)
                     .build();
 
     @Override
@@ -62,6 +68,7 @@ public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable
     }
 
     @Override
+    @NonNls
     @NotNull
     public String getDemoText() {
         return """

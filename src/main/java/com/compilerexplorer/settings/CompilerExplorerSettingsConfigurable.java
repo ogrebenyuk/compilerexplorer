@@ -1,7 +1,7 @@
 package com.compilerexplorer.settings;
 
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
-import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.settings.gui.SettingsGui;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -28,7 +28,7 @@ public class CompilerExplorerSettingsConfigurable implements Configurable {
     @Override
     @NotNull
     public String getDisplayName() {
-        return Constants.PROJECT_TITLE;
+        return Bundle.get("compilerexplorer.CompilerExplorerSettingsConfigurable.DisplayName");
     }
 
     @Override

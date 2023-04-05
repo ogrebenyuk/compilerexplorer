@@ -1,12 +1,14 @@
 package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.google.common.collect.ImmutableList;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public class TemplateShortener {
+    @NonNls
     @NotNull
     private static final List<String> EXCEPTIONS = ImmutableList.of(
             "<built-in>",
@@ -15,12 +17,19 @@ public class TemplateShortener {
             "<_GLOBAL__sub_I_main>",
             "<Compilation failed>"
     );
+    @NonNls
     @NotNull
     private static final List<String> ADDRESS_SUFFIXES = ImmutableList.of(
             "@plt"
     );
+    @NonNls private static final char HEX_RANGE1_FIRST = '0';
+    @NonNls private static final char HEX_RANGE1_LAST = '9';
+    @NonNls private static final char HEX_RANGE2_FIRST = 'a';
+    @NonNls private static final char HEX_RANGE2_LAST = 'f';
+    @NonNls private static final char HEX_RANGE3_FIRST = 'A';
+    @NonNls private static final char HEX_RANGE3_LAST = 'F';
 
-    public static void shortenTemplates(@NotNull StringBuilder builder, @NotNull String text) {
+    public static void shortenTemplates(@NotNull StringBuilder builder, @NonNls @NotNull String text) {
         int length = text.length();
         int depth = 0;
         boolean isAddress = false;
@@ -84,11 +93,11 @@ public class TemplateShortener {
     }
 
     @Nullable
-    private static String isException(@NotNull String text, int i) {
+    private static String isException(@NonNls @NotNull String text, int i) {
         return EXCEPTIONS.stream().filter(exception -> text.startsWith(exception, i)).findFirst().orElse(null);
     }
 
-    private static boolean isOperator(@NotNull String text, int i) {
+    private static boolean isOperator(@NonNls @NotNull String text, int i) {
         return ((i >= 8 && text.charAt(i - 1) == 'r' && text.startsWith("operator", i - 8)) ||
                 (i >= 1 && text.charAt(i - 1) == '-') ||
                 (i >= 10 && text.charAt(i - 1) == '=' && text.startsWith("operator<=", i - 10))
@@ -99,7 +108,7 @@ public class TemplateShortener {
         return depth == (isAddress ? 1 : 0);
     }
 
-    private static boolean isAddress(@NotNull String text, int openingBracket) {
+    private static boolean isAddress(@NonNls @NotNull String text, int openingBracket) {
         if (openingBracket >= 2) {
             int closingBracket = findClosingBracket(text, openingBracket);
             if (isAddressSuffix(text, closingBracket)) {
@@ -129,15 +138,15 @@ public class TemplateShortener {
         return false;
     }
 
-    private static boolean isAddressSuffix(@NotNull String text, int closingBracket) {
+    private static boolean isAddressSuffix(@NonNls @NotNull String text, int closingBracket) {
         return ADDRESS_SUFFIXES.stream().anyMatch(suffix -> text.startsWith(suffix, closingBracket - suffix.length()));
     }
 
     private static boolean isHexChar(char c) {
-        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        return (c >= HEX_RANGE1_FIRST && c <= HEX_RANGE1_LAST) || (c >= HEX_RANGE2_FIRST && c <= HEX_RANGE2_LAST) || (c >= HEX_RANGE3_FIRST && c <= HEX_RANGE3_LAST);
     }
 
-    static int findClosingBracket(@NotNull String text, int openingBracket) {
+    static int findClosingBracket(@NonNls @NotNull String text, int openingBracket) {
         int length = text.length();
         int depth = 0;
         for (int i = openingBracket; i < length; ++i) {

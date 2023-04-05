@@ -1,5 +1,7 @@
 package com.compilerexplorer.gui.tabs.exploreroutput;
 
+import com.compilerexplorer.common.Bundle;
+import com.compilerexplorer.common.TooltipUtil;
 import com.intellij.openapi.editor.Editor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +36,6 @@ public class ByteOffsetAnnotationProvider extends BaseTextAnnotationGutterProvid
 
     @NotNull
     private String getTooltipText(@NotNull Integer byteOffset) {
-        return "Byte offset " + byteOffset + ", hex 0x" + Integer.toHexString(byteOffset);
+        return TooltipUtil.prettify(Bundle.format("compilerexplorer.ByteOffsetAnnotationProvider.Tooltip", "ByteOffsetDecimal", Integer.toString(byteOffset), "ByteOffsetHex", Integer.toHexString(byteOffset)));
     }
 }

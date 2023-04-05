@@ -1,6 +1,6 @@
 package com.compilerexplorer.explorer;
 
-import com.compilerexplorer.common.Constants;
+import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.TaskRunner;
 import com.compilerexplorer.common.component.BaseRefreshableComponent;
 import com.compilerexplorer.common.component.CEComponent;
@@ -21,6 +21,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +32,17 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class RemoteCompilersProducer extends BaseRefreshableComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(RemoteCompilersProducer.class);
+    @NonNls
+    @NotNull
+    private static final String COMPILERS_ENDPOINT = "/api/compilers";
+    @NonNls
+    @NotNull
+    private static final String ACCEPT_HEADER = "accept";
+    @NonNls
+    @NotNull
+    private static final String JSON_MIME_TYPE = "application/json";
 
     @NotNull
     private final Project project;
@@ -99,9 +110,9 @@ public class RemoteCompilersProducer extends BaseRefreshableComponent {
 
     private void tryConnect(@Nullable DataHolder data, @Nullable Consumer<Exception> errorConsumer) {
         String url = state.getUrl();
-        String endpoint = url + "/api/compilers";
+        String endpoint = url + COMPILERS_ENDPOINT;
         if (!state.getConnected()) {
-            taskRunner.runTask(new Task.Backgroundable(project, Constants.PROJECT_TITLE + ": connecting to " + url) {
+            taskRunner.runTask(new Task.Backgroundable(project, Bundle.format("compilerexplorer.RemoteCompilersProducer.TaskTitle", "Url", url)) {
                 @Override
                 public void run(@NotNull ProgressIndicator indicator) {
                     boolean canceled = false;
@@ -110,7 +121,7 @@ public class RemoteCompilersProducer extends BaseRefreshableComponent {
                     try {
                         CloseableHttpClient httpClient = HttpClients.createDefault();
                         HttpGet getRequest = new HttpGet(endpoint);
-                        getRequest.addHeader("accept", "application/json");
+                        getRequest.addHeader(ACCEPT_HEADER, JSON_MIME_TYPE);
                         HttpResponse response = httpClient.execute(getRequest);
                         if (response.getStatusLine().getStatusCode() != 200) {
                             httpClient.close();

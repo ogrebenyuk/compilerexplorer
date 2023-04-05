@@ -17,6 +17,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,7 @@ import java.io.File;
 import java.util.stream.Stream;
 
 public class CompilerSettingsProducer extends BaseComponent {
+    @NonNls
     private static final Logger LOG = Logger.getInstance(CompilerSettingsProducer.class);
 
     @NotNull
@@ -66,7 +68,7 @@ public class CompilerSettingsProducer extends BaseComponent {
                 data.put(SelectedSourceCompiler.KEY, new SelectedSourceCompiler(true, false, true, null, cachedSettings));
             } else {
                 needRefreshNext = false;
-                taskRunner.runTask(new Task.Backgroundable(project, "Determining compiler version for " + selectedSource.getSelectedSource().sourceName) {
+                taskRunner.runTask(new Task.Backgroundable(project, Bundle.format("compilerexplorer.CompilerSettingsProducer.TaskTitle", "Source", selectedSource.getSelectedSource().sourceName)) {
                     @Override
                     public void run(@NotNull ProgressIndicator indicator) {
                         boolean canceled = false;
@@ -134,24 +136,26 @@ public class CompilerSettingsProducer extends BaseComponent {
     }
 
     @NotNull
-    private static String[] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
+    private static String @NonNls @NotNull [] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
         return Stream.of(
                 sourceSettings.compilerPath,
                 "-v"
         ).toArray(String[]::new);
     }
 
-    private static boolean isSupportedCompilerType(@NotNull String compilerKind) {
+    private static boolean isSupportedCompilerType(@NonNls @NotNull String compilerKind) {
         return compilerKind.equals("GCC") || compilerKind.equals("Clang");
     }
 
+    @NonNls
     @NotNull
-    private static String parseCompilerVersion(@NotNull String compilerKind, @NotNull String versionText) {
+    private static String parseCompilerVersion(@NonNls @NotNull String compilerKind, @NonNls @NotNull String versionText) {
         return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toLowerCase() + " version ([^ ]*).*", "$1");
     }
 
+    @NonNls
     @NotNull
-    private static String parseCompilerTarget(@NotNull String versionText) {
+    private static String parseCompilerTarget(@NonNls @NotNull String versionText) {
         return versionText.replace('\n', ' ').replaceAll(".*Target: ([^-]*).*", "$1");
     }
 }
