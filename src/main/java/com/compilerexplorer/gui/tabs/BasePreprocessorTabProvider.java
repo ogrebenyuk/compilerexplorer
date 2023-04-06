@@ -8,6 +8,7 @@ import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SelectedSource;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.NlsSafe;
 import com.jetbrains.cidr.lang.OCFileType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilProvider {
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String DEFAULT_PREPROCESSED_TEXT_EXTENSION = "ii";
 

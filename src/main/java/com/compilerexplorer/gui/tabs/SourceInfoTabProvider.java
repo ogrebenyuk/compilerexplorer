@@ -10,16 +10,16 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NonNls;
+import com.intellij.openapi.util.NlsSafe;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class SourceInfoTabProvider extends BaseTabProvider {
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String SOURCE_KEY = "source";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String MATCH_KEY = "matchToRemoteCompiler";
 

@@ -1,6 +1,7 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
+import com.intellij.openapi.util.NlsSafe;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -11,19 +12,19 @@ import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class RemoteCompilerInfo {
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String ID_FIELD = "id";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String NAME_FIELD = "name";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String LANG_FIELD = "lang";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String SEMVER_FIELD = "semver";
-    @NonNls
+    @NlsSafe
     @NotNull
     public static final String RAW_DATA_FIELD = "rawData";
 

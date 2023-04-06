@@ -23,6 +23,7 @@ import com.intellij.openapi.util.Key;
 import com.intellij.util.Producer;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 
@@ -30,6 +31,7 @@ public class Pipeline {
     @NonNls
     private static final Logger LOG = Logger.getInstance(Pipeline.class);
     public static final Key<Pipeline> KEY = Key.create("compilerexplorer.Pipeline");
+    public static final Key<Boolean> STARTED_KEY = Key.create("compilerexplorer.Pipeline.Started");
 
     private static class ResetInjector extends BaseLinkedComponent {
         @NonNls
@@ -79,6 +81,7 @@ public class Pipeline {
     private boolean editorReady;
     private boolean pipelineReady = true;
     private boolean enabled = true;
+    private boolean started = false;
     private boolean firstRefreshDone;
     @NotNull
     private final TimerScheduler refreshTimerScheduler = new TimerScheduler();
@@ -108,6 +111,11 @@ public class Pipeline {
         ProjectListener projectListener = new ProjectListener(projectSourcesGui, project);
         ResetInjector resetResetInjector = new ResetInjector(projectListener, ResetLevel.RESET);
         initiator = new Initiator(resetResetInjector);
+
+        @Nullable Boolean started_ = project.getUserData(STARTED_KEY);
+        if (started_ != null) {
+            started = started_;
+        }
     }
 
     @NotNull
@@ -224,8 +232,16 @@ public class Pipeline {
     }
 
     public void scheduleRefresh() {
-        LOG.debug("scheduleRefresh");
-        refreshTimerScheduler.schedule(this::refresh, state.getDelayMillis());
+        if (readyToRun()) {
+            LOG.debug("scheduleRefresh");
+            refreshTimerScheduler.schedule(() -> {
+                LOG.debug("running earlier scheduled refresh");
+                refresh();
+            }, state.getDelayMillis());
+        } else {
+            LOG.debug("scheduleRefresh requested for later");
+            refreshRequested = true;
+        }
     }
 
     private void editorReady() {
@@ -252,8 +268,17 @@ public class Pipeline {
         }
     }
 
+    public void started() {
+        LOG.debug("started " + started + " -> true");
+        refreshTimerScheduler.schedule(() -> {
+            LOG.debug("running earlier scheduled startup activity");
+            started = true;
+            runQueuedRequests();
+        }, state.getDelayMillis());
+    }
+
     private boolean readyToRun() {
-        return editorReady && pipelineReady && enabled;
+        return editorReady && pipelineReady && enabled && started;
     }
 
     private void runQueuedRequests() {

@@ -7,6 +7,7 @@ import com.google.gson.*;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.util.NlsSafe;
 import com.intellij.util.keyFMap.KeyFMap;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -14,10 +15,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 public class EverythingTabProvider extends BaseExplorerUtilProvider {
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String DATA_KEY = "data";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String STATE_KEY = "state";
 

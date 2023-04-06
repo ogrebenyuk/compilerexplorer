@@ -21,10 +21,19 @@
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
         <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
+
+
+<!--
+        <consoleActionsPostProcessor implementation="krasa.grepconsole.integration.MyConsoleActionsPostProcessor"/>
+        <consoleFilterProvider order="first" implementation="krasa.grepconsole.integration.MyConsoleFilterProvider"/>
+        <consoleInputFilterProvider implementation="krasa.grepconsole.integration.MyConsoleInputFilterProvider"/>
+        <console.folding implementation="krasa.grepconsole.folding.MyConsoleFolding"/>
+-->
     </extensions>
 
     <projectListeners>
         <listener class="com.compilerexplorer.project.oc.OCWorkspaceListener" topic="com.jetbrains.cidr.lang.workspace.OCWorkspaceListener"/>
+        <listener class="com.compilerexplorer.project.oc.CidrWorkspaceListener" topic="com.jetbrains.cidr.project.workspace.CidrWorkspaceListener"/>
         <listener class="com.compilerexplorer.project.idea.ExecutionTargetListener" topic="com.intellij.execution.ExecutionTargetListener"/>
         <listener class="com.compilerexplorer.project.idea.ModuleListener" topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="com.compilerexplorer.project.idea.ModuleRootListener" topic="com.intellij.openapi.roots.ModuleRootListener"/>

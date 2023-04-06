@@ -1,6 +1,7 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
+import com.intellij.openapi.util.NlsSafe;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.NonNls;
@@ -10,34 +11,34 @@ import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Filters {
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String BINARY_FIELD = "binary";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String BINARY_OBJECT_FIELD = "binaryObject";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String EXECUTE_FIELD = "execute";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String LABELS_FIELD = "labels";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String LIBRARY_CODE_FIELD = "libraryCode";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String DIRECTIVES_FIELD = "directives";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String COMMENT_ONLY_FIELD = "commentOnly";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String TRIM_FIELD = "trim";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String INTEL_FIELD = "intel";
-    @NonNls
+    @NlsSafe
     @NotNull
     private static final String DEMANGLE_FIELD = "demangle";
 

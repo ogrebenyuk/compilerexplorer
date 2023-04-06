@@ -37,10 +37,11 @@ public class ColoredLineMarkerRenderer implements LineMarkerRendererEx {
         boolean isFoldingEnabled = ((EditorEx) editor).getFoldingModel().isFoldingEnabled();
         int rw = isFoldingEnabled ? gutter.getWhitespaceSeparatorOffset() : rectangle.width;
         if (ExperimentalUI.isNewUI()) {
-            rw += isFoldingEnabled ? GAP_BETWEEN_ICONS.get() : -GAP_BETWEEN_ICONS.get();
+            int gap = GAP_BETWEEN_ICONS.get();
+            rw += isFoldingEnabled ? gap : -gap;
         }
         int rh = rectangle.height;
-        int w = graphics.getFontMetrics().getHeight() / 2;
+        int w = graphics.getFontMetrics().getHeight() / 3;
         int[] xPoints = {rectangle.x + rw, rectangle.x + rw - w, rectangle.x + rw - w, rectangle.x + rw};
         int[] yPoints = {rectangle.y,      rectangle.y + w,      rectangle.y + rh - w, rectangle.y + rh};
         graphics.fillPolygon(xPoints, yPoints, 4);
