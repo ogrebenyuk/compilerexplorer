@@ -9,9 +9,9 @@ import java.util.ResourceBundle;
 public class Bundle {
     @NonNls
     @NotNull
-    private static final String BUNDLE_FILE = "messages.compilerexplorerBundle";
+    public static final String BUNDLE_FILE = "messages.compilerexplorerBundle";
     @NotNull
-    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_FILE);
+    private static ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_FILE);
     private static class ThrowingLookup implements StringLookup {
         public String[] map = null;
         @Override
@@ -47,5 +47,12 @@ public class Bundle {
         @Nls @NotNull String result = SUBSTITUTOR.replace(get(key));
         LOOKUP.map = null;
         return result;
+    }
+
+    @VisibleForTesting
+    @NotNull
+    public static ResourceBundle adopt(@NotNull ResourceBundle bundle) {
+        BUNDLE = bundle;
+        return bundle;
     }
 }

@@ -21,14 +21,6 @@
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
         <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
-
-
-<!--
-        <consoleActionsPostProcessor implementation="krasa.grepconsole.integration.MyConsoleActionsPostProcessor"/>
-        <consoleFilterProvider order="first" implementation="krasa.grepconsole.integration.MyConsoleFilterProvider"/>
-        <consoleInputFilterProvider implementation="krasa.grepconsole.integration.MyConsoleInputFilterProvider"/>
-        <console.folding implementation="krasa.grepconsole.folding.MyConsoleFolding"/>
--->
     </extensions>
 
     <projectListeners>

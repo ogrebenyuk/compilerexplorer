@@ -2,42 +2,30 @@ package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
-import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompilerResult;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.text.Strings;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
 
 public abstract class BasePreprocessorUtilProvider extends BaseTabProvider {
-    private final boolean showError;
-
-    public BasePreprocessorUtilProvider(@NotNull Project project, @NotNull Tabs tab, @NonNls @NotNull String actionId, @NotNull FileType fileType, boolean showError_) {
-        super(project, tab, actionId, fileType);
-        showError = showError_;
-    }
-
-    @Override
-    public boolean isEnabled(@NotNull DataHolder data) {
-        return shouldShow(data);
-    }
-
-    @Override
-    public boolean isError(@NotNull DataHolder data) {
-        return shouldShowError(data);
-    }
-
-    protected abstract boolean shouldShow(@NotNull DataHolder data);
-
-    protected boolean shouldShowError(@NotNull DataHolder data) {
-        return showError && shouldShow(data);
+    public BasePreprocessorUtilProvider(@NotNull SettingsState state, @NotNull Tabs tab, @NonNls @NotNull String actionId, @NotNull FileType fileType) {
+        super(state, tab, actionId, fileType);
     }
 
     @Nls
     @NotNull
-    protected static String getPreprocessorErrorMessage(@NotNull CompilerResult.Output output) {
+    protected static String getPreprocessorErrorMessage(@Nullable CompilerResult result, @NotNull CompilerResult.Output output) {
         StringBuilder errorMessageBuilder = new StringBuilder();
+        if (result != null) {
+            errorMessageBuilder.append(Bundle.format("compilerexplorer.BasePreprocessorUtilProvider.CommandLine", "CommandLine", getCommandLine(result)));
+            errorMessageBuilder.append("\n");
+        }
         output.getException().ifPresentOrElse(
                 exception -> {
                     errorMessageBuilder.append(Bundle.format("compilerexplorer.BasePreprocessorUtilProvider.Exception", "Exception", exception.getMessage()));
@@ -52,5 +40,11 @@ public abstract class BasePreprocessorUtilProvider extends BaseTabProvider {
                 }
         );
         return errorMessageBuilder.toString();
+    }
+
+    @NonNls
+    @NotNull
+    private static String getCommandLine(@NotNull CompilerResult result) {
+        return Strings.join(Arrays.stream(result.getCommandLine()).toList(), " ");
     }
 }

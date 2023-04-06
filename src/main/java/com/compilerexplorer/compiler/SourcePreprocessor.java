@@ -114,7 +114,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                     });
                 } else {
                     LOG.debug("not preprocessed");
-                    data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), false, null, sourceText));
+                    data.put(PreprocessedSource.KEY, new PreprocessedSource(false, false, null, sourceText));
                 }
             } else {
                 LOG.debug("cannot get content from " + sourceSettings.sourceName);

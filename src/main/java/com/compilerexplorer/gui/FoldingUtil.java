@@ -1,7 +1,7 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.gui.json.JsonFoldingUtil;
-import com.compilerexplorer.gui.tabs.TabProvider;
+import com.compilerexplorer.gui.tabs.TabFoldingRegion;
 import com.intellij.json.JsonFileType;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.Language;
@@ -20,9 +20,9 @@ import java.util.function.BiFunction;
 
 public class FoldingUtil {
     @NotNull
-    public static Optional<List<TabProvider.FoldingRegion>> getFoldingForFileType(@NotNull FileType fileType,
-                                                                                  @NotNull Project project,
-                                                                                  @NotNull Document document) {
+    public static Optional<List<TabFoldingRegion>> getFoldingForFileType(@NotNull FileType fileType,
+                                                                         @NotNull Project project,
+                                                                         @NotNull Document document) {
         if (fileType instanceof JsonFileType jsonFileType) {
             return getFolding(jsonFileType.getLanguage(), project, document, JsonFoldingUtil::getJsonLabel);
         }
@@ -30,7 +30,7 @@ public class FoldingUtil {
     }
 
     @NotNull
-    private static Optional<List<TabProvider.FoldingRegion>> getFolding(@NotNull Language language,
+    private static Optional<List<TabFoldingRegion>> getFolding(@NotNull Language language,
                                                                         @NotNull Project project,
                                                                         @NotNull Document document,
                                                                         @NotNull BiFunction<ASTNode, Map<ASTNode, String>, String> labelProvider) {
@@ -39,7 +39,7 @@ public class FoldingUtil {
         FoldingDescriptor @NotNull [] descriptors = builder.buildFoldRegions(psiFile.getNode(), document);
         @NotNull Map<ASTNode, String> cache = new HashMap<>();
         return Optional.of(Arrays.stream(descriptors)
-                .map(descriptor -> new TabProvider.FoldingRegion(descriptor.getRange(), labelProvider.apply(descriptor.getElement(), cache), descriptor.getPlaceholderText() != null ? descriptor.getPlaceholderText() : ""))
+                .map(descriptor -> new TabFoldingRegion(descriptor.getRange(), labelProvider.apply(descriptor.getElement(), cache), descriptor.getPlaceholderText() != null ? descriptor.getPlaceholderText() : ""))
                 .toList());
     }
 }

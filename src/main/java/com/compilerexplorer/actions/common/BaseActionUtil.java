@@ -6,6 +6,7 @@ import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.swing.*;
 import java.util.function.Consumer;
 
 interface BaseActionUtil extends BaseActionWithProject {
@@ -26,6 +27,10 @@ interface BaseActionUtil extends BaseActionWithProject {
 
     default void setEnabled(@NotNull AnActionEvent event, boolean isEnabled) {
         event.getPresentation().setEnabled(isEnabled);
+    }
+
+    default void setIcon(@NotNull AnActionEvent event, @Nullable Icon icon) {
+        event.getPresentation().setIcon(icon);
     }
 
     default boolean isVisible(@NotNull AnActionEvent event) {

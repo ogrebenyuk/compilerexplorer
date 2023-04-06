@@ -4,57 +4,47 @@ import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
-    public ExplorerExecResultTabProvider(@NotNull Project project) {
-        super(project, Tabs.EXPLORER_EXEC_RESULT, "compilerexplorer.ShowExplorerExecResultTab", PlainTextFileType.INSTANCE);
+    public ExplorerExecResultTabProvider(@NotNull SettingsState state) {
+        super(state, Tabs.EXPLORER_EXEC_RESULT, "compilerexplorer.ShowExplorerExecResultTab", PlainTextFileType.INSTANCE);
     }
 
     @Override
-    public boolean isEnabled(@NotNull DataHolder data) {
-        return expectExecResult() && execResult(data).isPresent();
-    }
-
-    @Override
-    public boolean isError(@NotNull DataHolder data) {
-        return expectExecResult() && execResult(data).isEmpty() || compiledText(data).map(CompiledText::getCanceled).orElse(true);
-    }
-
-    @Override
-    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         compiledText(data).ifPresentOrElse(
             compiledText -> {
-                if (!compiledText.getCanceled()) {
-                    compiledText.getExecResult().ifPresentOrElse(
-                        execResult -> textConsumer.accept(getTextFromChunks(execResult.stdout)),
-                        () -> {
-                            if (expectExecResult()) {
-                                showExplorerError(compiledText, textConsumer);
-                            } else {
-                                textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Disabled"));
-                            }
+                if (expectExecResult()) {
+                    compiledText.getCompiledResultIfGood().ifPresentOrElse(compiledResult -> execResult(compiledText).ifPresentOrElse(
+                        execResult -> content(true, () -> getTextFromChunks(execResult.stdout), contentConsumer),
+                        () -> content(true, () -> "", contentConsumer)
+                    ),
+                    () -> {
+                        if (compiledText.getCanceled()) {
+                            error(true, () -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Canceled"), contentConsumer);
+                        } else {
+                            error(true, () -> getExplorerError(compiledText), contentConsumer);
                         }
-                    );
+                    });
                 } else {
-                    textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Canceled"));
+                    message(false, () -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Disabled"), contentConsumer);
                 }
             },
-            () -> textConsumer.accept(Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"))
+            () -> message(false, () -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"), contentConsumer)
         );
     }
 
     private boolean expectExecResult() {
-        return state.getFilters().getExecute();
+        return getState().getFilters().getExecute();
     }
 
     @NotNull
-    private Optional<CompiledText.ExecResult> execResult(@NotNull DataHolder data) {
-        return compiledText(data).flatMap(CompiledText::getExecResult);
+    private Optional<CompiledText.ExecResult> execResult(@NotNull CompiledText compiledText) {
+        return compiledText.getExecResult().filter(execResult -> hasText(execResult.stdout));
     }
 }

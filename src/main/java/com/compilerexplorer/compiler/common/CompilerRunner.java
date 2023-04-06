@@ -53,7 +53,7 @@ public class CompilerRunner {
             throw canceledException;
         }
         catch (Exception e) {
-            throw(new RuntimeException("Failed to run compiler: " + e.getMessage()));
+            throw new RuntimeException("Failed to run compiler: " + e.getMessage());
         }
 
         stdout = output.getStdout();

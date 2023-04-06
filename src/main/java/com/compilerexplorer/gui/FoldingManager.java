@@ -4,7 +4,7 @@ import com.compilerexplorer.common.DisposableParentProjectService;
 import com.compilerexplorer.common.SuppressionFlag;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.datamodel.state.SettingsState;
-import com.compilerexplorer.gui.tabs.TabProvider;
+import com.compilerexplorer.gui.tabs.TabFoldingRegion;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.editor.FoldRegion;
@@ -60,11 +60,12 @@ public class FoldingManager {
     }
 
     public void editorCreated(@NotNull EditorEx ed) {
+        ed.getSettings().setFoldingOutlineShown(true);
         updateFolding(ed);
         ed.getFoldingModel().addListener(foldingChangeListener, DisposableParentProjectService.getInstance(project));
     }
 
-    public void set(@Nullable String filename, @Nullable Tabs tab, @Nullable List<TabProvider.FoldingRegion> foldingRegions, @Nullable EditorEx ed) {
+    public void set(@Nullable String filename, @Nullable Tabs tab, @Nullable List<TabFoldingRegion> foldingRegions, @Nullable EditorEx ed) {
         currentFilename = filename;
         currentTab = tab;
         foldingEnablesForThisFile = foldingRegions != null;
@@ -78,7 +79,7 @@ public class FoldingManager {
             foldingModel.runBatchFoldingOperation(() -> withFoldingUpdatesSuppressed(foldingModel::clearFoldRegions));
             if (foldingRegions != null) {
                 foldingModel.runBatchFoldingOperation(() -> withFoldingUpdatesSuppressed(() -> {
-                    for (TabProvider.FoldingRegion foldingRegion : foldingRegions) {
+                    for (TabFoldingRegion foldingRegion : foldingRegions) {
                         @Nullable FoldRegion region = foldingModel.addFoldRegion(foldingRegion.range.getStartOffset(), foldingRegion.range.getEndOffset(), foldingRegion.placeholderText);
                         if (region != null) {
                             region.setExpanded(foldedLabels == null || foldingRegion.label.isEmpty() || !foldedLabels.contains(foldingRegion.label));
@@ -112,7 +113,6 @@ public class FoldingManager {
 
     private void updateFolding(@NotNull EditorEx ed, boolean enable) {
         ed.getFoldingModel().setFoldingEnabled(enable);
-        ed.getSettings().setFoldingOutlineShown(enable);
     }
 
     public void expandAllFolding(@NotNull EditorEx ed, boolean isExpanded) {
@@ -140,7 +140,7 @@ public class FoldingManager {
         return state.getEnableFolding() && foldingEnablesForThisFile;
     }
 
-    private void removeObsoleteFoldedLabels(@Nullable List<TabProvider.FoldingRegion> newRegions, @Nullable Set<String> oldFoldedLabels) {
+    private void removeObsoleteFoldedLabels(@Nullable List<TabFoldingRegion> newRegions, @Nullable Set<String> oldFoldedLabels) {
         if (currentFilename != null && currentTab != null) {
             if (newRegions != null && !newRegions.isEmpty()) {
                 if (oldFoldedLabels != null) {

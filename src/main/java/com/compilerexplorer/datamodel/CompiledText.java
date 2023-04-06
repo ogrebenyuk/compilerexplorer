@@ -37,7 +37,7 @@ public class CompiledText {
         @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
-            return (file != null ? file.hashCode() : 0)
+            return Objects.hashCode(file)
                     + line
                     ;
         }
@@ -68,9 +68,9 @@ public class CompiledText {
         @SuppressWarnings("unused")
         @Override
         public int hashCode() {
-            return (text != null ? text.hashCode() : 0)
-                    + (source != null ? source.hashCode() : 0)
-                    + (opcodes != null ? opcodes.hashCode() : 0)
+            return Objects.hashCode(text)
+                    + Objects.hashCode(source)
+                    + Objects.hashCode(opcodes)
                     + address
                     ;
         }
@@ -90,12 +90,12 @@ public class CompiledText {
     }
 
     public static class ExecResult {
+        @Nullable
         public List<CompiledChunk> stdout;
 
         @Override
         public int hashCode() {
-            return stdout.hashCode()
-                    ;
+            return Objects.hashCode(stdout);
         }
 
         @Override
@@ -103,8 +103,7 @@ public class CompiledText {
             if (!(obj instanceof ExecResult other)) {
                 return false;
             }
-            return stdout.equals(other.stdout)
-                    ;
+            return Objects.equals(stdout, other.stdout);
         }
     }
 
@@ -128,11 +127,11 @@ public class CompiledText {
         @Override
         public int hashCode() {
             return code
-                    + (stdout != null ? stdout.hashCode() : 0)
-                    + (stderr != null ? stderr.hashCode() : 0)
-                    + (asm != null ? asm.hashCode() : 0)
-                    + (labelDefinitions != null ? labelDefinitions.hashCode() : 0)
-                    + (execResult != null ? execResult.hashCode() : 0)
+                    + Objects.hashCode(stdout)
+                    + Objects.hashCode(stderr)
+                    + Objects.hashCode(asm)
+                    + Objects.hashCode(labelDefinitions)
+                    + Objects.hashCode(execResult)
                     ;
         }
 
@@ -196,7 +195,7 @@ public class CompiledText {
 
     @NotNull
     public Optional<CompiledResult> getCompiledResultIfGood() {
-        return compiledResult != null && compiledResult.code == CompiledResult.CODE_GOOD ? Optional.of(compiledResult) : Optional.empty();
+        return compiledResult != null && compiledResult.code == CompiledResult.CODE_GOOD && exception == null ? Optional.of(compiledResult) : Optional.empty();
     }
 
     @NotNull
@@ -206,7 +205,12 @@ public class CompiledText {
 
     @Override
     public int hashCode() {
-        return (canceled ? 1 : 0) + rawInput.hashCode() + rawOutput.hashCode() + Objects.hashCode(exception) + Objects.hashCode(compiledResult);
+        return (canceled ? 1 : 0)
+                + rawInput.hashCode()
+                + rawOutput.hashCode()
+                + Objects.hashCode(exception)
+                + Objects.hashCode(compiledResult)
+                ;
     }
 
     @Override
@@ -214,6 +218,11 @@ public class CompiledText {
         if (!(obj instanceof CompiledText other)) {
             return false;
         }
-        return canceled == other.canceled && rawInput.equals(other.rawInput) && rawOutput.equals(other.rawOutput) && Objects.equals(exception, other.exception) && Objects.equals(compiledResult, other.compiledResult);
+        return canceled == other.canceled
+                && rawInput.equals(other.rawInput)
+                && rawOutput.equals(other.rawOutput)
+                && Objects.equals(exception, other.exception)
+                && Objects.equals(compiledResult, other.compiledResult)
+                ;
     }
 }

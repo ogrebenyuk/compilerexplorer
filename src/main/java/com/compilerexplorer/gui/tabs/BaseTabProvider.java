@@ -1,8 +1,6 @@
 package com.compilerexplorer.gui.tabs;
 
-import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
 import com.compilerexplorer.common.Tabs;
-import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.google.common.collect.ImmutableList;
@@ -11,23 +9,19 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.util.Producer;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public abstract class BaseTabProvider implements TabProvider {
     @NotNull
-    private static final FileType FILE_TYPE_ON_ERROR = PlainTextFileType.INSTANCE;
+    private static final FileType MESSAGE_FILE_TYPE = PlainTextFileType.INSTANCE;
     @NotNull
     private static final List<TextRange> NO_RANGES = ImmutableList.of();
     @NotNull
-    protected final Project project;
-    @NotNull
-    protected final SettingsState state;
+    private final SettingsState state;
     @NotNull
     private final Tabs tab;
     @NonNls
@@ -36,9 +30,8 @@ public abstract class BaseTabProvider implements TabProvider {
     @NotNull
     private final FileType fileType;
 
-    public BaseTabProvider(@NotNull Project project_, @NotNull Tabs tab_, @NonNls @NotNull String actionId_, @NotNull FileType fileType_) {
-        project = project_;
-        state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+    public BaseTabProvider(@NotNull SettingsState state_, @NotNull Tabs tab_, @NonNls @NotNull String actionId_, @NotNull FileType fileType_) {
+        state = state_;
         tab = tab_;
         actionId = actionId_;
         fileType = fileType_;
@@ -58,21 +51,6 @@ public abstract class BaseTabProvider implements TabProvider {
     }
 
     @Override
-    @NotNull
-    public FileType getFileType(@NotNull DataHolder data) {
-        return isError(data) ? FILE_TYPE_ON_ERROR : fileType;
-    }
-
-    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
-        // empty
-    }
-
-    @Override
-    public void provide(@NotNull DataHolder data, @NotNull BiConsumer<String, Optional<List<FoldingRegion>>> textAndFoldingConsumer) {
-        provide(data, text -> textAndFoldingConsumer.accept(text, Optional.empty()));
-    }
-
-    @Override
     public void highlightLocations(@NotNull EditorEx ed, @NotNull List<CompiledText.SourceLocation> highlightedLocations) {
         // empty
     }
@@ -84,12 +62,12 @@ public abstract class BaseTabProvider implements TabProvider {
     }
 
     @Override
-    public void editorCreated(@NotNull EditorEx ed) {
+    public void editorCreated(@NotNull Project project, @NotNull EditorEx ed) {
         // empty
     }
 
     @Override
-    public void updateGutter(@NotNull EditorEx ed) {
+    public void updateGutter(@NotNull Project project, @NotNull EditorEx ed) {
         // empty
     }
 
@@ -103,15 +81,34 @@ public abstract class BaseTabProvider implements TabProvider {
         return true;
     }
 
-    @Override
-    @NonNls
-    @NotNull
-    public String defaultExtension(@NotNull DataHolder data) {
-        return getFileType(data).getDefaultExtension();
-    }
-
     @NotNull
     protected SettingsState getState() {
-        return CompilerExplorerSettingsProvider.getInstance(project).getState();
+        return state;
+    }
+
+    @NonNls
+    @NotNull
+    protected String defaultExtension(@NotNull FileType filetype) {
+        return filetype.getDefaultExtension();
+    }
+
+    protected void contentWithFolding(boolean enabled, @NotNull Producer<TabContent> contentProducer, @NotNull TabContentConsumer contentConsumer) {
+        contentConsumer.accept(enabled, false, fileType, defaultExtension(fileType), contentProducer);
+    }
+
+    protected void content(boolean enabled, @NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
+        contentConsumer.accept(enabled, false, fileType, defaultExtension(fileType),  () -> new TabContent(messageProducer.produce()));
+    }
+
+    protected void message(boolean enabled, @NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
+        message(enabled, false, messageProducer, contentConsumer);
+    }
+
+    protected void error(boolean enabled, Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
+        message(enabled, true, messageProducer, contentConsumer);
+    }
+
+    private void message(boolean enabled, boolean error, @NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
+        contentConsumer.accept(enabled, error, MESSAGE_FILE_TYPE, defaultExtension(MESSAGE_FILE_TYPE), () -> new TabContent(messageProducer.produce()));
     }
 }

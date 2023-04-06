@@ -3,52 +3,49 @@ package com.compilerexplorer.gui.tabs;
 import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
+import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.datamodel.SelectedSource;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.json.JsonSerializer;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.intellij.json.JsonFileType;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.NlsSafe;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Consumer;
-
 public class SourceInfoTabProvider extends BaseTabProvider {
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String SOURCE_KEY = "source";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String MATCH_KEY = "matchToRemoteCompiler";
 
-    public SourceInfoTabProvider(@NotNull Project project) {
-        super(project, Tabs.SOURCE_INFO, "compilerexplorer.ShowSourceInfoTab", JsonFileType.INSTANCE);
+    public SourceInfoTabProvider(@NotNull SettingsState state) {
+        super(state, Tabs.SOURCE_INFO, "compilerexplorer.ShowSourceInfoTab", JsonFileType.INSTANCE);
     }
 
     @Override
-    public boolean isEnabled(@NotNull DataHolder data) {
-        return false;
-    }
-
-    @Override
-    public boolean isError(@NotNull DataHolder data) {
-        return data.get(SelectedSource.KEY).isEmpty();
-    }
-
-    @Override
-    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
-        data.get(SelectedSource.KEY).ifPresentOrElse(selectedSource -> {
+    public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
+        data.get(SelectedSource.KEY).ifPresentOrElse(
+        selectedSource -> content(false, () -> {
             Gson gson = JsonSerializer.createSerializer();
             JsonObject object = new JsonObject();
-
             object.add(SOURCE_KEY, gson.toJsonTree(selectedSource));
+            object.add(MATCH_KEY, gson.toJsonTree(data.get(SourceRemoteMatched.SELECTED_KEY).orElse(null)));
+            return gson.toJson(object);
+        }, contentConsumer),
+        () -> {
+            if (sourcesPresent(data)) {
+                error(true, () -> Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection"), contentConsumer);
+            } else {
+                message(false, () -> Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection"), contentConsumer);
+            }
+        });
+    }
 
-            data.get(SourceRemoteMatched.SELECTED_KEY).ifPresent(sourceRemoteMatched -> object.add(MATCH_KEY, gson.toJsonTree(sourceRemoteMatched)));
-
-            String text = gson.toJson(object);
-            textConsumer.accept(text);
-        }, () -> textConsumer.accept(Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection")));
+    private static boolean sourcesPresent(@NotNull DataHolder data) {
+        return data.get(ProjectSources.KEY).map(sources -> !sources.getSources().isEmpty()).orElse(false);
     }
 }

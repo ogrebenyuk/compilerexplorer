@@ -1,44 +1,43 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
-import com.intellij.openapi.util.NlsSafe;
 import com.intellij.util.xmlb.annotations.Property;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class Filters {
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String BINARY_FIELD = "binary";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String BINARY_OBJECT_FIELD = "binaryObject";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String EXECUTE_FIELD = "execute";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String LABELS_FIELD = "labels";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String LIBRARY_CODE_FIELD = "libraryCode";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String DIRECTIVES_FIELD = "directives";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String COMMENT_ONLY_FIELD = "commentOnly";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String TRIM_FIELD = "trim";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String INTEL_FIELD = "intel";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String DEMANGLE_FIELD = "demangle";
 

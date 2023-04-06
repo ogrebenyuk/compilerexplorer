@@ -4,7 +4,6 @@ import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Vector;
 
 public class ProjectSources {
     public static final Key<ProjectSources> KEY = Key.create(ProjectSources.class.getName());
@@ -12,7 +11,7 @@ public class ProjectSources {
     @NotNull
     private final List<SourceSettings> sources;
 
-    public ProjectSources(@NotNull Vector<SourceSettings> sources_) {
+    public ProjectSources(@NotNull List<SourceSettings> sources_) {
         sources = sources_;
     }
 

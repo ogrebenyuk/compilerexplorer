@@ -52,8 +52,6 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     @NonNls
     @NotNull
     private static final String POPUP_ACTIONS_GROUP_ID = "compilerexplorer.ExplorerOutputEditorPopupGroup";
-    @NotNull
-    private static final DefaultActionGroup POPUP_ACTIONS = new DefaultActionGroup(ActionManager.getInstance().getAction(POPUP_ACTIONS_GROUP_ID));
 
     @NotNull
     private final Map<CompiledText.SourceLocation, List<TextRange>> locationsFromSourceMap = new HashMap<>();
@@ -68,30 +66,15 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     @NotNull
     private final ColoredLineMarkerRenderer lineMarkerRenderer = new ColoredLineMarkerRenderer();
 
-    public ExplorerOutputTabProvider(@NotNull Project project) {
-        super(project, Tabs.EXPLORER_OUTPUT, "compilerexplorer.ShowExplorerOutputTab", AsmFileType.INSTANCE);
+    public ExplorerOutputTabProvider(@NotNull SettingsState state) {
+        super(state, Tabs.EXPLORER_OUTPUT, "compilerexplorer.ShowExplorerOutputTab", AsmFileType.INSTANCE);
     }
 
     @Override
-    public boolean isEnabled(@NotNull DataHolder data) {
-        return shouldHaveRun(data).isPresent();
-    }
-
-    @Override
-    public boolean isError(@NotNull DataHolder data) {
-        return compiledText(data).map(compiledText -> compiledText.getCanceled() || compiledText.getCompiledResultIfGood().isEmpty()).orElse(true);
-    }
-
-    @Override
-    public void provide(@NotNull DataHolder data, @NotNull BiConsumer<String, Optional<List<FoldingRegion>>> textAndFoldingConsumer) {
-        locationsFromSourceMap.clear();
-        locationsToSourceMap.clear();
-        lineNumberToByteOffsetMap.clear();
-        highlighterRanges.clear();
-        highlighters.clear();
-
+    public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResultIfGood().ifPresentOrElse(
-            compiledResult -> {
+            compiledResult -> contentWithFolding(true, () -> {
+                clear();
                 SettingsState state = getState();
                 boolean shortenTemplates = state.getShortenTemplates();
                 StringBuilder asmBuilder = new StringBuilder();
@@ -140,7 +123,7 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
                 }
                 chunkToOffset[compiledResult.asm != null ? compiledResult.asm.size() : 0] = currentOffset;
 
-                List<FoldingRegion> foldingRegions = new ArrayList<>();
+                List<TabFoldingRegion> foldingRegions = new ArrayList<>();
                 if (compiledResult.labelDefinitions != null) {
                     List<Pair<Integer, String>> labelEntries = compiledResult.labelDefinitions.entrySet().stream().map(e -> new Pair<>(e.getValue(), e.getKey())).sorted(Pair.comparingByFirst()).toList();
                     for (int i = 0; i < labelEntries.size(); ++i) {
@@ -148,33 +131,41 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
                         int beginOffset = chunkToOffset[entry.getFirst() - 1];
                         int endOffset = (i + 1 < labelEntries.size() ? chunkToOffset[labelEntries.get(i + 1).getFirst() - 1] : currentOffset) - 1;
                         if (beginOffset < endOffset) {
-                            foldingRegions.add(new FoldingRegion(new TextRange(beginOffset, endOffset), entry.getSecond(), entry.getSecond()));
+                            foldingRegions.add(new TabFoldingRegion(new TextRange(beginOffset, endOffset), entry.getSecond(), entry.getSecond()));
                         }
                     }
                 }
 
-                textAndFoldingConsumer.accept(asmBuilder.toString(), Optional.of(foldingRegions));
-            },
+                return new TabContent(asmBuilder.toString(), foldingRegions);
+            }, contentConsumer),
             () -> {
                 if (compiledText.getCanceled()) {
-                    textAndFoldingConsumer.accept(Bundle.get("compilerexplorer.ExplorerOutputTabProvider.Canceled"), Optional.empty());
+                    error(true, () -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.Canceled");}, contentConsumer);
                 } else {
-                    showExplorerError(compiledText, text -> textAndFoldingConsumer.accept(text, Optional.empty()));
+                    error(true, () -> {clear(); return getExplorerError(compiledText);}, contentConsumer);
                 }
             }
-        )), () -> textAndFoldingConsumer.accept(Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun"), Optional.empty()));
+        )), () -> message(false, () -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun");}, contentConsumer));
+    }
+
+    private void clear() {
+        locationsFromSourceMap.clear();
+        locationsToSourceMap.clear();
+        lineNumberToByteOffsetMap.clear();
+        highlighterRanges.clear();
+        highlighters.clear();
     }
 
     @Override
-    public void editorCreated(@NotNull EditorEx ed) {
+    public void editorCreated(@NotNull Project project, @NotNull EditorEx ed) {
         ed.getCaretModel().addCaretListener(new CaretPositionChangeListener(newCaretPosition -> {
             if (getState().getAutoscrollToSource()) {
-                scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
+                scrollToSource(project, findSourceLocationFromOffset(ed.logicalPositionToOffset(newCaretPosition)));
             }
         }));
         ed.getSettings().setLineMarkerAreaShown(true);
         setupGutter(ed);
-        updateGutter(ed);
+        updateGutter(project, ed);
 
         MarkupModelEx markupModel = ed.getMarkupModel();
         markupModel.removeAllHighlighters();
@@ -187,7 +178,7 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
 
     @NotNull
     private Optional<String> shouldHaveRun(@NotNull DataHolder data) {
-        if (state.getConnected() && data.get(SourceRemoteMatched.SELECTED_KEY).isPresent()) {
+        if (getState().getConnected() && data.get(SourceRemoteMatched.SELECTED_KEY).isPresent()) {
             return data.get(PreprocessedSource.KEY).flatMap(PreprocessedSource::getPreprocessedText);
         } else {
             return Optional.empty();
@@ -208,15 +199,16 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     }
 
     private void showGutterPopupMenu(Component gutter, int x, int y) {
-        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, POPUP_ACTIONS, gutter, x, y);
+        DefaultActionGroup actions = new DefaultActionGroup(ActionManager.getInstance().getAction(POPUP_ACTIONS_GROUP_ID));
+        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, actions, gutter, x, y);
     }
 
-    public static void showPopupMenu(@NotNull String place, @NotNull ActionGroup actionsGroup, @NotNull Component component, int x, int y) {
+    private static void showPopupMenu(@NotNull String place, @NotNull ActionGroup actionsGroup, @NotNull Component component, int x, int y) {
         ActionManager.getInstance().createActionPopupMenu(place, actionsGroup).getComponent().show(component, x, y);
     }
 
     @Override
-    public void updateGutter(@NotNull EditorEx ed) {
+    public void updateGutter(@NotNull Project project, @NotNull EditorEx ed) {
         EditorGutterComponentEx gutter = ed.getGutterComponentEx();
         gutter.setCanCloseAnnotations(true);
         gutter.closeAllAnnotations();
@@ -237,12 +229,12 @@ public class ExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         if (state.getShowSourceAnnotations()) {
             SourceAnnotationProvider provider = new SourceAnnotationProvider(this::findSourceLocationFromOffset);
             gutter.registerTextAnnotation(provider, new SourceAnnotationGutterAction(provider, ed,
-                    line -> scrollToSource(findSourceLocationFromOffset(ed.logicalPositionToOffset(new LogicalPosition(line, 0))))
+                    line -> scrollToSource(project, findSourceLocationFromOffset(ed.logicalPositionToOffset(new LogicalPosition(line, 0))))
             ));
         }
     }
 
-    private void scrollToSource(@Nullable CompiledText.SourceLocation source) {
+    private void scrollToSource(@NotNull Project project, @Nullable CompiledText.SourceLocation source) {
         if (source != null && source.file != null) {
             try {
                 VirtualFile file = LocalFileSystem.getInstance().findFileByPath(source.file);

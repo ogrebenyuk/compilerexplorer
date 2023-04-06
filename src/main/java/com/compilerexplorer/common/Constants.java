@@ -1,14 +1,17 @@
 package com.compilerexplorer.common;
 
 import com.google.common.collect.ImmutableMap;
+import com.intellij.icons.AllIcons;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.ui.IconManager;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.*;
 import java.util.Map;
 
 public class Constants {
@@ -44,6 +47,13 @@ public class Constants {
     @Nls
     @NotNull
     public static final String INITIAL_NOTICE = Bundle.format("compilerexplorer.Constants.InitialNotice", "DefaultUrl", DEFAULT_URL);
+    @NonNls
+    @NotNull
+    public static final String DEFAULT_PREPROCESSED_TEXT_EXTENSION = "ii";
+    @NotNull
+    public static final Icon TAB_ERROR_ICON = AllIcons.General.BalloonError;
+    @NotNull
+    public static final Icon TAB_NO_ERROR_ERROR_ICON = IconManager.getInstance().createEmptyIcon(TAB_ERROR_ICON);
 
     @NotNull
     public static final NotificationGroup NOTIFICATION_GROUP = NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_GROUP_NAME);

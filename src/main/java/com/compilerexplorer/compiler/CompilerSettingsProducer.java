@@ -17,6 +17,7 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +28,15 @@ import java.util.stream.Stream;
 public class CompilerSettingsProducer extends BaseComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(CompilerSettingsProducer.class);
+    @NonNls
+    @NonNull
+    private static final String VERSION_FLAG = "-v";
+    @NonNls
+    @NonNull
+    private static final String GCC_COMPILER_KIND = "GCC";
+    @NonNls
+    @NonNull
+    private static final String CLANG_COMPILER_KIND = "Clang";
 
     @NotNull
     private final Project project;
@@ -139,12 +149,12 @@ public class CompilerSettingsProducer extends BaseComponent {
     private static String @NonNls @NotNull [] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
         return Stream.of(
                 sourceSettings.compilerPath,
-                "-v"
+                VERSION_FLAG
         ).toArray(String[]::new);
     }
 
     private static boolean isSupportedCompilerType(@NonNls @NotNull String compilerKind) {
-        return compilerKind.equals("GCC") || compilerKind.equals("Clang");
+        return compilerKind.equals(GCC_COMPILER_KIND) || compilerKind.equals(CLANG_COMPILER_KIND);
     }
 
     @NonNls

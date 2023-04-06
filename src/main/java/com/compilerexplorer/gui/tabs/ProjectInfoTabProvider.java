@@ -4,17 +4,16 @@ import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.ProjectSources;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.json.JsonSerializer;
 import com.intellij.json.JsonFileType;
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
-import java.util.function.Consumer;
 
 public class ProjectInfoTabProvider extends BaseTabProvider {
-    public ProjectInfoTabProvider(@NotNull Project project) {
-        super(project, Tabs.PROJECT_INFO, "compilerexplorer.ShowProjectInfoTab", JsonFileType.INSTANCE);
+    public ProjectInfoTabProvider(@NotNull SettingsState state) {
+        super(state, Tabs.PROJECT_INFO, "compilerexplorer.ShowProjectInfoTab", JsonFileType.INSTANCE);
     }
 
     @Override
@@ -23,20 +22,10 @@ public class ProjectInfoTabProvider extends BaseTabProvider {
     }
 
     @Override
-    public boolean isEnabled(@NotNull DataHolder data) {
-        return sources(data).isEmpty();
-    }
-
-    @Override
-    public boolean isError(@NotNull DataHolder data) {
-        return sources(data).isEmpty();
-    }
-
-    @Override
-    public void provide(@NotNull DataHolder data, @NotNull Consumer<String> textConsumer) {
+    public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         sources(data).ifPresentOrElse(
-                sources -> textConsumer.accept(JsonSerializer.createSerializer().toJson(sources)),
-                () -> textConsumer.accept(Bundle.get("compilerexplorer.ProjectInfoTabProvider.NoSources"))
+                sources -> content(false, () -> JsonSerializer.createSerializer().toJson(sources), contentConsumer),
+                () -> error(true, () -> Bundle.get("compilerexplorer.ProjectInfoTabProvider.NoSources"), contentConsumer)
         );
     }
 

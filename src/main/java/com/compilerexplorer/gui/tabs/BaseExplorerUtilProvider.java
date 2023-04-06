@@ -4,8 +4,9 @@ import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -13,16 +14,17 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import static com.compilerexplorer.datamodel.CompiledText.CompiledResult.*;
 
 public abstract class BaseExplorerUtilProvider extends BaseTabProvider {
-    public BaseExplorerUtilProvider(@NotNull Project project_, @NotNull Tabs tab_, @NonNls  @NotNull String actionId_, @NotNull FileType fileType_) {
-        super(project_, tab_, actionId_, fileType_);
+    public BaseExplorerUtilProvider(@NotNull SettingsState state, @NotNull Tabs tab_, @NonNls  @NotNull String actionId_, @NotNull FileType fileType_) {
+        super(state, tab_, actionId_, fileType_);
     }
 
-    protected void showExplorerError(@NotNull CompiledText compiledText, @NotNull Consumer<String> textConsumer) {
+    @Nls
+    @NotNull
+    protected String getExplorerError(@NotNull CompiledText compiledText) {
         StringBuilder errorMessageBuilder = new StringBuilder();
         compiledText.getException().ifPresent(exception -> {
                     errorMessageBuilder.append(Bundle.format("compilerexplorer.BaseExplorerUtilProvider.Exception", "Exception", exception.getMessage()));
@@ -39,7 +41,7 @@ public abstract class BaseExplorerUtilProvider extends BaseTabProvider {
                 buildTextFromChunks(compiledResult.stderr, errorMessageBuilder);
             }
         });
-        textConsumer.accept(errorMessageBuilder.toString());
+        return errorMessageBuilder.toString();
     }
 
     protected static boolean hasText(@Nullable List<CompiledText.CompiledChunk> chunks) {
@@ -48,17 +50,19 @@ public abstract class BaseExplorerUtilProvider extends BaseTabProvider {
 
     @NonNls
     @NotNull
-    protected static String getTextFromChunks(@NotNull List<CompiledText.CompiledChunk> chunks) {
+    protected static String getTextFromChunks(@Nullable List<CompiledText.CompiledChunk> chunks) {
         StringBuilder builder = new StringBuilder();
         buildTextFromChunks(chunks, builder);
         return builder.toString();
     }
 
-    protected static void buildTextFromChunks(@NotNull List<CompiledText.CompiledChunk> chunks, @NotNull StringBuilder builder) {
-        for (CompiledText.CompiledChunk chunk : chunks) {
-            if (chunk.text != null) {
-                builder.append(chunk.text);
-                builder.append('\n');
+    protected static void buildTextFromChunks(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull StringBuilder builder) {
+        if (chunks != null) {
+            for (CompiledText.CompiledChunk chunk : chunks) {
+                if (chunk.text != null) {
+                    builder.append(chunk.text);
+                    builder.append('\n');
+                }
             }
         }
     }

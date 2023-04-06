@@ -23,11 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.Vector;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
     @NotNull
@@ -46,7 +45,7 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
     @NotNull
     private static ProjectSources collect(@NotNull Project project) {
         OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(project);
-        return (configuration != null) ? collect(project, configuration) : new ProjectSources(new Vector<>());
+        return (configuration != null) ? collect(project, configuration) : new ProjectSources(new ArrayList<>());
     }
 
     @NotNull
@@ -73,7 +72,7 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
                 }
             }
             return null;
-        }).filter(Objects::nonNull).collect(Collectors.toCollection(Vector::new)));
+        }).filter(Objects::nonNull).toList());
     }
 
     @NotNull

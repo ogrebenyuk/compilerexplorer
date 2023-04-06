@@ -1,7 +1,6 @@
 package com.compilerexplorer.datamodel.state;
 
 import com.google.gson.annotations.SerializedName;
-import com.intellij.openapi.util.NlsSafe;
 import com.intellij.util.xmlb.annotations.Property;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -12,19 +11,19 @@ import javax.xml.bind.annotation.XmlAccessorType;
 
 @XmlAccessorType(XmlAccessType.PROPERTY)
 public class RemoteCompilerInfo {
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String ID_FIELD = "id";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String NAME_FIELD = "name";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String LANG_FIELD = "lang";
-    @NlsSafe
+    @NonNls
     @NotNull
     private static final String SEMVER_FIELD = "semver";
-    @NlsSafe
+    @NonNls
     @NotNull
     public static final String RAW_DATA_FIELD = "rawData";
 
@@ -48,11 +47,11 @@ public class RemoteCompilerInfo {
     @NotNull
     private String rawData = "";
 
-    RemoteCompilerInfo() {
+    public RemoteCompilerInfo() {
         // empty
     }
 
-    RemoteCompilerInfo(@NotNull RemoteCompilerInfo other) {
+    public RemoteCompilerInfo(@NotNull RemoteCompilerInfo other) {
         copyFrom(other);
     }
 
@@ -61,7 +60,7 @@ public class RemoteCompilerInfo {
         return getStringOrEmpty(id);
     }
 
-    private void setId(@Nullable String id_) {
+    public void setId(@Nullable String id_) {
         id = id_;
     }
 
@@ -70,7 +69,7 @@ public class RemoteCompilerInfo {
         return getStringOrEmpty(name);
     }
 
-    private void setName(@Nullable String name_) {
+    public void setName(@Nullable String name_) {
         name = name_;
     }
 
@@ -79,7 +78,7 @@ public class RemoteCompilerInfo {
         return getStringOrEmpty(language);
     }
 
-    private void setLanguage(@Nullable String language_) {
+    public void setLanguage(@Nullable String language_) {
         language = language_;
     }
 
@@ -88,7 +87,7 @@ public class RemoteCompilerInfo {
         return getStringOrEmpty(version);
     }
 
-    private void setVersion(@Nullable String version_) {
+    public void setVersion(@Nullable String version_) {
         version = version_;
     }
 
