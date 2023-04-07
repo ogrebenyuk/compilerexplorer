@@ -21,7 +21,7 @@ class BaseShowTab extends BaseAction implements BaseActionWithFilters, BaseActio
         super.update(event);
         withEditorGui(event, editorGui -> {
             setEnabled(event, isEnabled(event) && editorGui.isTabEnabled(tab));
-            setIcon(event, editorGui.isTabError(tab) ? Constants.TAB_ERROR_ICON : Constants.TAB_NO_ERROR_ERROR_ICON);
+            setIcon(event, editorGui.isTabError(tab) ? Constants.TAB_ERROR_ICON : Constants.EMPTY_ICON);
         });
     }
 

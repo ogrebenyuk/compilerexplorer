@@ -1,12 +1,14 @@
 package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.*;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.PopupMenuListenerAdapter;
 import com.intellij.ui.SimpleListCellRenderer;
 import com.intellij.util.ui.JBUI;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,17 +28,25 @@ public class TabsComboBox extends ComboBox<AnAction> {
         return this;
     }
 
-    public TabsComboBox() {
-        combobox().setMaximumRowCount(Tabs.values().length);
+    public TabsComboBox(@NotNull SettingsState state) {
+        combobox().setMaximumRowCount(Tabs.values().length + 1);
         combobox().setBorder(JBUI.Borders.empty());
         combobox().setRenderer(new SimpleListCellRenderer<>() {
             @Override
             public void customize(@Nullable JList list, @Nullable AnAction value, int index, boolean isSelected, boolean cellHasFocus) {
                 if (value != null) {
                     Presentation presentation = createPresentation(value);
-                    setText(presentation.getText());
-                    setToolTipText(TooltipUtil.prettify(presentation.getDescription()));
-                    setIcon((index == -1 && presentation.getIcon() == Constants.TAB_NO_ERROR_ERROR_ICON) || !anyErrorTabs() ? null : presentation.getIcon());
+                    @NonNls String text = presentation.getText();
+                    setText(text);
+                    setToolTipText(presentation.getDescription() != null ? TooltipUtil.prettify(presentation.getDescription()) : null);
+
+                    if (index == combobox().getModel().getSize() - 1) {
+                        setIcon(state.getShowAllTabs() ? Constants.CHECKMARK_ICON : Constants.EMPTY_ICON);
+                    } else if (index == -1 && presentation.getIcon() == Constants.EMPTY_ICON) {
+                        setIcon(null);
+                    } else {
+                        setIcon(presentation.getIcon());
+                    }
                 }
                 setBorder(JBUI.Borders.empty());
             }
@@ -103,13 +113,13 @@ public class TabsComboBox extends ComboBox<AnAction> {
     }
 
     public void refreshModel(@NotNull List<AnAction> actions, @Nullable AnAction selectedAction) {
-        DefaultComboBoxModel<AnAction> model = new DefaultComboBoxModel<>(new Vector<>(actions));
+        Vector<AnAction> vec = new Vector<>(actions);
+        vec.add(ActionUtil.findAction("compilerexplorer.ShowAllTabsToggle"));
+        DefaultComboBoxModel<AnAction> model = new DefaultComboBoxModel<>(vec);
         suppressUpdates.apply(() -> combobox().setModel(model));
         if (selectedAction != null) {
             selectAction(selectedAction, true);
         }
-        combobox().setVisible(actions.size() > 0);
-        combobox().setEnabled(actions.size() > 1);
     }
 
     public void selectAction(@NotNull AnAction action, boolean suppressUpdates_) {
@@ -144,18 +154,5 @@ public class TabsComboBox extends ComboBox<AnAction> {
     @NotNull
     private Presentation createPresentation(@NotNull AnAction action) {
         return ActionUtil.createPresentation(action, combobox());
-    }
-
-    private boolean anyErrorTabs() {
-        ComboBoxModel<AnAction> model = combobox().getModel();
-        int size = model.getSize();
-        for (int i = 0; i < size; ++i) {
-            AnAction action = model.getElementAt(i);
-            Presentation presentation = createPresentation(action);
-            if (presentation.getIcon() == Constants.TAB_ERROR_ICON) {
-                return true;
-            }
-        }
-        return false;
     }
 }

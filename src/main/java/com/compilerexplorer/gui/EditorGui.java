@@ -27,6 +27,7 @@ import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.AsyncProcessIcon;
+import com.intellij.util.ui.JBUI;
 import com.twelvemonkeys.io.FileUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +65,7 @@ public class EditorGui extends BaseRefreshableComponent {
     @NotNull
     private final CaretTracker caretTracker;
     @NotNull
-    private final TabsComboBox tabsCombobox = new TabsComboBox();
+    private final TabsComboBox tabsCombobox;
     @NotNull
     private final JComponent spinningIcon = new AsyncProcessIcon("");
     @NotNull
@@ -92,6 +93,8 @@ public class EditorGui extends BaseRefreshableComponent {
         project.putUserData(EditorGui.KEY, this);
 
         spinningIcon.setVisible(false);
+
+        tabsCombobox = new TabsComboBox(state);
 
         mainPanel = new JPanel(new BorderLayout());
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
@@ -127,6 +130,7 @@ public class EditorGui extends BaseRefreshableComponent {
     public void applyThemeColors() {
         withCurrentTabProvider(TabProvider::applyThemeColors);
         tabsCombobox.applyThemeColors();
+        withEditor(this::setupTabs);
     }
 
     @NotNull
@@ -139,7 +143,9 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     private void setupTabs(@NotNull EditorEx ed) {
-        JPanel panel = new JPanel();
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        panel.setBackground(editor.getBackground());
+        panel.setBorder(JBUI.Borders.empty());
         panel.add(spinningIcon);
         panel.add(tabsCombobox.getComponent());
         ((JBScrollPane) ed.getScrollPane()).setStatusComponent(panel);
@@ -356,7 +362,7 @@ public class EditorGui extends BaseRefreshableComponent {
     private void clearEditor() {
         editor.setNewDocumentAndFileType(PlainTextFileType.INSTANCE, editor.getDocument());
         editor.setText("");
-        editor.setEnabled(false);
+        editor.setEnabled(true);
         foldingManager.set(getCurrentSourceFilename(getLastData()), currentTab, null, getEditor());
     }
 

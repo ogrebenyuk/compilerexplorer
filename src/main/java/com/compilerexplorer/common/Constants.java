@@ -53,7 +53,9 @@ public class Constants {
     @NotNull
     public static final Icon TAB_ERROR_ICON = AllIcons.General.BalloonError;
     @NotNull
-    public static final Icon TAB_NO_ERROR_ERROR_ICON = IconManager.getInstance().createEmptyIcon(TAB_ERROR_ICON);
+    public static final Icon CHECKMARK_ICON = AllIcons.Actions.Checked;
+    @NotNull
+    public static final Icon EMPTY_ICON = IconManager.getInstance().createEmptyIcon(TAB_ERROR_ICON);
 
     @NotNull
     public static final NotificationGroup NOTIFICATION_GROUP = NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_GROUP_NAME);
