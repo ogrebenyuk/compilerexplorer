@@ -17,12 +17,12 @@ public interface WithSources extends NoSources {
         data.get(ProjectSources.KEY).ifPresent(sources ->
             sources.getSources().add(new SourceSettings("sourcePath",
                 "sourceName",
-                "language",
+                "myLanguage",
                 "languageSwitch",
                 "compilerPath",
                 "compilerWorkingDir",
                 "compilerKind",
-                List.of("switches"),
+                List.of("mySwitches"),
                 new LocalHost())
             )
         );

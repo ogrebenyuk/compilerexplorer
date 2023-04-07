@@ -1,9 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.ActionUtil;
-import com.compilerexplorer.common.SuppressionFlag;
-import com.compilerexplorer.common.Tabs;
-import com.compilerexplorer.common.TooltipUtil;
+import com.compilerexplorer.common.*;
 import com.compilerexplorer.gui.listeners.ComboBoxSelectionListener;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.ui.ComboBox;
@@ -39,7 +36,7 @@ public class TabsComboBox extends ComboBox<AnAction> {
                     Presentation presentation = createPresentation(value);
                     setText(presentation.getText());
                     setToolTipText(TooltipUtil.prettify(presentation.getDescription()));
-                    setIcon(presentation.getIcon());
+                    setIcon((index == -1 && presentation.getIcon() == Constants.TAB_NO_ERROR_ERROR_ICON) || !anyErrorTabs() ? null : presentation.getIcon());
                 }
                 setBorder(JBUI.Borders.empty());
             }
@@ -147,5 +144,18 @@ public class TabsComboBox extends ComboBox<AnAction> {
     @NotNull
     private Presentation createPresentation(@NotNull AnAction action) {
         return ActionUtil.createPresentation(action, combobox());
+    }
+
+    private boolean anyErrorTabs() {
+        ComboBoxModel<AnAction> model = combobox().getModel();
+        int size = model.getSize();
+        for (int i = 0; i < size; ++i) {
+            AnAction action = model.getElementAt(i);
+            Presentation presentation = createPresentation(action);
+            if (presentation.getIcon() == Constants.TAB_ERROR_ICON) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -60,6 +60,7 @@ public class CollectedTabContent {
     }
 
     @Override
+    @NonNls
     @NotNull
     public String toString() {
         return "CollectedTabContent{" +

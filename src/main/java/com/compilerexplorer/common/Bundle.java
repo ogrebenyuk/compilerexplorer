@@ -1,7 +1,5 @@
 package com.compilerexplorer.common;
 
-import org.apache.commons.text.StringSubstitutor;
-import org.apache.commons.text.lookup.StringLookup;
 import org.jetbrains.annotations.*;
 
 import java.util.ResourceBundle;
@@ -12,27 +10,21 @@ public class Bundle {
     public static final String BUNDLE_FILE = "messages.compilerexplorerBundle";
     @NotNull
     private static ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_FILE);
-    private static class ThrowingLookup implements StringLookup {
-        public String[] map = null;
-        @Override
+
+    public static class Substitutor {
         @Nls
         @NotNull
-        public String lookup(@NonNls @NotNull String key) {
-            if (map != null) {
-                for (int i = 0; i + 1 < map.length; i += 2) {
-                    if (map[i].equals(key)) {
-                        return map[i + 1];
-                    }
-                }
-                throw new RuntimeException("Cannot find " + key + " among " + String.join(" ", map));
+        public static String replace(@Nls @NotNull String format, @NonNls @NotNull String ... map) {
+            String result = format;
+            for (int i = 0; i + 1 < map.length; i += 2) {
+                result = result.replace("${" + map[i] + "}", map[i + 1]);
             }
-            throw new RuntimeException("Cannot find " + key);
+            if (result.contains("${")) {
+                throw new RuntimeException("Bad format " + format);
+            }
+            return result;
         }
     }
-    @NotNull
-    private static final ThrowingLookup LOOKUP = new ThrowingLookup();
-    @NotNull
-    private static final StringSubstitutor SUBSTITUTOR = new StringSubstitutor(LOOKUP);
 
     @Nls
     @NotNull
@@ -43,9 +35,7 @@ public class Bundle {
     @Nls
     @NotNull
     public static String format(@NonNls @NotNull @PropertyKey(resourceBundle = BUNDLE_FILE) String key, @NonNls @NotNull String ... map) {
-        LOOKUP.map = map;
-        @Nls @NotNull String result = SUBSTITUTOR.replace(get(key));
-        LOOKUP.map = null;
+        @Nls @NotNull String result = Substitutor.replace(get(key), map);
         return result;
     }
 

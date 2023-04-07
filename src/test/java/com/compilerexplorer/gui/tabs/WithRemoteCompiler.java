@@ -24,7 +24,7 @@ public interface WithRemoteCompiler extends WithPreprocessor, WithMatch {
         CompiledText.CompiledResult goodRunResult = new CompiledText.CompiledResult();
         goodRunResult.code = 0;
         CompiledText.CompiledChunk output = new CompiledText.CompiledChunk();
-        output.text = "output";
+        output.text = "myOutput";
         CompiledText.CompiledResult goodRunResultWithStdout = new CompiledText.CompiledResult();
         goodRunResultWithStdout.code = 0;
         goodRunResultWithStdout.stdout = List.of(output);

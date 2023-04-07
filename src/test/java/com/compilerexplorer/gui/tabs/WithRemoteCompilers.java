@@ -5,10 +5,12 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.RemoteCompilersOutput;
 import com.compilerexplorer.datamodel.state.RemoteCompilerInfo;
 import com.compilerexplorer.datamodel.state.SettingsState;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+@NonNls
 public interface WithRemoteCompilers extends NoSources {
     enum Status {CANCELED, EXCEPTION, NEWLY_CONNECTED, ALREADY_CONNECTED}
 
