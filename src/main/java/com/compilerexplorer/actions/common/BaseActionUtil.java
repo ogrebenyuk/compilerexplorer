@@ -11,13 +11,12 @@ import java.util.function.Consumer;
 
 interface BaseActionUtil extends BaseActionWithProject {
     default <T> void withUserData(@NotNull AnActionEvent event, @NotNull Key<T> key, @NotNull Consumer<T> consumer) {
-        withProject(event, project -> withUserData(project, key, consumer));
-    }
-
-    default <T> void withUserData(@NotNull Project project, @NotNull Key<T> key, @NotNull Consumer<T> consumer) {
-        @Nullable T data = project.getUserData(key);
-        if (data != null) {
-            consumer.accept(data);
+        @Nullable Project project = event.getProject();
+        if (project != null) {
+            @Nullable T data = project.getUserData(key);
+            if (data != null) {
+                consumer.accept(data);
+            }
         }
     }
 
@@ -39,10 +38,6 @@ interface BaseActionUtil extends BaseActionWithProject {
 
     default void setVisible(@NotNull AnActionEvent event, boolean isVisible) {
         event.getPresentation().setVisible(isVisible);
-    }
-
-    default boolean isEnabledAndVisible(@NotNull AnActionEvent event) {
-        return event.getPresentation().isEnabledAndVisible();
     }
 
     default void setEnabledAndVisible(@NotNull AnActionEvent event, boolean isEnabledAndVisible) {

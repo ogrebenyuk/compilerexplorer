@@ -25,8 +25,8 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.SpinningProgressIcon;
 import com.intellij.ui.components.JBScrollPane;
+import com.intellij.util.ui.AsyncProcessIcon;
 import com.twelvemonkeys.io.FileUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -66,7 +66,7 @@ public class EditorGui extends BaseRefreshableComponent {
     @NotNull
     private final TabsComboBox tabsCombobox = new TabsComboBox();
     @NotNull
-    private final JLabel spinningLabel = new JLabel();
+    private final JComponent spinningIcon = new AsyncProcessIcon("");
     @NotNull
     private final List<TabProvider> tabs;
     @Nullable
@@ -91,8 +91,7 @@ public class EditorGui extends BaseRefreshableComponent {
 
         project.putUserData(EditorGui.KEY, this);
 
-        spinningLabel.setIcon(new SpinningProgressIcon());
-        spinningLabel.setVisible(false);
+        spinningIcon.setVisible(false);
 
         mainPanel = new JPanel(new BorderLayout());
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
@@ -122,7 +121,7 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     public void setSpinningIndicatorVisible(boolean visible) {
-        spinningLabel.setVisible(visible);
+        spinningIcon.setVisible(visible);
     }
 
     public void applyThemeColors() {
@@ -141,8 +140,8 @@ public class EditorGui extends BaseRefreshableComponent {
 
     private void setupTabs(@NotNull EditorEx ed) {
         JPanel panel = new JPanel();
-        panel.add(spinningLabel);
-        panel.add(tabsCombobox);
+        panel.add(spinningIcon);
+        panel.add(tabsCombobox.getComponent());
         ((JBScrollPane) ed.getScrollPane()).setStatusComponent(panel);
     }
 
@@ -169,6 +168,7 @@ public class EditorGui extends BaseRefreshableComponent {
 
     public void updateFolding() {
         withEditor(foldingManager::updateFolding);
+        refresh(false);
     }
 
     @Override

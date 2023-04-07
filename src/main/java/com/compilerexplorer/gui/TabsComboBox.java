@@ -100,6 +100,11 @@ public class TabsComboBox extends ComboBox<AnAction> {
         });
     }
 
+    @NotNull
+    public Component getComponent() {
+        return this;
+    }
+
     public void refreshModel(@NotNull List<AnAction> actions, @Nullable AnAction selectedAction) {
         DefaultComboBoxModel<AnAction> model = new DefaultComboBoxModel<>(new Vector<>(actions));
         suppressUpdates.apply(() -> combobox().setModel(model));

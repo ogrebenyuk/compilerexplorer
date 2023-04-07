@@ -5,6 +5,7 @@ import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -16,14 +17,20 @@ public interface BaseActionWithState extends BaseActionWithProject {
     }
 
     default void withState(@NotNull AnActionEvent event, @NotNull Consumer<SettingsState> consumer) {
-        withProject(event, project -> consumer.accept(getState(project)));
+        @Nullable Project project = event.getProject();
+        if (project != null) {
+            SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+            consumer.accept(state);
+        }
     }
 
     default <ReturnType> ReturnType withState(@NotNull AnActionEvent event, @NotNull Function<SettingsState, ReturnType> consumer, ReturnType defaultValue) {
-        return withProject(event, project -> consumer.apply(getState(project)), defaultValue);
-    }
-
-    default void withState(@NotNull Project project, @NotNull Consumer<SettingsState> consumer) {
-        consumer.accept(getState(project));
+        @Nullable Project project = event.getProject();
+        if (project != null) {
+            SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+            return consumer.apply(state);
+        } else {
+            return defaultValue;
+        }
     }
 }

@@ -1,20 +1,13 @@
 package com.compilerexplorer.gui.tabs.exploreroutput;
 
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.editor.ex.EditorGutterComponentEx;
 import com.intellij.openapi.editor.markup.LineMarkerRendererEx;
-import com.intellij.ui.ExperimentalUI;
-import com.intellij.util.ui.JBValue;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 
 public class ColoredLineMarkerRenderer implements LineMarkerRendererEx {
-    private static final JBValue.JBValueGroup JBVG = new JBValue.JBValueGroup();
-    private static final JBValue GAP_BETWEEN_ICONS = JBVG.value(3);
-
     @Nullable
     private Color color;
 
@@ -24,26 +17,18 @@ public class ColoredLineMarkerRenderer implements LineMarkerRendererEx {
 
     @NotNull
     public Position getPosition() {
-        return Position.CUSTOM;
+        return Position.RIGHT;
     }
 
     @Override
     public void paint(@NotNull Editor editor, @NotNull Graphics graphics, @NotNull Rectangle rectangle) {
-        if (color == null) {
-            return;
+        if (color != null) {
+            graphics.setColor(color);
+            int h = rectangle.height;
+            int w = rectangle.width;
+            int[] xPoints = {rectangle.x + w, rectangle.x,     rectangle.x,         rectangle.x + w};
+            int[] yPoints = {rectangle.y,     rectangle.y + w, rectangle.y + h - w, rectangle.y + h};
+            graphics.fillPolygon(xPoints, yPoints, 4);
         }
-        graphics.setColor(color);
-        EditorGutterComponentEx gutter = ((EditorEx) editor).getGutterComponentEx();
-        boolean isFoldingEnabled = ((EditorEx) editor).getFoldingModel().isFoldingEnabled();
-        int rw = isFoldingEnabled ? gutter.getWhitespaceSeparatorOffset() : rectangle.width;
-        if (ExperimentalUI.isNewUI()) {
-            int gap = GAP_BETWEEN_ICONS.get();
-            rw += isFoldingEnabled ? gap : -gap;
-        }
-        int rh = rectangle.height;
-        int w = graphics.getFontMetrics().getHeight() / 3;
-        int[] xPoints = {rectangle.x + rw, rectangle.x + rw - w, rectangle.x + rw - w, rectangle.x + rw};
-        int[] yPoints = {rectangle.y,      rectangle.y + w,      rectangle.y + rh - w, rectangle.y + rh};
-        graphics.fillPolygon(xPoints, yPoints, 4);
     }
 }
