@@ -5,10 +5,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.1'
+version '2.2'
 
 patchPluginXml {
     changeNotes = """
+        2.2:<br/>
+        Addressed several compatibility issues from plugin review.<br/>
+        Some bug fixes and small improvements.<br/>
         2.1:<br/>
         Bug fixes and small improvements.<br/>
         2.0:<br/>
