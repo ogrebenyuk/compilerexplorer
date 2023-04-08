@@ -91,10 +91,13 @@ patchPluginXml {
         Added source line highlighing.<br/>
         Added scrolling to/from source.<br/>
     """
+
+    sinceBuild = '223.8836'
 }
 
 sourceCompatibility = 17
 
+def clionType = 'CL'
 def clionVersion = '2022.3.3'
 
 repositories {
@@ -112,9 +115,9 @@ test {
 }
 
 intellij {
-    type.set('CL')
+    type.set(clionType)
     version.set(clionVersion)
-    updateSinceUntilBuild.set(false) // Disables updating since-build attribute in plugin.xml
+    updateSinceUntilBuild.set(false)
     plugins.set([
             "com.intellij.clion",
             "com.intellij.cidr.base",
@@ -128,6 +131,10 @@ publishPlugin {
 
 runIde {
     jvmArgs = ['-Xms2048m', '-Xmx8192m']
+}
+
+runPluginVerifier {
+    ideVersions = [clionType + '-' + clionVersion]
 }
 
 allprojects {
