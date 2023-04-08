@@ -133,7 +133,7 @@
             <reference ref="compilerexplorer.ShowEverythingTab"/>
         </group>
 
-        <group id="compilerexplorer.TabsPopupGroup" popup="true">
+        <group id="compilerexplorer.TabsPopupGroup" popup="true" compact="true">
             <reference ref="compilerexplorer.TabsGroup"/>
             <separator/>
             <reference ref="compilerexplorer.ShowAllTabsToggle"/>

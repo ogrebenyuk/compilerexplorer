@@ -25,6 +25,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.EditorTextField;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.intellij.util.ui.JBUI;
@@ -65,7 +66,7 @@ public class EditorGui extends BaseRefreshableComponent {
     @NotNull
     private final CaretTracker caretTracker;
     @NotNull
-    private final TabsComboBox tabsCombobox;
+    private final TabsGui tabsGui = new TabsGui();
     @NotNull
     private final JComponent spinningIcon = new AsyncProcessIcon("");
     @NotNull
@@ -93,8 +94,6 @@ public class EditorGui extends BaseRefreshableComponent {
         project.putUserData(EditorGui.KEY, this);
 
         spinningIcon.setVisible(false);
-
-        tabsCombobox = new TabsComboBox(state);
 
         mainPanel = new JPanel(new BorderLayout());
         editor = new EditorTextField(EditorFactory.getInstance().createDocument(""), project, PlainTextFileType.INSTANCE, true, false);
@@ -129,7 +128,6 @@ public class EditorGui extends BaseRefreshableComponent {
 
     public void applyThemeColors() {
         withCurrentTabProvider(TabProvider::applyThemeColors);
-        tabsCombobox.applyThemeColors();
         withEditor(this::setupTabs);
     }
 
@@ -144,10 +142,10 @@ public class EditorGui extends BaseRefreshableComponent {
 
     private void setupTabs(@NotNull EditorEx ed) {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        panel.setBackground(editor.getBackground());
         panel.setBorder(JBUI.Borders.empty());
+        panel.setOpaque(false);
         panel.add(spinningIcon);
-        panel.add(tabsCombobox.getComponent());
+        panel.add(tabsGui.getComponent());
         ((JBScrollPane) ed.getScrollPane()).setStatusComponent(panel);
     }
 
@@ -193,12 +191,6 @@ public class EditorGui extends BaseRefreshableComponent {
                     .toList();
 
             @Nullable Tabs newSelectedTab = chooseNewTab(visibleTabs);
-
-            List<AnAction> tabActions = visibleTabs.stream()
-                    .map(provider -> ActionUtil.findAction(provider.actionId()))
-                    .toList();
-            @Nullable AnAction newSelectedTabAction = newSelectedTab != null ? findTabAction(newSelectedTab) : null;
-            tabsCombobox.refreshModel(tabActions, newSelectedTabAction);
             if (newSelectedTab != null) {
                 showTab(newSelectedTab, true);
             } else {
@@ -260,7 +252,7 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     private void showTab(@NotNull Tabs tab, boolean forceRefresh) {
-        tabsCombobox.selectAction(findTabAction(tab), true);
+        tabsGui.selectAction(findTabAction(tab));
         if (currentTab != tab || forceRefresh) {
             currentTab = tab;
             state.setLastOpenTab(tab);
