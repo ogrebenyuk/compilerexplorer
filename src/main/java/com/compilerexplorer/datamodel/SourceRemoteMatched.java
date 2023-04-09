@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SourceRemoteMatched {
     public static final Key<SourceRemoteMatched> KEY = Key.create(SourceRemoteMatched.class.getName());
-    public static final Key<SourceRemoteMatched> SELECTED_KEY = Key.create(SourceRemoteMatched.class.getName() + ".selected");
+    public static final Key<SourceRemoteMatched> SELECTED_KEY = Key.create(SourceRemoteMatched.class.getName() + "Selected");
 
     private final boolean cached;
     @NotNull

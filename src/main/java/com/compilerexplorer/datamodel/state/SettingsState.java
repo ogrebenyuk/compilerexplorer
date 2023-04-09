@@ -4,6 +4,7 @@ import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.Tabs;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Transient;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +46,12 @@ public class SettingsState {
     @NotNull
     @Property
     private List<RemoteCompilerInfo> remoteCompilers = new ArrayList<>();
+    @NotNull
+    @Property
+    private Map<String, List<RemoteLibraryInfo>> remoteLibraries = new HashMap<>();
+    @NotNull
+    @Property
+    private Map<String, List<EnabledRemoteLibraryInfo>> enabledRemoteLibraries = new HashMap<>();
     @NotNull
     @Property
     private Map<LocalCompilerPath, LocalCompilerSettings> localCompilerSettings = new HashMap<>();
@@ -174,6 +181,57 @@ public class SettingsState {
 
     synchronized public void clearRemoteCompilers() {
         setRemoteCompilers(EMPTY.getRemoteCompilers());
+    }
+
+    @NotNull
+    synchronized public Map<String, List<RemoteLibraryInfo>> getRemoteLibraries() {
+        Map<String, List<RemoteLibraryInfo>> result = new HashMap<>();
+        remoteLibraries.forEach((key, value) -> result.put(key, new ArrayList<>(value)));
+        return result;
+    }
+
+    synchronized public void setRemoteLibraries(@NotNull Map<String, List<RemoteLibraryInfo>> remoteLibraries_) {
+        remoteLibraries = new HashMap<>();
+        remoteLibraries_.forEach((key, value) -> remoteLibraries.put(key, new ArrayList<>(value)));
+    }
+
+    synchronized public void clearRemoteLibraries() {
+        setRemoteLibraries(EMPTY.getRemoteLibraries());
+    }
+
+    synchronized public void clearRemoteLibrariesForLanguage(@NonNls @NotNull String language) {
+        remoteLibraries.remove(language);
+    }
+
+    synchronized public void setRemoteLibrariesForLanguage(@NonNls @NotNull String language, @NotNull List<RemoteLibraryInfo> libraries) {
+        remoteLibraries.put(language, new ArrayList<>(libraries));
+    }
+
+    @NotNull
+    synchronized public Set<String> getRemoteLibrariesLanguages() {
+        return new HashSet<>(remoteLibraries.keySet());
+    }
+
+    @NotNull
+    synchronized public Map<String, List<EnabledRemoteLibraryInfo>> getEnabledRemoteLibraries() {
+        Map<String, List<EnabledRemoteLibraryInfo>> result = new HashMap<>();
+        enabledRemoteLibraries.forEach((key, value) -> result.put(key, new ArrayList<>(value)));
+        return result;
+    }
+
+    @NotNull
+    synchronized public Optional<List<EnabledRemoteLibraryInfo>> getEnabledRemoteLibrariesForLanguage(@NonNls @NotNull String language) {
+        @Nullable List<EnabledRemoteLibraryInfo> libraries = enabledRemoteLibraries.get(language);
+        return Optional.ofNullable(libraries != null ? new ArrayList<>(libraries) : null);
+    }
+
+    synchronized public void setEnabledRemoteLibraries(@NotNull Map<String, List<EnabledRemoteLibraryInfo>> enabledRemoteLibraries_) {
+        enabledRemoteLibraries = new HashMap<>();
+        enabledRemoteLibraries_.forEach((key, value) -> enabledRemoteLibraries.put(key, new ArrayList<>(value)));
+    }
+
+    synchronized public void clearEnabledRemoteLibraries() {
+        enabledRemoteLibraries = new HashMap<>();
     }
 
     @NotNull
@@ -447,6 +505,8 @@ public class SettingsState {
         setUrlHistory(other.getUrlHistory());
         setConnected(other.getConnected());
         setRemoteCompilers(other.getRemoteCompilers());
+        setRemoteLibraries(other.getRemoteLibraries());
+        setEnabledRemoteLibraries(other.getEnabledRemoteLibraries());
         setLocalCompilerSettings(other.getLocalCompilerSettings());
         setFilters(other.getFilters());
         setCompilerMatches(other.getCompilerMatches());
@@ -480,6 +540,8 @@ public class SettingsState {
                 + getUrlHistory().hashCode()
                 + (getConnected() ? 1 : 0)
                 + getRemoteCompilers().hashCode()
+                + getRemoteLibraries().hashCode()
+                + getEnabledRemoteLibraries().hashCode()
                 + getLocalCompilerSettings().hashCode()
                 + getFilters().hashCode()
                 + getCompilerMatches().hashCode()
@@ -517,6 +579,8 @@ public class SettingsState {
                 && getUrlHistory().equals(other.getUrlHistory())
                 && getConnected() == other.getConnected()
                 && getRemoteCompilers().equals(other.getRemoteCompilers())
+                && getRemoteLibraries().equals(other.getRemoteLibraries())
+                && getEnabledRemoteLibraries().equals(other.getEnabledRemoteLibraries())
                 && getLocalCompilerSettings().equals(other.getLocalCompilerSettings())
                 && getFilters().equals(other.getFilters())
                 && getCompilerMatches().equals(other.getCompilerMatches())

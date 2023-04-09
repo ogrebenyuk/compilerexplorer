@@ -12,6 +12,7 @@ import com.compilerexplorer.compiler.SourceRemoteMatchSaver;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.RemoteCompiler;
 import com.compilerexplorer.explorer.RemoteCompilersProducer;
+import com.compilerexplorer.explorer.RemoteLibrariesProducer;
 import com.compilerexplorer.gui.EditorGui;
 import com.compilerexplorer.gui.MatchesGui;
 import com.compilerexplorer.gui.ProjectSourcesGui;
@@ -105,7 +106,8 @@ public class Pipeline {
         matchesGui = new MatchesGui(sourceRemoteMatchSaver, suppressUpdates);
         SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(matchesGui, project);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(sourceRemoteMatchProducer, project, taskRunner);
-        remoteCompilersProducer = new RemoteCompilersProducer(compilerSettingsProducer, project, state, state::addToUrlHistory, taskRunner);
+        RemoteLibrariesProducer remoteLibrariesProducer = new RemoteLibrariesProducer(compilerSettingsProducer, project, state, taskRunner);
+        remoteCompilersProducer = new RemoteCompilersProducer(remoteLibrariesProducer, project, state, state::addToUrlHistory, taskRunner);
         ResetInjector reconnectResetInjector = new ResetInjector(remoteCompilersProducer, ResetLevel.RECONNECT);
         projectSourcesGui = new ProjectSourcesGui(reconnectResetInjector, suppressUpdates);
         ProjectListener projectListener = new ProjectListener(projectSourcesGui, project);

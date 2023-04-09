@@ -51,9 +51,7 @@ public class Constants {
     @NotNull
     public static final String DEFAULT_PREPROCESSED_TEXT_EXTENSION = "ii";
     @NotNull
-    public static final Icon TAB_ERROR_ICON = AllIcons.General.BalloonError;
-    @NotNull
-    public static final Icon CHECKMARK_ICON = AllIcons.Actions.Checked;
+    public static final Icon TAB_ERROR_ICON = AllIcons.General.Error;
     @NotNull
     public static final Icon EMPTY_ICON = IconManager.getInstance().createEmptyIcon(TAB_ERROR_ICON);
 

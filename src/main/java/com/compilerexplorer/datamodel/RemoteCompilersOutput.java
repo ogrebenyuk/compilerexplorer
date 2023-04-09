@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public class RemoteCompilersOutput {
     public static final Key<RemoteCompilersOutput> KEY = Key.create(RemoteCompilersOutput.class.getName());
+    public static final Key<RemoteCompilersOutput> LIBRARIES_KEY = Key.create(RemoteCompilersOutput.class.getName() + "Libraries");
 
     public static class Output {
         @Nullable

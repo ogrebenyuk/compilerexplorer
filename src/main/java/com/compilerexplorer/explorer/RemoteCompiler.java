@@ -3,8 +3,10 @@ package com.compilerexplorer.explorer;
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.*;
 import com.compilerexplorer.datamodel.*;
+import com.compilerexplorer.datamodel.state.EnabledRemoteLibraryInfo;
 import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
+import com.compilerexplorer.explorer.common.Reader;
 import com.google.common.net.UrlEscapers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -26,9 +28,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,18 +36,6 @@ import java.util.stream.Collectors;
 public class RemoteCompiler extends BaseRefreshableComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(RemoteCompiler.class);
-    @NonNls
-    @NotNull
-    private static final String COMPILER_API_ROOT = "/api/compiler/";
-    @NonNls
-    @NotNull
-    private static final String COMPILE_ENDPOINT = "/compile";
-    @NonNls
-    @NotNull
-    private static final String ACCEPT_HEADER = "accept";
-    @NonNls
-    @NotNull
-    private static final String JSON_MIME_TYPE = "application/json";
     @NonNls
     @NotNull
     private static final String LOCATION_HEADER = "Location";
@@ -99,12 +87,14 @@ public class RemoteCompiler extends BaseRefreshableComponent {
                     Filters filters = state.getFilters();
                     String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches());
                     String remoteCompilerId = selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getId();
-                    String endpoint = url + COMPILER_API_ROOT + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + COMPILE_ENDPOINT;
+                    String endpoint = url + ExplorerUtil.COMPILER_API_ROOT + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + ExplorerUtil.COMPILE_ENDPOINT;
+                    String compilerLanguage = selectedSource.getSelectedSource().language;
+                    Optional<List<EnabledRemoteLibraryInfo>> enabledLibraries = state.getEnabledRemoteLibrariesForLanguage(compilerLanguage);
                     try {
                         CloseableHttpClient httpClient = HttpClients.createDefault();
 
                         HttpPost postRequest = new HttpPost(endpoint);
-                        postRequest.addHeader(ACCEPT_HEADER, JSON_MIME_TYPE);
+                        postRequest.addHeader(ExplorerUtil.ACCEPT_HEADER, ExplorerUtil.JSON_MIME_TYPE);
 
                         Gson gson = new Gson();
 
@@ -115,6 +105,8 @@ public class RemoteCompiler extends BaseRefreshableComponent {
                         request.options.filters = filters;
                         request.options.compilerOptions = new CompilerOptions();
                         request.options.compilerOptions.executorRequest = false;
+                        request.options.libraries = enabledLibraries.orElse(new ArrayList<>());
+                        request.lang = ExplorerUtil.language(compilerLanguage);
 
                         rawInput = gson.toJson(request);
 
@@ -160,23 +152,7 @@ public class RemoteCompiler extends BaseRefreshableComponent {
 
                         CloseableHttpResponse response = responses[0];
 
-                        if (response.getStatusLine().getStatusCode() != 200) {
-                            httpClient.close();
-                            response.close();
-                            throw new RuntimeException("Failed : HTTP error code : " + response.getStatusLine().getStatusCode() + " from " + url);
-                        }
-                        BufferedReader br = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-                        StringBuilder output = new StringBuilder();
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            indicator.checkCanceled();
-                            output.append(line);
-                        }
-                        httpClient.close();
-                        response.close();
-                        indicator.checkCanceled();
-
-                        rawOutput = output.toString();
+                        rawOutput = Reader.read(endpoint, httpClient, response, indicator);
 
                         JsonObject obj = JsonParser.parseString(rawOutput).getAsJsonObject();
                         compiledResult = gson.fromJson(obj, CompiledText.CompiledResult.class);
@@ -237,11 +213,13 @@ public class RemoteCompiler extends BaseRefreshableComponent {
         String userArguments;
         Filters filters;
         CompilerOptions compilerOptions;
+        List<EnabledRemoteLibraryInfo> libraries;
     }
 
     private static class Request {
         String source;
         Options options;
+        String lang;
     }
 
     private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host, @Nullable String compilerInstallPath) {

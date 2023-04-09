@@ -47,6 +47,8 @@
         <action id="compilerexplorer.CommentOnlyToggle" class="com.compilerexplorer.actions.filter.CommentOnlyToggle"/>
         <action id="compilerexplorer.HorizontalWhitespaceToggle" class="com.compilerexplorer.actions.filter.HorizontalWhitespaceToggle"/>
 
+        <action id="compilerexplorer.EnabledRemoteLibraries" class="com.compilerexplorer.actions.extra.EnabledRemoteLibraries" icon="AllIcons.General.Add"/>
+
         <action id="compilerexplorer.ShowLineNumbersToggle" class="com.compilerexplorer.actions.appearance.ShowLineNumbersToggle"/>
         <action id="compilerexplorer.ShowByteOffsetsToggle" class="com.compilerexplorer.actions.appearance.ShowByteOffsetsToggle"/>
         <action id="compilerexplorer.ShowSourceAnnotationsToggle" class="com.compilerexplorer.actions.appearance.ShowSourceAnnotationsToggle"/>
@@ -111,6 +113,14 @@
 
         <group id="compilerexplorer.FilterPopupGroup" popup="true">
             <reference ref="compilerexplorer.FilterGroup"/>
+        </group>
+
+        <group id="compilerexplorer.ExtraGroup" popup="false">
+            <reference ref="compilerexplorer.EnabledRemoteLibraries"/>
+        </group>
+
+        <group id="compilerexplorer.ExtraPopupGroup" popup="true">
+            <reference ref="compilerexplorer.ExtraGroup"/>
         </group>
 
         <group id="compilerexplorer.TabsGroup" popup="false">
@@ -193,6 +203,7 @@
             <reference ref="compilerexplorer.ScrollFromSource"/>
             <reference ref="compilerexplorer.AutoupdateFromSourceToggle"/>
             <reference ref="compilerexplorer.RecompileCurrentSource"/>
+            <separator/>
             <reference ref="compilerexplorer.SaveCurrentTabAs"/>
             <reference ref="compilerexplorer.ShowSettings"/>
             <reference ref="compilerexplorer.ShowColorSettings"/>
@@ -209,6 +220,9 @@
             <separator/>
             <separator key="compilerexplorer.FilterGroupTitle"/>
             <reference ref="compilerexplorer.FilterGroup"/>
+            <separator/>
+            <separator key="compilerexplorer.ExtraGroupTitle"/>
+            <reference ref="compilerexplorer.ExtraGroup"/>
             <separator/>
             <separator key="compilerexplorer.AppearanceGroupTitle"/>
             <reference ref="compilerexplorer.AppearanceGroup"/>
@@ -227,6 +241,7 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <reference ref="compilerexplorer.OutputPopupGroup"/>
             <reference ref="compilerexplorer.FilterPopupGroup"/>
+            <reference ref="compilerexplorer.ExtraPopupGroup"/>
             <reference ref="compilerexplorer.AppearancePopupGroup"/>
             <reference ref="compilerexplorer.FullBehaviorPopupGroup"/>
         </group>
