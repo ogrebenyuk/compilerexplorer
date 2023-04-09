@@ -3,7 +3,6 @@ package com.compilerexplorer.gui;
 import com.compilerexplorer.common.ActionUtil;
 import com.compilerexplorer.common.Constants;
 import com.intellij.openapi.actionSystem.*;
-import com.intellij.ui.components.JBLabel;
 import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

@@ -15,6 +15,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.ex.*;
+import com.intellij.openapi.editor.markup.HighlighterLayer;
+import com.intellij.openapi.editor.markup.HighlighterTargetArea;
 import com.intellij.openapi.fileChooser.FileChooserFactory;
 import com.intellij.openapi.fileChooser.FileSaverDescriptor;
 import com.intellij.openapi.fileChooser.FileSaverDialog;
@@ -25,7 +27,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileWrapper;
 import com.intellij.ui.EditorTextField;
-import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.intellij.util.ui.JBUI;
@@ -38,6 +39,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.PrintWriter;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -308,8 +310,11 @@ public class EditorGui extends BaseRefreshableComponent {
                     provider.provide(data, (enabled, error, fileType, ext, contentProducer) -> {
                         TabContent content = contentProducer.produce();
 
+                        List<TerminalColorParser.HighlightedRange> highlightedRanges = new ArrayList<>();
+                        String text = fileType == PlainTextFileType.INSTANCE ? TerminalColorParser.parse(content.getContent(), highlightedRanges) : content.getContent();
+
                         editor.setNewDocumentAndFileType(fileType, editor.getDocument());
-                        editor.setText(fileType == PlainTextFileType.INSTANCE ? filterOutTerminalEscapeSequences(content.getContent()) : content.getContent());
+                        editor.setText(text);
                         editor.setEnabled(true);
 
                         Optional<List<TabFoldingRegion>> foldingRegions = content.getFolding();
@@ -318,7 +323,12 @@ public class EditorGui extends BaseRefreshableComponent {
                         }
                         lastFoldingRegions = foldingRegions.orElse(null);
 
-                        withEditor(ed -> editorCreated(ed, lastFoldingRegions));
+                        withEditor(ed -> {
+                            editorCreated(ed, lastFoldingRegions);
+
+                            MarkupModelEx markupModel = ed.getMarkupModel();
+                            highlightedRanges.forEach(range -> markupModel.addRangeHighlighter(range.startOffset, range.endOffset, HighlighterLayer.ADDITIONAL_SYNTAX, range.textAttributes, HighlighterTargetArea.EXACT_RANGE));
+                        });
                         provided[0] = true;
                     });
                     if (!provided[0]) {
@@ -361,11 +371,6 @@ public class EditorGui extends BaseRefreshableComponent {
     @Nullable
     private String getCurrentSourceFilename(@Nullable DataHolder data) {
         return data != null ? data.get(SelectedSource.KEY).map(SelectedSource::getSelectedSource).map(s -> s.sourcePath).orElse(null) : null;
-    }
-
-    @NotNull
-    private static String filterOutTerminalEscapeSequences(@NotNull String terminalText) {
-        return terminalText.replaceAll(TERMINAL_ESCAPE_SEQUENCE_REGEXP, "");
     }
 
     @NotNull
