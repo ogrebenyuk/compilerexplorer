@@ -1,6 +1,7 @@
 package com.compilerexplorer.project.oc;
 
 import com.compilerexplorer.common.PathNormalizer;
+import com.compilerexplorer.common.compilerkind.CompilerKindFactory;
 import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.datamodel.SourceSettings;
 import com.intellij.execution.ExecutionException;
@@ -59,14 +60,16 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
                 OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
                 CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
                 if (compiler != null && compilerKind != null && switches != null) {
+                    String compilerKindString = compilerKind.toString();
+                    String languageOption = CompilerKindFactory.findCompilerKind(compilerKindString).map(kind -> kind.getLanguageOption(language)).orElse("");
                     return new SourceSettings(
                             PathNormalizer.normalizePath(virtualFile.getPath()),
                             virtualFile.getPresentableName(),
                             language.getDisplayName(),
-                            GCCCompiler.getLanguageOption(language),
+                            languageOption,
                             compiler.getPath(),
                             compilerWorkingDir != null ? compilerWorkingDir.getPath() : "",
-                            compilerKind.toString(),
+                            compilerKindString,
                             switches.getList(CidrCompilerSwitches.Format.RAW),
                             getHostMachine(project));
                 }

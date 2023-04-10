@@ -120,6 +120,7 @@ public class EditorGui extends BaseRefreshableComponent {
 
         requestTab(state.getLastOpenTab());
     }
+
     public void updateCaretTracker(@NotNull VirtualFile file, @Nullable Editor editor) {
         caretTracker.update(file, editor);
     }
@@ -300,50 +301,50 @@ public class EditorGui extends BaseRefreshableComponent {
     public void refresh(boolean reset) {
         LOG.debug("refresh " + reset);
         suppressRefresh.unlessApplied(() ->
-            suppressRefresh.apply(() -> {
-                suppressUpdates.unlessApplied(() -> super.refresh(reset));
-                withCurrentTabProvider(provider -> {
-                    DataHolder data = getLastData();
-                    assert data != null;
+                suppressRefresh.apply(() -> {
+                    suppressUpdates.unlessApplied(() -> super.refresh(reset));
+                    withCurrentTabProvider(provider -> {
+                        DataHolder data = getLastData();
+                        assert data != null;
 
-                    Boolean[] provided = new Boolean[]{false};
-                    provider.provide(data, (enabled, error, fileType, ext, contentProducer) -> {
-                        TabContent content = contentProducer.produce();
+                        Boolean[] provided = new Boolean[]{false};
+                        provider.provide(data, (enabled, error, fileType, ext, contentProducer) -> {
+                            TabContent content = contentProducer.produce();
 
-                        List<TerminalColorParser.HighlightedRange> highlightedRanges = new ArrayList<>();
-                        String text = fileType == PlainTextFileType.INSTANCE ? TerminalColorParser.parse(content.getContent(), highlightedRanges) : content.getContent();
+                            List<TerminalColorParser.HighlightedRange> highlightedRanges = new ArrayList<>();
+                            String text = fileType == PlainTextFileType.INSTANCE ? TerminalColorParser.parse(content.getContent(), highlightedRanges) : content.getContent();
 
-                        editor.setNewDocumentAndFileType(fileType, editor.getDocument());
-                        editor.setText(text);
-                        editor.setEnabled(true);
+                            editor.setNewDocumentAndFileType(fileType, editor.getDocument());
+                            editor.setText(text);
+                            editor.setEnabled(true);
 
-                        Optional<List<TabFoldingRegion>> foldingRegions = content.getFolding();
-                        if (foldingRegions.isEmpty()) {
-                            foldingRegions = FoldingUtil.getFoldingForFileType(fileType, project, editor.getDocument());
-                        }
-                        lastFoldingRegions = foldingRegions.orElse(null);
+                            Optional<List<TabFoldingRegion>> foldingRegions = content.getFolding();
+                            if (foldingRegions.isEmpty()) {
+                                foldingRegions = FoldingUtil.getFoldingForFileType(fileType, project, editor.getDocument());
+                            }
+                            lastFoldingRegions = foldingRegions.orElse(null);
 
-                        withEditor(ed -> {
-                            editorCreated(ed, lastFoldingRegions);
+                            withEditor(ed -> {
+                                editorCreated(ed, lastFoldingRegions);
 
-                            MarkupModelEx markupModel = ed.getMarkupModel();
-                            highlightedRanges.forEach(range -> markupModel.addRangeHighlighter(range.startOffset, range.endOffset, HighlighterLayer.ADDITIONAL_SYNTAX, range.textAttributes, HighlighterTargetArea.EXACT_RANGE));
+                                MarkupModelEx markupModel = ed.getMarkupModel();
+                                highlightedRanges.forEach(range -> markupModel.addRangeHighlighter(range.startOffset, range.endOffset, HighlighterLayer.ADDITIONAL_SYNTAX, range.textAttributes, HighlighterTargetArea.EXACT_RANGE));
+                            });
+                            provided[0] = true;
                         });
-                        provided[0] = true;
+                        if (!provided[0]) {
+                            lastFoldingRegions = null;
+                            clearEditor();
+                        }
                     });
-                    if (!provided[0]) {
-                        lastFoldingRegions = null;
-                        clearEditor();
-                    }
-                });
-            })
+                })
         );
     }
 
     private void editorCreated(@NotNull EditorEx ed, @Nullable List<TabFoldingRegion> foldingRegions) {
         ed.setHorizontalScrollbarVisible(true);
         ed.setVerticalScrollbarVisible(true);
-        ((EditorMarkupModel)ed.getMarkupModel()).setErrorStripeVisible(true);
+        ((EditorMarkupModel) ed.getMarkupModel()).setErrorStripeVisible(true);
         ed.setViewer(true);
         ed.getSettings().setUseSoftWraps(true);
         setupTabs(ed);
@@ -430,7 +431,7 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     @NotNull
-    private TabProvider findTabProvider(@NotNull Tabs tab) {
+    public TabProvider findTabProvider(@NotNull Tabs tab) {
         return tabs.stream()
                 .filter(provider -> provider.getTab() == tab)
                 .findFirst()
@@ -534,5 +535,19 @@ public class EditorGui extends BaseRefreshableComponent {
             return ext[0];
         }
         return "";
+    }
+
+    @NonNls
+    @Nullable
+    public String findDeviceName(@NotNull Tabs tab) {
+        DataHolder data = getLastData();
+        if (data != null) {
+            return data.get(CompiledText.KEY)
+                    .flatMap(CompiledText::getCompiledResultIfGood)
+                    .map(compiledResult -> ((BaseExplorerOutputDeviceTabProvider) findTabProvider(tab)).getDeviceName(compiledResult))
+                    .orElse(null);
+        } else {
+            return null;
+        }
     }
 }

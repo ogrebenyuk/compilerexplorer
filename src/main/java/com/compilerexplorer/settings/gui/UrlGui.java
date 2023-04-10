@@ -2,6 +2,7 @@ package com.compilerexplorer.settings.gui;
 
 import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.Constants;
+import com.google.common.collect.Streams;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.SimpleListCellRenderer;
 import org.jetbrains.annotations.NotNull;
@@ -64,7 +65,7 @@ public class UrlGui {
 
     public void setUrlHistory(@NotNull List<String> urlHistory) {
         DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>(
-            Stream.concat(
+            Streams.concat(
                 Constants.DEFAULT_URLS.keySet().stream(),
                 urlHistory.stream()
             ).collect(Collectors.toCollection(Vector::new)));

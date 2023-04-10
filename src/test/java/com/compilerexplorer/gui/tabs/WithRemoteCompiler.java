@@ -80,6 +80,11 @@ public interface WithRemoteCompiler extends WithPreprocessor, WithMatch {
             case BAD_RUN, BAD_RUN_EXEC -> error(Tabs.EXPLORER_OUTPUT, ENABLED, "compilerexplorer.BaseExplorerUtilProvider.ExitCode");
             case GOOD_RUN, WITH_STDOUT, WITH_STDERR, GOOD_RUN_EXEC -> contentWithFolding(Tabs.EXPLORER_OUTPUT, ENABLED, ASM);
         });
+        set(result, message(Tabs.EXPLORER_OUTPUT_DEVICE_1, DISABLED, "compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice"));
+        set(result, message(Tabs.EXPLORER_OUTPUT_DEVICE_2, DISABLED, "compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice"));
+        set(result, message(Tabs.EXPLORER_OUTPUT_DEVICE_3, DISABLED, "compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice"));
+        set(result, message(Tabs.EXPLORER_OUTPUT_DEVICE_4, DISABLED, "compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice"));
+        set(result, message(Tabs.EXPLORER_OUTPUT_DEVICE_5, DISABLED, "compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice"));
         set(result, switch(status) {
             case CANCELED, EXCEPTION, BAD_RUN, GOOD_RUN, WITH_STDOUT, WITH_STDERR, GOOD_WITH_EXCEPTION -> message(Tabs.EXPLORER_EXEC_RESULT, DISABLED, "compilerexplorer.ExplorerExecResultTabProvider.Disabled");
             case CANCELED_EXEC ->  error(Tabs.EXPLORER_EXEC_RESULT, ENABLED, "compilerexplorer.ExplorerExecResultTabProvider.Canceled");

@@ -43,6 +43,11 @@ public interface NoSources extends Base {
         result.add(message(Tabs.EXPLORER_STDOUT,             DISABLED, "compilerexplorer.ExplorerStdoutTabProvider.WasNotRun"));
         result.add(message(Tabs.EXPLORER_STDERR,             DISABLED, "compilerexplorer.ExplorerStderrTabProvider.WasNotRun"));
         result.add(message(Tabs.EXPLORER_OUTPUT,             DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
+        result.add(message(Tabs.EXPLORER_OUTPUT_DEVICE_1,    DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
+        result.add(message(Tabs.EXPLORER_OUTPUT_DEVICE_2,    DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
+        result.add(message(Tabs.EXPLORER_OUTPUT_DEVICE_3,    DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
+        result.add(message(Tabs.EXPLORER_OUTPUT_DEVICE_4,    DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
+        result.add(message(Tabs.EXPLORER_OUTPUT_DEVICE_5,    DISABLED, "compilerexplorer.ExplorerOutputTabProvider.WasNotRun"));
         result.add(message(Tabs.EXPLORER_EXEC_RESULT,        DISABLED, "compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"));
         result.add(content(Tabs.EVERYTHING,                  DISABLED, JSON));
         return result;

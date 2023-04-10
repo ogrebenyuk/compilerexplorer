@@ -4,6 +4,8 @@ import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
+import com.compilerexplorer.common.compilerkind.CompilerKind;
+import com.compilerexplorer.common.compilerkind.CompilerKindFactory;
 import com.compilerexplorer.datamodel.CompilerResult;
 import com.compilerexplorer.datamodel.SelectedSource;
 import com.compilerexplorer.datamodel.SelectedSourceCompiler;
@@ -17,26 +19,17 @@ import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 public class CompilerSettingsProducer extends BaseComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(CompilerSettingsProducer.class);
-    @NonNls
-    @NonNull
-    private static final String VERSION_FLAG = "-v";
-    @NonNls
-    @NonNull
-    private static final String GCC_COMPILER_KIND = "GCC";
-    @NonNls
-    @NonNull
-    private static final String CLANG_COMPILER_KIND = "Clang";
 
     @NotNull
     private final Project project;
@@ -85,14 +78,17 @@ public class CompilerSettingsProducer extends BaseComponent {
                         boolean isSupportedCompilerType = true;
                         CompilerResult.Output output = null;
                         @Nullable File workingDir = source.compilerWorkingDir.isEmpty() ? null : new File(source.compilerWorkingDir);
-                        String[] versionCommandLine = getVersionCommandLine(source);
+                        String[] versionCommandLine = new String[]{};
                         LocalCompilerSettings localCompilerSettings = null;
-                        if (isSupportedCompilerType(source.compilerKind)) {
+                        Optional<CompilerKind> compilerKind = CompilerKindFactory.findCompilerKind(source.compilerKind);
+                        if (compilerKind.isPresent()) {
                             int exitCode = -1;
                             String stdout = "";
                             String stderr = "";
                             Exception exception = null;
                             try {
+                                CompilerKind kind = compilerKind.orElseThrow();
+                                versionCommandLine = getVersionCommandLine(source, kind);
                                 CompilerRunner versionRunner = new CompilerRunner(source.host, versionCommandLine, workingDir, "", indicator, state.getCompilerTimeoutMillis());
                                 indicator.checkCanceled();
 
@@ -100,11 +96,11 @@ public class CompilerSettingsProducer extends BaseComponent {
                                 stdout = versionRunner.getStdout();
                                 stderr = versionRunner.getStderr();
 
-                                String versionText = stderr;
+                                String versionText = stdout + '\n' + stderr;
                                 if (exitCode == 0 && !versionText.isEmpty()) {
-                                    String compilerVersion = parseCompilerVersion(source.compilerKind, versionText);
-                                    String compilerTarget = parseCompilerTarget(versionText);
-                                    if (!compilerVersion.isEmpty() && !compilerTarget.isEmpty()) {
+                                    String compilerVersion = kind.parseCompilerVersion(versionText);
+                                    String compilerTarget = kind.parseCompilerTarget(versionText);
+                                    if (!compilerVersion.isEmpty()) {
                                         LOG.debug("parsed \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
                                         localCompilerSettings = new LocalCompilerSettings(source.compilerKind, compilerVersion, compilerTarget);
                                     } else {
@@ -146,26 +142,10 @@ public class CompilerSettingsProducer extends BaseComponent {
     }
 
     @NotNull
-    private static String @NonNls @NotNull [] getVersionCommandLine(@NotNull SourceSettings sourceSettings) {
+    private static String @NonNls @NotNull [] getVersionCommandLine(@NotNull SourceSettings sourceSettings, @NotNull CompilerKind compilerKind) {
         return Stream.of(
                 sourceSettings.compilerPath,
-                VERSION_FLAG
+                compilerKind.getVersionOption()
         ).toArray(String[]::new);
-    }
-
-    private static boolean isSupportedCompilerType(@NonNls @NotNull String compilerKind) {
-        return compilerKind.equals(GCC_COMPILER_KIND) || compilerKind.equals(CLANG_COMPILER_KIND);
-    }
-
-    @NonNls
-    @NotNull
-    private static String parseCompilerVersion(@NonNls @NotNull String compilerKind, @NonNls @NotNull String versionText) {
-        return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toLowerCase() + " version ([^ ]*).*", "$1");
-    }
-
-    @NonNls
-    @NotNull
-    private static String parseCompilerTarget(@NonNls @NotNull String versionText) {
-        return versionText.replace('\n', ' ').replaceAll(".*Target: ([^-]*).*", "$1");
     }
 }

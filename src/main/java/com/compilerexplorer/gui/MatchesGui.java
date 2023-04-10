@@ -8,6 +8,7 @@ import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.common.component.ResetFlag;
+import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.CompilerMatch;
 import com.compilerexplorer.datamodel.state.CompilerMatchKind;
@@ -125,14 +126,19 @@ public class MatchesGui extends BaseComponent {
 
     @Nls
     @NotNull
-    private String getMatchTooltip(@NotNull CompilerMatch compilerMatch) {
+    private String getMatchTooltip(@NotNull DataHolder data, @NotNull CompilerMatch compilerMatch) {
+        @NotNull String desiredCompiler = data.get(SelectedSourceCompiler.KEY)
+                .flatMap(SelectedSourceCompiler::getLocalCompilerSettings)
+                .map(compiler -> String.join(" ", compiler.getName(), compiler.getVersion(), compiler.getTarget()))
+                .orElse("");
         return TooltipUtil.prettify(Bundle.format("compilerexplorer.MatchesGui.Tooltip",
                 "Id", compilerMatch.getRemoteCompilerInfo().getId(),
-                "Language", compilerMatch.getRemoteCompilerInfo().getId(),
+                "Language", compilerMatch.getRemoteCompilerInfo().getLanguage(),
                 "Name", compilerMatch.getRemoteCompilerInfo().getName(),
                 "Version", compilerMatch.getRemoteCompilerInfo().getVersion(),
                 "MatchKind", CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind()),
-                "RawData", prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData())));
+                "RawData", prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData()),
+                "DesiredCompiler", desiredCompiler));
     }
 
     @NonNls
@@ -147,7 +153,7 @@ public class MatchesGui extends BaseComponent {
         LOG.debug("selectionChanged to " + (compilerMatch != null ? compilerMatch.getRemoteCompilerInfo().getName() : null) + ", will refresh next: " + needRefreshNext);
         if (compilerMatch != null) {
             data.put(SourceRemoteMatched.SELECTED_KEY, sourceRemoteMatched.withChosenMatch(compilerMatch));
-            comboBox.setToolTipText(getMatchTooltip(compilerMatch));
+            comboBox.setToolTipText(getMatchTooltip(data, compilerMatch));
         } else {
             doClear(data);
             doReset(data);

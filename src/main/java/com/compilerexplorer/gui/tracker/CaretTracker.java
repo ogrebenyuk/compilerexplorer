@@ -2,6 +2,7 @@ package com.compilerexplorer.gui.tracker;
 
 import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.datamodel.CompiledText;
+import com.google.common.collect.Streams;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
@@ -46,7 +47,7 @@ public class CaretTracker {
 
     @NotNull
     private List<Integer> collectLineNumbers(@NotNull Editor editor) {
-        return Stream.concat(
+        return Streams.concat(
                 editor.getCaretModel().getAllCarets().stream().map(caret -> caret.getLogicalPosition().line),
                 IntStream.rangeClosed(editor.offsetToLogicalPosition(editor.getSelectionModel().getSelectionStart()).line, editor.offsetToLogicalPosition(editor.getSelectionModel().getSelectionEnd()).line).boxed()
         ).distinct().collect(Collectors.toList());

@@ -107,7 +107,28 @@ public class CompiledText {
         }
     }
 
-    public static class CompiledResult {
+    public static class AsmResult {
+        @Nullable
+        public List<CompiledChunk> asm;
+        @Nullable
+        public Map<String, Integer> labelDefinitions;
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(asm) + Objects.hashCode(labelDefinitions);
+        }
+
+        @SuppressWarnings("WeakerAccess")
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof AsmResult other)) {
+                return false;
+            }
+            return Objects.equals(asm, other.asm) && Objects.equals(labelDefinitions, other.labelDefinitions);
+        }
+    }
+
+    public static class CompiledResult extends AsmResult {
         public static final int CODE_GOOD = 0;
         public static final int CODE_NOT_COMPILED = -1;
 
@@ -117,21 +138,19 @@ public class CompiledText {
         @Nullable
         public List<CompiledChunk> stderr;
         @Nullable
-        public List<CompiledChunk> asm;
-        @Nullable
-        public Map<String, Integer> labelDefinitions;
-        @Nullable
         public ExecResult execResult;
+        @Nullable
+        public Map<String, AsmResult> devices;
 
         @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
-            return code
+            return super.hashCode()
+                    + code
                     + Objects.hashCode(stdout)
                     + Objects.hashCode(stderr)
-                    + Objects.hashCode(asm)
-                    + Objects.hashCode(labelDefinitions)
                     + Objects.hashCode(execResult)
+                    + Objects.hashCode(devices)
                     ;
         }
 
@@ -141,12 +160,12 @@ public class CompiledText {
             if (!(obj instanceof CompiledResult other)) {
                 return false;
             }
-            return code == other.code
+            return super.equals(obj)
+                    && code == other.code
                     && Objects.equals(stdout, other.stdout)
                     && Objects.equals(stderr, other.stderr)
-                    && Objects.equals(asm, other.asm)
-                    && Objects.equals(labelDefinitions, other.labelDefinitions)
                     && Objects.equals(execResult, other.execResult)
+                    && Objects.equals(devices, other.devices)
                     ;
         }
     }

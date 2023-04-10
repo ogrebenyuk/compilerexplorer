@@ -18,10 +18,4 @@ public class ShowLineNumbersToggle extends BaseAppearanceToggleAction implements
     public void setSelected(@NotNull AnActionEvent event, boolean selected) {
         setSelected(event, selected, SettingsState::setShowLineNumbers, withEditorGuiRun(event, EditorGui::updateGutter));
     }
-
-    @Override
-    public void update(@NotNull final AnActionEvent event) {
-        super.update(event);
-        withFilters(event, filters -> setEnabled(event, isEnabled(event) && !filters.isAnyBinaryRequested()));
-    }
 }

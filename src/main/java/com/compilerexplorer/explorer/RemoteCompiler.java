@@ -2,11 +2,14 @@ package com.compilerexplorer.explorer;
 
 import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.*;
+import com.compilerexplorer.common.compilerkind.CompilerKind;
+import com.compilerexplorer.common.compilerkind.CompilerKindFactory;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.EnabledRemoteLibraryInfo;
 import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.explorer.common.Reader;
+import com.google.common.collect.Streams;
 import com.google.common.net.UrlEscapers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -32,6 +35,7 @@ import java.io.File;
 import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class RemoteCompiler extends BaseRefreshableComponent {
     @NonNls
@@ -85,7 +89,8 @@ public class RemoteCompiler extends BaseRefreshableComponent {
 
                     String url = state.getUrl();
                     Filters filters = state.getFilters();
-                    String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches());
+                    boolean preprocessedLocally = data.get(PreprocessedSource.KEY).map(PreprocessedSource::getPreprocessLocally).orElse(false);
+                    String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches(), preprocessedLocally);
                     String remoteCompilerId = selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getId();
                     String endpoint = url + ExplorerUtil.COMPILER_API_ROOT + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + ExplorerUtil.COMPILE_ENDPOINT;
                     String compilerLanguage = selectedSource.getSelectedSource().language;
@@ -198,11 +203,15 @@ public class RemoteCompiler extends BaseRefreshableComponent {
     }
 
     @NotNull
-    private static String getCompilerOptions(@NotNull SourceSettings selectedSource, @NotNull String additionalSwitches, @NotNull String ignoreSwitches) {
-        List<String> ignoreSwitchesList = Arrays.asList(ignoreSwitches.split(" "));
-        return selectedSource.switches.stream().filter(x -> !ignoreSwitchesList.contains(x)).map(s -> "\"" + s + "\"").collect(Collectors.joining(" "))
-                + (AdditionalSwitches.INSTANCE.isEmpty() ? "" : " " + String.join(" ", AdditionalSwitches.INSTANCE))
-                + (additionalSwitches.isEmpty() ? "" : " " + Arrays.stream(additionalSwitches.split(" ")).filter(x -> !ignoreSwitchesList.contains(x)).collect(Collectors.joining(" ")));
+    private static String getCompilerOptions(@NotNull SourceSettings selectedSource, @NotNull String additionalSwitches, @NotNull String ignoreSwitches, boolean preprocessedLocally) {
+        List<String> ignoreSwitchesList = CommandLineUtil.parseCommandLine(ignoreSwitches);
+        @Nullable CompilerKind kind = CompilerKindFactory.findCompilerKind(selectedSource.compilerKind).orElse(null);
+        return CommandLineUtil.formCommandLine(Streams.concat(
+                selectedSource.switches.stream().filter(x -> !ignoreSwitchesList.contains(x)),
+                 (kind != null ? kind.additionalSwitches().stream() : Stream.empty()),
+                 (kind != null ? kind.additionalCompilerSwitches(preprocessedLocally).stream() : Stream.empty()),
+                 (!additionalSwitches.isEmpty() ? CommandLineUtil.parseCommandLine(additionalSwitches).stream().filter(x -> !ignoreSwitchesList.contains(x)) : Stream.empty())
+        ).toList());
     }
 
     private static class CompilerOptions {

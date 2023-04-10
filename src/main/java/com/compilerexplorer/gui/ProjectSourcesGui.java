@@ -1,9 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.Bundle;
-import com.compilerexplorer.common.LaterConsumerUnlessSuppressed;
-import com.compilerexplorer.common.SuppressionFlag;
-import com.compilerexplorer.common.TooltipUtil;
+import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
@@ -133,6 +130,6 @@ public class ProjectSourcesGui extends BaseComponent {
                 "Language", sourceSettings.language,
                 "CompilerPath", sourceSettings.compilerPath,
                 "CompilerKind", sourceSettings.compilerKind,
-                "CompilerOptions", String.join(" ", sourceSettings.switches)));
+                "CompilerOptions", CommandLineUtil.formCommandLine(sourceSettings.switches)));
     }
 }

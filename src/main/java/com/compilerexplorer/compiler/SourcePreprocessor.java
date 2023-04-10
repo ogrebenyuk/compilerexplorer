@@ -4,9 +4,12 @@ import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.BaseRefreshableComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
+import com.compilerexplorer.common.compilerkind.CompilerKind;
+import com.compilerexplorer.common.compilerkind.CompilerKindFactory;
 import com.compilerexplorer.datamodel.*;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.compiler.common.CompilerRunner;
+import com.google.common.collect.Streams;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
@@ -16,7 +19,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.eclipse.lsp4j.jsonrpc.validation.NonNull;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,28 +26,12 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class SourcePreprocessor extends BaseRefreshableComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(SourcePreprocessor.class);
-    @NonNls
-    @NonNull
-    private static final String PREPROCESS_FLAG = "-E";
-    @NonNls
-    @NonNull
-    private static final String OUTPUT_FLAG = "-o";
-    @NonNls
-    @NonNull
-    private static final String COMPILE_FLAG = "-c";
-    @NonNls
-    @NonNull
-    private static final String INCLUDE_FLAG = "-I";
-    @NonNls
-    @NonNull
-    private static final String TERMINAL_INDICATOR = "-";
 
     @NotNull
     private final Project project;
@@ -86,18 +72,32 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                         public void run(@NotNull ProgressIndicator indicator) {
                             boolean canceled = false;
                             @Nullable File workingDir = sourceSettings.compilerWorkingDir.isEmpty() ? null : new File(sourceSettings.compilerWorkingDir);
-                            String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches());
+                            @Nullable CompilerKind compilerKind = CompilerKindFactory.findCompilerKind(sourceSettings.compilerKind).orElse(null);
+                            String[] preprocessorCommandLine = getPreprocessorCommandLine(project, sourceSettings, state.getAdditionalSwitches(), state.getIgnoreSwitches(), compilerKind);
                             int exitCode = -1;
                             String stdout = "";
                             String stderr = "";
                             Exception exception = null;
+                            boolean exitCodeGood = false;
                             try {
-                                LOG.debug("preprocessing " + String.join(" ", preprocessorCommandLine));
+                                LOG.debug("preprocessing " + CommandLineUtil.formCommandLine(List.of(preprocessorCommandLine)));
                                 CompilerRunner compilerRunner = new CompilerRunner(sourceSettings.host, preprocessorCommandLine, workingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
                                 indicator.checkCanceled();
                                 exitCode = compilerRunner.getExitCode();
                                 stdout = compilerRunner.getStdout();
                                 stderr = compilerRunner.getStderr();
+                                exitCodeGood = exitCode == 0;
+                                if (compilerKind != null && compilerKind.twoPassPreprocessor() && exitCodeGood) {
+                                    List<String> secondPassOptions = compilerKind.getSecondPassPreprocessOptions(stdout, stderr);
+                                    if (!secondPassOptions.isEmpty()) {
+                                        CompilerRunner compilerRunner2 = new CompilerRunner(sourceSettings.host, secondPassOptions.toArray(new String[0]), workingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
+                                        indicator.checkCanceled();
+                                        exitCode = compilerRunner2.getExitCode();
+                                        stdout = compilerRunner2.getStdout();
+                                        stderr = compilerRunner2.getStderr();
+                                        exitCodeGood = exitCode == 0;
+                                    }
+                                }
                                 LOG.debug("preprocessed " + sourceSettings.sourcePath);
                             } catch (ProcessCanceledException canceledException) {
                                 LOG.debug("canceled");
@@ -108,7 +108,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                             }
                             CompilerResult.Output output = new CompilerResult.Output(exitCode, stdout, stderr, exception);
                             CompilerResult result = new CompilerResult(sourceSettings.compilerWorkingDir, preprocessorCommandLine, output);
-                            data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), canceled, result, exitCode == 0 ? stdout : null));
+                            data.put(PreprocessedSource.KEY, new PreprocessedSource(state.getPreprocessLocally(), canceled, result, exitCodeGood ? stdout : null));
                             SourcePreprocessor.super.refreshNext(data);
                         }
                     });
@@ -131,29 +131,28 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
     }
 
     @NotNull
-    private static String @NonNls @NotNull [] getPreprocessorCommandLine(@NotNull Project project, @NotNull SourceSettings sourceSettings, @NonNls @NotNull String additionalSwitches, @NonNls @NotNull String ignoreSwitches) {
-        return Stream.concat(
-                Stream.concat(
-                        Stream.concat(
-                                Stream.concat(Stream.of(sourceSettings.compilerPath),
-                                    Stream.of(
-                                            Paths.get(sourceSettings.sourcePath).getParent().toString(),
-                                            project.getBasePath() != null ? project.getBasePath() : null
-                                    ).filter(Objects::nonNull).distinct().map(path -> PathNormalizer.resolvePathFromLocalToCompilerHost(path, sourceSettings.host)).map(path -> INCLUDE_FLAG + path)
-                                ),
-                                Stream.concat(
-                                        sourceSettings.switches.stream(),
-                                        AdditionalSwitches.INSTANCE.stream()
-                                )
-                        ),
-                        Arrays.stream(additionalSwitches.split(" "))
-                ).filter(x -> !Arrays.asList(ignoreSwitches.split(" ")).contains(x)),
+    private static String @NonNls @NotNull [] getPreprocessorCommandLine(@NotNull Project project,
+                                                                         @NotNull SourceSettings sourceSettings,
+                                                                         @NonNls @NotNull String additionalSwitches,
+                                                                         @NonNls @NotNull String ignoreSwitches,
+                                                                         @Nullable CompilerKind compilerKind) {
+        @NotNull String includeOption = compilerKind != null ? compilerKind.getIncludeOption() : CompilerKind.DEFAULT_INCLUDE_OPTION;
+        @NotNull List<String> preprocessOptions = compilerKind != null ? compilerKind.getPreprocessOptions() : CompilerKind.DEFAULT_PREPROCESS_OPTIONS;
+        return Streams.concat(
+            Streams.concat(
+                Stream.of(sourceSettings.compilerPath),
                 Stream.of(
-                        PREPROCESS_FLAG,
-                        OUTPUT_FLAG, TERMINAL_INDICATOR,
-                        sourceSettings.languageSwitch,
-                        COMPILE_FLAG, TERMINAL_INDICATOR
-                )
+                    Paths.get(sourceSettings.sourcePath).getParent().toString(),
+                    project.getBasePath() != null ? project.getBasePath() : null
+                ).filter(Objects::nonNull).distinct().map(path -> PathNormalizer.resolvePathFromLocalToCompilerHost(path, sourceSettings.host)).map(path -> includeOption + path),
+                sourceSettings.switches.stream(),
+                compilerKind != null ? compilerKind.additionalSwitches().stream() : Stream.empty(),
+                CommandLineUtil.parseCommandLine(additionalSwitches).stream()
+            ).filter(x -> !CommandLineUtil.parseCommandLine(ignoreSwitches).contains(x)),
+            Streams.concat(
+                CommandLineUtil.parseCommandLine(sourceSettings.languageSwitch).stream(),
+                preprocessOptions.stream()
+            )
         ).filter(s -> !s.isEmpty()).toArray(String[]::new);
     }
 }

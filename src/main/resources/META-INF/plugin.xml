@@ -73,6 +73,11 @@
         <action id="compilerexplorer.ShowExplorerStdoutTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerStdoutTab"/>
         <action id="compilerexplorer.ShowExplorerStderrTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerStderrTab"/>
         <action id="compilerexplorer.ShowExplorerOutputTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputTab"/>
+        <action id="compilerexplorer.ShowExplorerOutputDevice1Tab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputDevice1Tab"/>
+        <action id="compilerexplorer.ShowExplorerOutputDevice2Tab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputDevice2Tab"/>
+        <action id="compilerexplorer.ShowExplorerOutputDevice3Tab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputDevice3Tab"/>
+        <action id="compilerexplorer.ShowExplorerOutputDevice4Tab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputDevice4Tab"/>
+        <action id="compilerexplorer.ShowExplorerOutputDevice5Tab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerOutputDevice5Tab"/>
         <action id="compilerexplorer.ShowExplorerExecResultTab" class="com.compilerexplorer.actions.appearance.tabs.ShowExplorerExecResultTab"/>
         <action id="compilerexplorer.ShowEverythingTab" class="com.compilerexplorer.actions.appearance.tabs.ShowEverythingTab"/>
         <action id="compilerexplorer.ShowAllTabsToggle" class="com.compilerexplorer.actions.appearance.ShowAllTabsToggle"/>
@@ -139,6 +144,11 @@
             <reference ref="compilerexplorer.ShowExplorerStdoutTab"/>
             <reference ref="compilerexplorer.ShowExplorerStderrTab"/>
             <reference ref="compilerexplorer.ShowExplorerOutputTab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputDevice1Tab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputDevice2Tab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputDevice3Tab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputDevice4Tab"/>
+            <reference ref="compilerexplorer.ShowExplorerOutputDevice5Tab"/>
             <reference ref="compilerexplorer.ShowExplorerExecResultTab"/>
             <reference ref="compilerexplorer.ShowEverythingTab"/>
         </group>

@@ -25,6 +25,11 @@ public class TabsFactory {
                 new ExplorerStdoutTabProvider(state),
                 new ExplorerStderrTabProvider(state),
                 new ExplorerOutputTabProvider(state),
+                new ExplorerOutputDevice1TabProvider(state),
+                new ExplorerOutputDevice2TabProvider(state),
+                new ExplorerOutputDevice3TabProvider(state),
+                new ExplorerOutputDevice4TabProvider(state),
+                new ExplorerOutputDevice5TabProvider(state),
                 new ExplorerExecResultTabProvider(state),
                 new EverythingTabProvider(state)
         );

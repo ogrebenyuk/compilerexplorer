@@ -101,7 +101,7 @@ public class SourceRemoteMatchProducer extends BaseComponent {
                                                           @NotNull String localTarget) {
         String remoteVersion = remoteCompilerInfo.getVersion();
         String remoteName = remoteCompilerInfo.getName();
-        boolean targetMatches =
+        boolean targetMatches = localTarget.isEmpty() ||
                 remoteVersion.replaceAll("-", "_").contains(localTarget.replaceAll("-", "_")) ||
                 remoteName.replaceAll("-", "_").contains(localTarget.replaceAll("-", "_"));
         boolean nameMatches =

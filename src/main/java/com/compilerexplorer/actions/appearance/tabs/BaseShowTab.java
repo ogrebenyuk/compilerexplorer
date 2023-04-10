@@ -16,6 +16,11 @@ class BaseShowTab extends BaseAction implements BaseActionWithFilters, BaseActio
         tab = tab_;
     }
 
+    @NotNull
+    protected Tabs getTab() {
+        return tab;
+    }
+
     @Override
     public void update(@NotNull final AnActionEvent event) {
         super.update(event);
