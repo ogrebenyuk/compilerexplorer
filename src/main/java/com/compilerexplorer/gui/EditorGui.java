@@ -43,15 +43,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class EditorGui extends BaseRefreshableComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(EditorGui.class);
     public static final Key<EditorGui> KEY = Key.create("compilerexplorer.EditorGui");
-    @NonNls
-    @NotNull
-    private static final String TERMINAL_ESCAPE_SEQUENCE_REGEXP = "\u001B\\[[;\\d]*.";
 
     @NotNull
     private final JPanel mainPanel;
@@ -164,11 +160,6 @@ public class EditorGui extends BaseRefreshableComponent {
         }
     }
 
-    private <ReturnType> ReturnType withEditor(@NotNull Function<EditorEx, ReturnType> consumer, ReturnType defaultValue) {
-        @Nullable EditorEx ed = getEditor();
-        return ed != null ? consumer.apply(ed) : defaultValue;
-    }
-
     public void updateGutter() {
         withEditor(ed -> withCurrentTabProvider(provider -> provider.updateGutter(project, ed)));
     }
@@ -269,13 +260,14 @@ public class EditorGui extends BaseRefreshableComponent {
         if (data != null) {
             withCurrentTabProvider(provider -> {
                 assert currentTab != null;
-
-                int scrollPosition = withEditor(EditorGui::findCurrentScrollPosition, 0);
-                if (isTabProviderError(provider)) {
-                    getState().addToScrollPositionsError(currentTab, scrollPosition);
-                } else {
-                    getState().addToScrollPositions(currentTab, scrollPosition);
-                }
+                withEditor(ed -> {
+                    int scrollPosition = findCurrentScrollPosition(ed);
+                    if (isTabProviderError(provider)) {
+                        getState().addToScrollPositionsError(currentTab, scrollPosition);
+                    } else {
+                        getState().addToScrollPositions(currentTab, scrollPosition);
+                    }
+                });
             });
         }
     }

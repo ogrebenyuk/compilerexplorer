@@ -22,20 +22,24 @@ public class PreprocessorVersionOutputTabProvider extends BasePreprocessorVersio
     public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         data.get(SelectedSourceCompiler.KEY).ifPresentOrElse(
                 selectedSourceCompiler -> {
-                    if (selectedSourceCompiler.getIsSupportedCompilerType()) {
-                        if (selectedSourceCompiler.getCanceled()) {
-                            error(true, () -> Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.Canceled"), contentConsumer);
+                    if (!selectedSourceCompiler.getCached()) {
+                        if (selectedSourceCompiler.getIsSupportedCompilerType()) {
+                            if (selectedSourceCompiler.getCanceled()) {
+                                error(true, () -> Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.Canceled"), contentConsumer);
+                            } else {
+                                badOutput(selectedSourceCompiler).ifPresentOrElse(
+                                        output -> error(true, () -> getPreprocessorErrorMessage(selectedSourceCompiler.getResult().orElse(null), output), contentConsumer),
+                                        () -> content(false, () -> JsonSerializer.createSerializer().toJson(selectedSourceCompiler), contentConsumer)
+                                );
+                            }
                         } else {
-                            badOutput(selectedSourceCompiler).ifPresentOrElse(
-                                output -> error(true, () -> getPreprocessorErrorMessage(selectedSourceCompiler.getResult().orElse(null), output), contentConsumer),
-                                () -> content(false, () -> JsonSerializer.createSerializer().toJson(selectedSourceCompiler), contentConsumer)
-                            );
+                            error(true, () -> Bundle.format("compilerexplorer.PreprocessorVersionOutputTabProvider.Unsupported", "CompilerKind", getCompilerKind(data)), contentConsumer);
                         }
                     } else {
-                        error(true, () -> Bundle.format("compilerexplorer.PreprocessorVersionOutputTabProvider.Unsupported", "CompilerKind", getCompilerKind(data)), contentConsumer);
+                        message(() -> Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.Cached"), contentConsumer);
                     }
                 },
-                () -> message(false, () -> Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.WasNotRun"), contentConsumer)
+                () -> message(() -> Bundle.get("compilerexplorer.PreprocessorVersionOutputTabProvider.WasNotRun"), contentConsumer)
         );
     }
 

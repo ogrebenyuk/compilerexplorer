@@ -71,9 +71,4 @@ public abstract class BaseExplorerUtilProvider extends BaseTabProvider {
     protected static Optional<CompiledText> compiledText(@NotNull DataHolder data) {
         return data.get(CompiledText.KEY);
     }
-
-    @NotNull
-    protected static Optional<CompiledText.CompiledResult> compiledResult(@NotNull DataHolder data) {
-        return compiledText(data).flatMap(CompiledText::getCompiledResult);
-    }
 }

@@ -11,7 +11,7 @@ public final class DisposableParentProjectService implements Disposable {
         return project.getService(DisposableParentProjectService.class);
     }
 
-    public DisposableParentProjectService(Project project) {
+    public DisposableParentProjectService(@SuppressWarnings("unused") Project project) {
         // empty
     }
 

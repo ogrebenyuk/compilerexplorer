@@ -14,7 +14,7 @@ public class ModuleListener implements com.intellij.openapi.project.ModuleListen
     @NonNls
     private static final Logger LOG = Logger.getInstance(ModuleListener.class);
 
-    public ModuleListener(@NotNull Project project) {
+    public ModuleListener(@SuppressWarnings("unused") @NotNull Project project) {
         LOG.debug("created");
     }
 

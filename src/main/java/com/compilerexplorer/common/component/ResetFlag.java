@@ -10,10 +10,6 @@ public class ResetFlag {
         return data.get(KEY).orElse(false);
     }
 
-    public static void add(@NotNull DataHolder data, boolean reset) {
-        data.put(KEY, reset);
-    }
-
     public static DataHolder with(@NotNull DataHolder data, boolean reset) {
         return data.with(KEY, reset);
     }

@@ -74,7 +74,7 @@ public class RemoteCompilersProducer extends BaseRefreshableComponent {
     }
 
     @Override
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         LOG.debug("doReset");
         state.setConnected(false);
         state.clearRemoteCompilers();

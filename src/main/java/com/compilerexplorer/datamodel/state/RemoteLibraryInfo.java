@@ -44,17 +44,9 @@ public class RemoteLibraryInfo {
             return getStringOrEmpty(id);
         }
 
-        public void setId(@Nullable String id_) {
-            id = id_;
-        }
-
         @NotNull
         public String getVersion() {
             return getStringOrEmpty(version);
-        }
-
-        public void setVersion(@Nullable String version_) {
-            version = version_;
         }
 
         @Override
@@ -99,6 +91,7 @@ public class RemoteLibraryInfo {
     @Property
     @SerializedName(DESCRIPTION_FIELD)
     private String description = "";
+    @NotNull
     @Property
     @SerializedName(VERSIONS_FIELD)
     private List<Version> versions = new ArrayList<>();
@@ -110,6 +103,7 @@ public class RemoteLibraryInfo {
         // empty
     }
 
+    @SuppressWarnings("CopyConstructorMissesField")
     public RemoteLibraryInfo(@NotNull RemoteLibraryInfo other) {
         copyFrom(other);
     }

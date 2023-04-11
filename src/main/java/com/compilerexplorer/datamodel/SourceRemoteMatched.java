@@ -18,10 +18,6 @@ public class SourceRemoteMatched {
         matches = matches_;
     }
 
-    public boolean getCached() {
-        return cached;
-    }
-
     @NotNull
     public CompilerMatches getMatches() {
         return matches;

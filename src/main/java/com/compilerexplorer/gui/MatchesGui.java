@@ -76,7 +76,7 @@ public class MatchesGui extends BaseComponent {
     }
 
     @Override
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         LOG.debug("doReset");
         ApplicationManager.getApplication().assertIsDispatchThread();
         comboBox.removeAllItems();
@@ -84,13 +84,14 @@ public class MatchesGui extends BaseComponent {
         comboBox.setEnabled(false);
     }
 
+    @Override
     protected void doRefresh(@NotNull DataHolder data) {
         LOG.debug("doRefresh");
         suppressionFlag.apply(() -> data.get(SourceRemoteMatched.KEY).ifPresentOrElse(
                 sourceRemoteMatched -> showMatches(data, sourceRemoteMatched),
                 () -> {
                     LOG.debug("cannot find input");
-                    doReset(data);
+                    doReset();
                 }
         ));
     }
@@ -156,7 +157,7 @@ public class MatchesGui extends BaseComponent {
             comboBox.setToolTipText(getMatchTooltip(data, compilerMatch));
         } else {
             doClear(data);
-            doReset(data);
+            doReset();
         }
         if (needRefreshNext) {
             refreshNext(data);

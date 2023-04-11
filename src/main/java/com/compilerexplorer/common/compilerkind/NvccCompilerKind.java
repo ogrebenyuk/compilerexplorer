@@ -1,15 +1,11 @@
 package com.compilerexplorer.common.compilerkind;
 
 import com.compilerexplorer.common.CommandLineUtil;
-import com.google.common.collect.Streams;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class NvccCompilerKind implements CompilerKind {
     @NonNls
@@ -103,9 +99,10 @@ public class NvccCompilerKind implements CompilerKind {
         return true;
     }
 
+    @Override
     @NonNls
     @NotNull
-    public List<String> getSecondPassPreprocessOptions(@NotNull String firstPassStdout, @NotNull String firstPassStderr) {
+    public List<String> getSecondPassPreprocessOptions(@NotNull String firstPassStderr) {
         String[] lines = firstPassStderr.split("\n");
         if (lines.length > 0) {
             String command = lines[lines.length - 1];

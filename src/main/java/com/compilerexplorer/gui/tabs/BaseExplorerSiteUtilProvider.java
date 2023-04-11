@@ -26,8 +26,8 @@ public abstract class BaseExplorerSiteUtilProvider extends BaseTabProvider {
                     }
                 );
             } else {
-                message(false, () -> Bundle.format("compilerexplorer.BaseExplorerSiteUtilProvider.Cached", "Endpoint", remoteCompilersOutput.getEndpoint()), contentConsumer);
+                message(() -> Bundle.format("compilerexplorer.BaseExplorerSiteUtilProvider.Cached", "Endpoint", remoteCompilersOutput.getEndpoint()), contentConsumer);
             }
-        }, () -> message(false, () -> Bundle.format("compilerexplorer.BaseExplorerSiteUtilProvider.NotQueried", "Url", getState().getUrl()), contentConsumer));
+        }, () -> message(() -> Bundle.format("compilerexplorer.BaseExplorerSiteUtilProvider.NotQueried", "Url", getState().getUrl()), contentConsumer));
     }
 }

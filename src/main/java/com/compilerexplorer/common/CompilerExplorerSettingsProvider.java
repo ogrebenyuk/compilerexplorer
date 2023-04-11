@@ -23,7 +23,6 @@ public class CompilerExplorerSettingsProvider implements PersistentStateComponen
         return project.getService(CompilerExplorerSettingsProvider.class);
     }
 
-    @SuppressWarnings("WeakerAccess")
     public CompilerExplorerSettingsProvider(@NotNull Project project_) {
         project = project_;
         state = new SettingsState();

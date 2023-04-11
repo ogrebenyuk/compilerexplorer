@@ -31,11 +31,11 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
             preprocessedSource -> preprocessedSource.getResult().ifPresentOrElse(
                 result -> result.getOutput().ifPresentOrElse(
                     output -> content(preprocessedSource.getPreprocessedText().isEmpty(), () -> textProducer.apply(output), contentConsumer),
-                    () -> message(false, () -> textProducer.apply(null), contentConsumer)
+                    () -> message(() -> textProducer.apply(null), contentConsumer)
                 ),
-                () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Disabled"), contentConsumer)
+                () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Disabled"), contentConsumer)
             ),
-            () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.WasNotRun"), contentConsumer)
+            () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.WasNotRun"), contentConsumer)
         );
     }
 

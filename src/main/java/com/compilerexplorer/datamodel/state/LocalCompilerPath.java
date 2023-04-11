@@ -37,13 +37,11 @@ public class LocalCompilerPath {
         setPath(other.getPath());
     }
 
-    @SuppressWarnings("unused")
     @Override
     public int hashCode() {
         return getPath().hashCode();
     }
 
-    @SuppressWarnings("unused")
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof LocalCompilerPath other)) {

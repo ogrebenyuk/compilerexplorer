@@ -15,7 +15,7 @@ public abstract class BaseComponent extends BaseLinkedComponent {
     public void refresh(@NotNull DataHolder data) {
         doClear(data);
         if (ResetFlag.in(data)) {
-            doReset(data);
+            doReset();
         }
         doRefresh(data);
         super.refresh(data);
@@ -23,7 +23,7 @@ public abstract class BaseComponent extends BaseLinkedComponent {
 
     protected abstract void doClear(@NotNull DataHolder data);
 
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         // empty
     }
 

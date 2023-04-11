@@ -51,6 +51,7 @@ public interface CompilerKind {
     @NotNull
     String getLanguageOption(@NotNull Object language);
 
+    @SuppressWarnings("SameReturnValue")
     @NonNls
     @NotNull
     default String getIncludeOption() {
@@ -69,7 +70,7 @@ public interface CompilerKind {
 
     @NonNls
     @NotNull
-    default List<String> getSecondPassPreprocessOptions(@NotNull String firstPassStdout, @NotNull String firstPassStderr) {
+    default List<String> getSecondPassPreprocessOptions(@NotNull String firstPassStderr) {
         return DEFAULT_PREPROCESS_OPTIONS;
     }
 }

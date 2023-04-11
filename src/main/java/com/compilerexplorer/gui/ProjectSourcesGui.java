@@ -59,7 +59,7 @@ public class ProjectSourcesGui extends BaseComponent {
     }
 
     @Override
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         LOG.debug("doReset");
         ApplicationManager.getApplication().assertIsDispatchThread();
         comboBox.removeAllItems();
@@ -74,7 +74,7 @@ public class ProjectSourcesGui extends BaseComponent {
                 projectSettings -> sourcesChanged(data, projectSettings),
                 () -> {
                     LOG.debug("cannot find input");
-                    doReset(data);
+                    doReset();
                 }
         );
     }
@@ -115,7 +115,7 @@ public class ProjectSourcesGui extends BaseComponent {
             comboBox.setToolTipText(getSourceTooltip(newSelection));
         } else {
             doClear(data);
-            doReset(data);
+            doReset();
         }
         if (needRefreshNext) {
             refreshNext(data);

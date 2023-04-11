@@ -11,6 +11,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@NonNls
 public class TerminalColorParserTest {
     @NotNull
     private static final String CSI = TerminalColorParser.CSI_MARKER;
@@ -131,11 +132,11 @@ public class TerminalColorParserTest {
         verifyForegroundColor256(14, TerminalColorParser.BRIGHT_COLORS[6]);
         verifyForegroundColor256(15, TerminalColorParser.BRIGHT_COLORS[7]);
 
-        verifyForegroundColor256(16, new Color(0, 0, 0));
-        verifyForegroundColor256(231, new Color(255, 255, 255));
+        verifyForegroundColor256(16, color(0, 0, 0));
+        verifyForegroundColor256(231, color(255, 255, 255));
 
-        verifyForegroundColor256(232, new Color(0, 0, 0));
-        verifyForegroundColor256(255, new Color(253, 253, 253));
+        verifyForegroundColor256(232, color(0, 0, 0));
+        verifyForegroundColor256(255, color(253, 253, 253));
     }
 
     @Test
@@ -156,29 +157,30 @@ public class TerminalColorParserTest {
         verifyBackgroundColor256(14, TerminalColorParser.BRIGHT_COLORS[6]);
         verifyBackgroundColor256(15, TerminalColorParser.BRIGHT_COLORS[7]);
 
-        verifyBackgroundColor256(16, new Color(0, 0, 0));
-        verifyBackgroundColor256(231, new Color(255, 255, 255));
+        verifyBackgroundColor256(16, color(0, 0, 0));
+        verifyBackgroundColor256(231, color(255, 255, 255));
 
-        verifyBackgroundColor256(232, new Color(0, 0, 0));
-        verifyBackgroundColor256(255, new Color(253, 253, 253));
+        verifyBackgroundColor256(232, color(0, 0, 0));
+        verifyBackgroundColor256(255, color(253, 253, 253));
     }
 
     @Test
     public void verifyForegroundColor24() {
-        verifyForegroundColor24(0, 0, 0, new Color(0, 0, 0));
-        verifyForegroundColor24(12, 23, 34, new Color(12, 23, 34));
-        verifyForegroundColor24(255, 255, 255, new Color(255, 255, 255));
+        verifyForegroundColor24(0, 0, 0, color(0, 0, 0));
+        verifyForegroundColor24(12, 23, 34, color(12, 23, 34));
+        verifyForegroundColor24(255, 255, 255, color(255, 255, 255));
     }
 
     @Test
     public void verifyBackgroundColor24() {
-        verifyBackgroundColor24(0, 0, 0, new Color(0, 0, 0));
-        verifyBackgroundColor24(12, 23, 34, new Color(12, 23, 34));
-        verifyBackgroundColor24(255, 255, 255, new Color(255, 255, 255));
+        verifyBackgroundColor24(0, 0, 0, color(0, 0, 0));
+        verifyBackgroundColor24(12, 23, 34, color(12, 23, 34));
+        verifyBackgroundColor24(255, 255, 255, color(255, 255, 255));
     }
 
-    public void verifyFontType(int code, int expectedFontType) {
+    private static void verifyFontType(int code, int expectedFontType) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -187,8 +189,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedFontType, ranges.get(0).textAttributes.getFontType());
     }
 
-    public void verifyEffectType(int code, @Nullable EffectType expectedEffectType) {
+    private static void verifyEffectType(int code, @Nullable EffectType expectedEffectType) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -197,8 +200,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedEffectType, ranges.get(0).textAttributes.getEffectType());
     }
 
-    public void verifyForegroundColor(int code, @NotNull Color expectedColor) {
+    private static void verifyForegroundColor(int code, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -207,8 +211,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getForegroundColor());
     }
 
-    public void verifyBackgroundColor(int code, @NotNull Color expectedColor) {
+    private static void verifyBackgroundColor(int code, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -217,8 +222,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getBackgroundColor());
     }
 
-    public void verifyForegroundColor256(int code, @NotNull Color expectedColor) {
+    private static void verifyForegroundColor256(int code, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + "38" + SEP + "5" + SEP + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -227,8 +233,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getForegroundColor());
     }
 
-    public void verifyBackgroundColor256(int code, @NotNull Color expectedColor) {
+    private static void verifyBackgroundColor256(int code, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + "48" + SEP + "5" + SEP + code + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -237,8 +244,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getBackgroundColor());
     }
 
-    public void verifyForegroundColor24(int r, int g, int b, @NotNull Color expectedColor) {
+    private static void verifyForegroundColor24(int r, int g, int b, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + "38" + SEP + "2" + SEP + r + SEP + g + SEP + b + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -247,8 +255,9 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getForegroundColor());
     }
 
-    public void verifyBackgroundColor24(int r, int g, int b, @NotNull Color expectedColor) {
+    private static void verifyBackgroundColor24(int r, int g, int b, @NotNull Color expectedColor) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
+        @NonNls
         String parsed = TerminalColorParser.parse("a" + CSI + "48" + SEP + "2" + SEP + r + SEP + g + SEP + b + END + "b" + CSI + END + "c", ranges);
         Assertions.assertEquals("abc", parsed);
         Assertions.assertEquals(1, ranges.size());
@@ -257,18 +266,18 @@ public class TerminalColorParserTest {
         Assertions.assertEquals(expectedColor, ranges.get(0).textAttributes.getBackgroundColor());
     }
 
-    private void verifyCodeIgnored(char code) {
+    private static void verifyCodeIgnored(char code) {
         verifyParsedText(CSI + code, "");
         verifyParsedText("a" + CSI + code, "a");
         verifyParsedText(CSI + code + "a", "a");
         verifyParsedText("a" + CSI + code + "b", "ab");
     }
 
-    private void verifyNoCodes(@NonNls @NotNull String text) {
+    private static void verifyNoCodes(@NonNls @NotNull String text) {
         verifyParsedText(text, text);
     }
 
-    private void verifyParsedText(@NonNls @NotNull String text, @NonNls @NotNull String expectedParsed) {
+    private static void verifyParsedText(@NonNls @NotNull String text, @NonNls @NotNull String expectedParsed) {
         List<TerminalColorParser.HighlightedRange> ranges = create();
         String parsed = TerminalColorParser.parse(text, ranges);
         Assertions.assertEquals(expectedParsed, parsed);
@@ -276,7 +285,12 @@ public class TerminalColorParserTest {
     }
 
     @NotNull
-    private List<TerminalColorParser.HighlightedRange> create() {
+    private static List<TerminalColorParser.HighlightedRange> create() {
         return new ArrayList<>();
+    }
+
+    @NotNull
+    private static Color color(int r, int g, int b) {
+        return TerminalColorParser.color(r, g, b);
     }
 }

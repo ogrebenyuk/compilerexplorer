@@ -31,12 +31,11 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.net.URI;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class RemoteCompiler extends BaseRefreshableComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(RemoteCompiler.class);
@@ -60,16 +59,19 @@ public class RemoteCompiler extends BaseRefreshableComponent {
         taskRunner = taskRunner_;
     }
 
+    @Override
     protected void doClear(@NotNull DataHolder data) {
         LOG.debug("doClear");
         data.remove(CompiledText.KEY);
     }
 
-    protected void doReset(@NotNull DataHolder data) {
+    @Override
+    protected void doReset() {
         LOG.debug("doReset");
         normalizedPathMap.clear();
     }
 
+    @Override
     protected void doRefresh(@NotNull DataHolder data) {
         LOG.debug("doRefresh");
         needRefreshNext = true;
@@ -164,13 +166,11 @@ public class RemoteCompiler extends BaseRefreshableComponent {
 
                         if (compiledResult.code == 0) {
                             HostMachine host = selectedSource.getSelectedSource().host;
-                            @Nullable File compilerDir = new File(selectedSource.getSelectedSource().compilerPath).getParentFile();
-                            @Nullable String compilerInstallPath = compilerDir != null ? compilerDir.getParent() : null;
-                            normalizePaths(compiledResult.stdout, host, compilerInstallPath);
-                            normalizePaths(compiledResult.stderr, host, compilerInstallPath);
-                            normalizePaths(compiledResult.asm, host, compilerInstallPath);
+                            normalizePaths(compiledResult.stdout, host);
+                            normalizePaths(compiledResult.stderr, host);
+                            normalizePaths(compiledResult.asm, host);
                             if (compiledResult.execResult != null) {
-                                normalizePaths(compiledResult.execResult.stdout, host, compilerInstallPath);
+                                normalizePaths(compiledResult.execResult.stdout, host);
                             }
                             LOG.debug("compiled");
                         } else {
@@ -231,23 +231,23 @@ public class RemoteCompiler extends BaseRefreshableComponent {
         String lang;
     }
 
-    private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
+    private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host) {
         if (chunks != null) {
             chunks.forEach(chunk -> {
                 if (chunk.source != null) {
-                    chunk.source.file = tryNormalizePath(chunk.source.file, host, compilerInstallPath);
+                    chunk.source.file = tryNormalizePath(chunk.source.file, host);
                 }
             });
         }
     }
 
     @Nullable
-    private String tryNormalizePath(@Nullable String path, @NotNull HostMachine host, @Nullable String compilerInstallPath) {
+    private String tryNormalizePath(@Nullable String path, @NotNull HostMachine host) {
         if (path == null) {
             return null;
         }
         return normalizedPathMap.computeIfAbsent(path, p ->
-                PathNormalizer.resolvePathFromCompilerHostToLocal(p, host, project.getBasePath(), compilerInstallPath)
+                PathNormalizer.resolvePathFromCompilerHostToLocal(p, host, project.getBasePath())
         );
     }
 }

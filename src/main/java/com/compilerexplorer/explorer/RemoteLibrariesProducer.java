@@ -53,7 +53,7 @@ public class RemoteLibrariesProducer extends BaseRefreshableComponent {
     }
 
     @Override
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         LOG.debug("doReset");
         state.clearRemoteLibraries();
     }

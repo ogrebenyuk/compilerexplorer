@@ -40,7 +40,7 @@ public class SourceInfoTabProvider extends BaseTabProvider {
             if (sourcesPresent(data)) {
                 error(true, () -> Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection"), contentConsumer);
             } else {
-                message(false, () -> Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection"), contentConsumer);
+                message(() -> Bundle.get("compilerexplorer.SourceInfoTabProvider.NoSelection"), contentConsumer);
             }
         });
     }

@@ -96,10 +96,6 @@ public class Filters {
         binaryObject = binaryObject_;
     }
 
-    public boolean isAnyBinaryRequested() {
-        return getBinary() || getBinaryObject();
-    }
-
     public boolean getExecute() {
         return execute;
     }

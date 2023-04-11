@@ -24,13 +24,13 @@ public class PreprocessorOutputTabProvider extends BasePreprocessorTabProvider {
                                 error(true, () -> getPreprocessorErrorMessage(result, output), contentConsumer);
                             }
                         }),
-                        () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Disabled"), contentConsumer)
+                        () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Disabled"), contentConsumer)
                     );
                 } else {
                     error(true, () -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.Canceled"), contentConsumer);
                 }
             },
-            () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.WasNotRun"), contentConsumer)
+            () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorTabProvider.WasNotRun"), contentConsumer)
         );
     }
 

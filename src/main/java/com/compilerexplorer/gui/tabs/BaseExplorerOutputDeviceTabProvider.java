@@ -35,9 +35,9 @@ public class BaseExplorerOutputDeviceTabProvider extends BaseExplorerOutputTabPr
     public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResultIfGood().map(compilerResult -> getDeviceAsm(compilerResult, device)).ifPresentOrElse(
                 unusedAsm -> super.provide(data, contentConsumer),
-                () -> message(false, () -> {clear(); return Bundle.get("compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice");}, contentConsumer)
+                () -> message(() -> {clear(); return Bundle.get("compilerexplorer.BaseExplorerOutputDeviceTabProvider.NoDevice");}, contentConsumer)
             )),
-            () -> message(false, () -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun");}, contentConsumer)
+            () -> message(() -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun");}, contentConsumer)
         );
     }
 

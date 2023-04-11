@@ -4,7 +4,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-public class Initiator extends BaseLinkedComponent implements Refreshable {
+public class Initiator extends BaseLinkedComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(Initiator.class);
 
@@ -18,7 +18,6 @@ public class Initiator extends BaseLinkedComponent implements Refreshable {
         LOG.debug("created");
     }
 
-    @Override
     public void refresh(boolean reset) {
         refresh(reset, ResetLevel.NONE);
     }

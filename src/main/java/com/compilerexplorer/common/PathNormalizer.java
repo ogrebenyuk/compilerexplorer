@@ -39,7 +39,7 @@ public class PathNormalizer {
 
     @NonNls
     @NotNull
-    public static String resolvePathFromCompilerHostToLocal(@NonNls @NotNull String remotePath, @NotNull HostMachine host, @NonNls @Nullable String projectBasePath, @NonNls @Nullable String compilerInstallPath) {
+    public static String resolvePathFromCompilerHostToLocal(@NonNls @NotNull String remotePath, @NotNull HostMachine host, @NonNls @Nullable String projectBasePath) {
         String normalisedRemotePath = normalizePath(remotePath);
         if (normalisedRemotePath.startsWith(COMPILER_EXPLORER_DEFAULT_INSTALL_PATH)) {
             return remotePath;

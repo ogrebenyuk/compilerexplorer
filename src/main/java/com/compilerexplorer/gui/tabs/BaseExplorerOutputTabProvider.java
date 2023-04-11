@@ -8,12 +8,10 @@ import com.compilerexplorer.common.component.DataHolder;
 import com.compilerexplorer.datamodel.CompiledText;
 import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
-import com.compilerexplorer.datamodel.state.Filters;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.listeners.CaretPositionChangeListener;
 import com.compilerexplorer.gui.listeners.MousePopupClickListener;
 import com.compilerexplorer.gui.tabs.exploreroutput.*;
-import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -86,7 +84,7 @@ public class BaseExplorerOutputTabProvider extends BaseExplorerUtilProvider {
     @Override
     public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         shouldHaveRun(data).ifPresentOrElse(unusedPreprocessedText -> compiledText(data).ifPresent(compiledText -> compiledText.getCompiledResultIfGood().map(asmGetter).ifPresentOrElse(
-                asmResult -> contentWithFolding(true, () -> {
+                asmResult -> contentWithFolding(() -> {
                 clear();
                 SettingsState state = getState();
                 boolean shortenTemplates = state.getShortenTemplates();
@@ -108,7 +106,7 @@ public class BaseExplorerOutputTabProvider extends BaseExplorerUtilProvider {
                         parseOpcodes(asmBuilder, chunk.opcodes);
                         ++line;
                     }
-                    if (chunk.address != CompiledText.CompiledChunk.NO_ADDRESS) {
+                    if (chunk.address != null) {
                         lineNumberToByteOffsetMap.put(line, chunk.address);
                     }
                     if (chunk.text != null) {
@@ -158,7 +156,7 @@ public class BaseExplorerOutputTabProvider extends BaseExplorerUtilProvider {
                     error(true, () -> {clear(); return getExplorerError(compiledText);}, contentConsumer);
                 }
             }
-        )), () -> message(false, () -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun");}, contentConsumer));
+        )), () -> message(() -> {clear(); return Bundle.get("compilerexplorer.ExplorerOutputTabProvider.WasNotRun");}, contentConsumer));
     }
 
     protected void clear() {
@@ -213,11 +211,7 @@ public class BaseExplorerOutputTabProvider extends BaseExplorerUtilProvider {
 
     private void showGutterPopupMenu(Component gutter, int x, int y) {
         DefaultActionGroup actions = new DefaultActionGroup(ActionManager.getInstance().getAction(POPUP_ACTIONS_GROUP_ID));
-        showPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, actions, gutter, x, y);
-    }
-
-    private static void showPopupMenu(@NotNull String place, @NotNull ActionGroup actionsGroup, @NotNull Component component, int x, int y) {
-        ActionManager.getInstance().createActionPopupMenu(place, actionsGroup).getComponent().show(component, x, y);
+        ActionManager.getInstance().createActionPopupMenu(ActionPlaces.EDITOR_GUTTER_POPUP, actions).getComponent().show(gutter, x, y);
     }
 
     @Override
@@ -228,7 +222,6 @@ public class BaseExplorerOutputTabProvider extends BaseExplorerUtilProvider {
         gutter.setCanCloseAnnotations(false);
 
         SettingsState state = getState();
-        Filters filters = state.getFilters();
 
         if (state.getShowLineNumbers()) {
             gutter.registerTextAnnotation(new LineNumberAnnotationProvider());

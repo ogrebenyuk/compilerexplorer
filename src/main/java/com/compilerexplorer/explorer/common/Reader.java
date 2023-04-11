@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.function.BiConsumer;
 
+@SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class Reader {
     @NotNull
     public static String read(@NonNls @NotNull String endpoint, @NotNull CloseableHttpClient httpClient, @NotNull CloseableHttpResponse response, @NotNull ProgressIndicator indicator) throws IOException {

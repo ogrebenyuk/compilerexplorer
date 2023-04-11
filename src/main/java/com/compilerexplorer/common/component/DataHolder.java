@@ -4,7 +4,6 @@ import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.UserDataHolderBase;
 import com.intellij.util.keyFMap.KeyFMap;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -39,10 +38,6 @@ public class DataHolder {
 
     public <T> Optional<T> get(@NotNull Key<T> key) {
         return Optional.ofNullable(data.getUserData(key));
-    }
-
-    public static <T> Optional<T> get(@Nullable DataHolder data, @NotNull Key<T> key) {
-        return data != null ? data.get(key) : Optional.empty();
     }
 
     @NotNull

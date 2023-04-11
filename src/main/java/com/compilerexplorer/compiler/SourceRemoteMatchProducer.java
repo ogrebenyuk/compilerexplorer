@@ -42,7 +42,7 @@ public class SourceRemoteMatchProducer extends BaseComponent {
     }
 
     @Override
-    protected void doReset(@NotNull DataHolder data) {
+    protected void doReset() {
         LOG.debug("doReset");
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         state.clearCompilerMatches();

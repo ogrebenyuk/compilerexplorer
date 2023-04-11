@@ -5,6 +5,7 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ public class TerminalColorParser {
     @NonNls
     @NotNull
     public static final String CSI_MARKER = "\u001B[";
+    @NonNls
     public static final char END_OF_CODES = 'm';
     @NonNls
     @NotNull
@@ -144,7 +146,7 @@ public class TerminalColorParser {
             int colorType = codes.get(i);
             if (colorType == 2) {
                 if (i + 3 < codes.size()) {
-                    color = new Color(codes.get(i + 1), codes.get(i + 2), codes.get(i + 3));
+                    color = color(codes.get(i + 1), codes.get(i + 2), codes.get(i + 3));
                     i += 3;
                 } else {
                     i = codes.size();
@@ -159,11 +161,11 @@ public class TerminalColorParser {
                         color = BRIGHT_COLORS[color256 - 8];
                     } else if (color256 < 232) {
                         color256 -= 16;
-                        color = new Color(((color256 / 36) % 6) * 51, ((color256 / 6) % 6) * 51, (color256 % 6) * 51);
+                        color = color(((color256 / 36) % 6) * 51, ((color256 / 6) % 6) * 51, (color256 % 6) * 51);
                     } else if (color256 < 256) {
                         color256 -= 232;
                         color256 *= 11;
-                        color = new Color(color256, color256, color256);
+                        color = color(color256, color256, color256);
                     }
                 }
             }
@@ -176,5 +178,11 @@ public class TerminalColorParser {
             }
         }
         return i;
+    }
+
+    @VisibleForTesting
+    @NotNull
+    public static Color color(int r, int g, int b) {
+        return new JBColor(new Color(r, g, b), new Color(r, g, b));
     }
 }

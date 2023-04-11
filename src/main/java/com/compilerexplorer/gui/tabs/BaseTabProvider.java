@@ -92,16 +92,16 @@ public abstract class BaseTabProvider implements TabProvider {
         return filetype.getDefaultExtension();
     }
 
-    protected void contentWithFolding(boolean enabled, @NotNull Producer<TabContent> contentProducer, @NotNull TabContentConsumer contentConsumer) {
-        contentConsumer.accept(enabled, false, fileType, defaultExtension(fileType), contentProducer);
+    protected void contentWithFolding(@NotNull Producer<TabContent> contentProducer, @NotNull TabContentConsumer contentConsumer) {
+        contentConsumer.accept(true, false, fileType, defaultExtension(fileType), contentProducer);
     }
 
     protected void content(boolean enabled, @NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
         contentConsumer.accept(enabled, false, fileType, defaultExtension(fileType),  () -> new TabContent(messageProducer.produce()));
     }
 
-    protected void message(boolean enabled, @NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
-        message(enabled, false, messageProducer, contentConsumer);
+    protected void message(@NotNull Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {
+        message(false, false, messageProducer, contentConsumer);
     }
 
     protected void error(boolean enabled, Producer<String> messageProducer, @NotNull TabContentConsumer contentConsumer) {

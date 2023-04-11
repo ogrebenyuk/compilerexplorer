@@ -1,3 +1,4 @@
+<!--suppress PluginXmlCapitalization -->
 <idea-plugin>
     <id>com.compilerexplorer.compilerexplorer</id>
     <name>Compiler Explorer</name>

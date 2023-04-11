@@ -34,15 +34,13 @@ public class CompiledText {
             return (file != null ? file : "") + ":" + line;
         }
 
-        @SuppressWarnings("WeakerAccess")
-        @Override
+         @Override
         public int hashCode() {
             return Objects.hashCode(file)
                     + line
                     ;
         }
 
-        @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof SourceLocation other)) {
@@ -55,27 +53,23 @@ public class CompiledText {
     }
 
     public static class CompiledChunk {
-        public final static int NO_ADDRESS = -1;
-
         @Nullable
         public String text;
         @Nullable
         public SourceLocation source;
         @Nullable
         public List<String> opcodes;
-        public int address = NO_ADDRESS;
+        public Integer address;
 
-        @SuppressWarnings("unused")
         @Override
         public int hashCode() {
             return Objects.hashCode(text)
                     + Objects.hashCode(source)
                     + Objects.hashCode(opcodes)
-                    + address
+                    + Objects.hashCode(address)
                     ;
         }
 
-        @SuppressWarnings("unused")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof CompiledChunk other)) {
@@ -84,7 +78,7 @@ public class CompiledText {
             return Objects.equals(text, other.text)
                     && Objects.equals(source, other.source)
                     && Objects.equals(opcodes, other.opcodes)
-                    && address == other.address
+                    && Objects.equals(address, other.address)
                     ;
         }
     }
@@ -118,7 +112,6 @@ public class CompiledText {
             return Objects.hashCode(asm) + Objects.hashCode(labelDefinitions);
         }
 
-        @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof AsmResult other)) {
@@ -142,7 +135,6 @@ public class CompiledText {
         @Nullable
         public Map<String, AsmResult> devices;
 
-        @SuppressWarnings("WeakerAccess")
         @Override
         public int hashCode() {
             return super.hashCode()
@@ -154,7 +146,6 @@ public class CompiledText {
                     ;
         }
 
-        @SuppressWarnings("WeakerAccess")
         @Override
         public boolean equals(Object obj) {
             if (!(obj instanceof CompiledResult other)) {

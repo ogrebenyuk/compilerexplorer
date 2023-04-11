@@ -32,10 +32,10 @@ public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
                         }
                     });
                 } else {
-                    message(false, () -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Disabled"), contentConsumer);
+                    message(() -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.Disabled"), contentConsumer);
                 }
             },
-            () -> message(false, () -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"), contentConsumer)
+            () -> message(() -> Bundle.get("compilerexplorer.ExplorerExecResultTabProvider.WasNotRun"), contentConsumer)
         );
     }
 

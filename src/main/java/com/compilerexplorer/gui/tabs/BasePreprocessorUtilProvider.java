@@ -1,11 +1,11 @@
 package com.compilerexplorer.gui.tabs;
 
 import com.compilerexplorer.common.Bundle;
+import com.compilerexplorer.common.CommandLineUtil;
 import com.compilerexplorer.common.Tabs;
 import com.compilerexplorer.datamodel.CompilerResult;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.util.text.Strings;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +23,7 @@ public abstract class BasePreprocessorUtilProvider extends BaseTabProvider {
     protected static String getPreprocessorErrorMessage(@Nullable CompilerResult result, @NotNull CompilerResult.Output output) {
         StringBuilder errorMessageBuilder = new StringBuilder();
         if (result != null) {
-            errorMessageBuilder.append(Bundle.format("compilerexplorer.BasePreprocessorUtilProvider.CommandLine", "CommandLine", getCommandLine(result)));
+            errorMessageBuilder.append(Bundle.format("compilerexplorer.BasePreprocessorUtilProvider.CommandLine", "CommandLine", getCommandLine(result), "WorkingDir", result.getWorkingDir()));
             errorMessageBuilder.append("\n");
         }
         output.getException().ifPresentOrElse(
@@ -45,6 +45,6 @@ public abstract class BasePreprocessorUtilProvider extends BaseTabProvider {
     @NonNls
     @NotNull
     private static String getCommandLine(@NotNull CompilerResult result) {
-        return Strings.join(Arrays.stream(result.getCommandLine()).toList(), " ");
+        return CommandLineUtil.formCommandLine(Arrays.stream(result.getCommandLine()).toList());
     }
 }

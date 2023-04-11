@@ -16,7 +16,7 @@ public class ExplorerRawInputTabProvider extends BaseExplorerUtilProvider {
     public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         compiledText(data).ifPresentOrElse(
                 compiledText -> content(false, compiledText::getRawInput, contentConsumer),
-                () -> message(false, () -> Bundle.get("compilerexplorer.ExplorerRawInputTabProvider.WasNotRun"), contentConsumer)
+                () -> message(() -> Bundle.get("compilerexplorer.ExplorerRawInputTabProvider.WasNotRun"), contentConsumer)
         );
     }
 }

@@ -88,7 +88,7 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
                                 stderr = compilerRunner.getStderr();
                                 exitCodeGood = exitCode == 0;
                                 if (compilerKind != null && compilerKind.twoPassPreprocessor() && exitCodeGood) {
-                                    List<String> secondPassOptions = compilerKind.getSecondPassPreprocessOptions(stdout, stderr);
+                                    List<String> secondPassOptions = compilerKind.getSecondPassPreprocessOptions(stderr);
                                     if (!secondPassOptions.isEmpty()) {
                                         CompilerRunner compilerRunner2 = new CompilerRunner(sourceSettings.host, secondPassOptions.toArray(new String[0]), workingDir, sourceText, indicator, state.getCompilerTimeoutMillis());
                                         indicator.checkCanceled();

@@ -29,11 +29,11 @@ public abstract class BasePreprocessorVersionTabProvider extends BasePreprocesso
             selectedSourceCompiler -> selectedSourceCompiler.getResult().ifPresentOrElse(
                 result -> result.getOutput().ifPresentOrElse(
                     output -> content(selectedSourceCompiler.getLocalCompilerSettings().isEmpty(), () -> textProducer.apply(output), contentConsumer),
-                    () -> message(false, () -> textProducer.apply(null), contentConsumer)
+                    () -> message(() -> textProducer.apply(null), contentConsumer)
                 ),
-                () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.Cached"), contentConsumer)
+                () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.Cached"), contentConsumer)
             ),
-            () -> message(false, () -> Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.WasNotRun"), contentConsumer)
+            () -> message(() -> Bundle.get("compilerexplorer.BasePreprocessorVersionTabProvider.WasNotRun"), contentConsumer)
         );
     }
 }

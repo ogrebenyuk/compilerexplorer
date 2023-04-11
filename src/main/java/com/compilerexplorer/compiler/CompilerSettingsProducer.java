@@ -52,7 +52,7 @@ public class CompilerSettingsProducer extends BaseComponent {
     }
 
     @Override
-    public void doReset(@NotNull DataHolder data) {
+    public void doReset() {
         LOG.debug("doReset");
         SettingsState state = CompilerExplorerSettingsProvider.getInstance(project).getState();
         state.clearLocalCompilerSettings();

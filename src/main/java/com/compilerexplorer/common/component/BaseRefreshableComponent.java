@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class BaseRefreshableComponent extends BaseComponent implements Refreshable {
+public abstract class BaseRefreshableComponent extends BaseComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(BaseRefreshableComponent.class);
 
@@ -31,7 +31,6 @@ public abstract class BaseRefreshableComponent extends BaseComponent implements 
         super.refresh(data);
     }
 
-    @Override
     public void refresh(boolean reset) {
         if (lastData != null) {
             LOG.debug("refresh " + reset);

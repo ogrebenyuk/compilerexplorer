@@ -1,7 +1,6 @@
 package com.compilerexplorer.actions.appearance.tabs;
 
 import com.compilerexplorer.common.Bundle;
-import com.compilerexplorer.common.Constants;
 import com.compilerexplorer.common.Tabs;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;

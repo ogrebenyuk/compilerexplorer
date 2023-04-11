@@ -20,7 +20,7 @@ public class ExplorerStderrTabProvider extends BaseExplorerUtilProvider {
                 CompiledText.CompiledResult result = compiledText.getCompiledResultIfGood().orElse(null);
                 content(result == null, () -> result != null ? getTextFromChunks(result.stderr) : "", contentConsumer);
             },
-            () -> message(false, () -> Bundle.get("compilerexplorer.ExplorerStderrTabProvider.WasNotRun"), contentConsumer)
+            () -> message(() -> Bundle.get("compilerexplorer.ExplorerStderrTabProvider.WasNotRun"), contentConsumer)
         );
     }
 }
