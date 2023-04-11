@@ -136,6 +136,7 @@ public class MatchesGui extends BaseComponent {
                 "Id", compilerMatch.getRemoteCompilerInfo().getId(),
                 "Language", compilerMatch.getRemoteCompilerInfo().getLanguage(),
                 "Name", compilerMatch.getRemoteCompilerInfo().getName(),
+                "CompilerType", compilerMatch.getRemoteCompilerInfo().getCompilerType(),
                 "Version", compilerMatch.getRemoteCompilerInfo().getVersion(),
                 "MatchKind", CompilerMatchKind.asStringFull(compilerMatch.getCompilerMatchKind()),
                 "RawData", prettifyJson(compilerMatch.getRemoteCompilerInfo().getRawData()),
