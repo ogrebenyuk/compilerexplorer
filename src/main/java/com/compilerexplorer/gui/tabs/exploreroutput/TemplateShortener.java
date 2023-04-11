@@ -13,6 +13,7 @@ public class TemplateShortener {
     private static final List<String> EXCEPTIONS = ImmutableList.of(
             "<built-in>",
             "<command-line>",
+            "<stdin>",
             "<__static_initialization_and_destruction_0(int, int)>",
             "<_GLOBAL__sub_I_main>",
             "<Compilation failed>"

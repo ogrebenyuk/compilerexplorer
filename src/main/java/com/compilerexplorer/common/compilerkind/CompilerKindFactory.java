@@ -11,11 +11,12 @@ public class CompilerKindFactory {
     private static final Set<CompilerKind> KNOWN_COMPILER_KINDS = Set.of(
         new GccCompilerKind(),
         new ClangCompilerKind(),
-        new NvccCompilerKind()
+        new NvccCompilerKind(),
+        new CircleCompilerKind()
     );
 
     @NotNull
     public static Optional<CompilerKind> findCompilerKind(@NonNls @NotNull String compilerKind) {
-        return KNOWN_COMPILER_KINDS.stream().filter(kind -> kind.getKind().equals(compilerKind)).findFirst();
+        return KNOWN_COMPILER_KINDS.stream().filter(kind -> kind.getKind().equalsIgnoreCase(compilerKind)).findFirst();
     }
 }

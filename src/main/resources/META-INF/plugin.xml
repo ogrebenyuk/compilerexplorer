@@ -176,18 +176,26 @@
 
         <group id="compilerexplorer.EditorPopupGroup" popup="false">
             <reference ref="EditorCopy"/>
+            <separator/>
+            <reference ref="compilerexplorer.SaveCurrentTabAs"/>
         </group>
 
         <group id="compilerexplorer.FoldingEditorPopupGroup" popup="false">
-            <reference ref="compilerexplorer.EditorPopupGroup"/>
+            <reference ref="EditorCopy"/>
             <separator/>
             <reference ref="compilerexplorer.FoldingGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.SaveCurrentTabAs"/>
         </group>
 
         <group id="compilerexplorer.ExplorerOutputEditorPopupGroup" popup="false">
-            <reference ref="compilerexplorer.FoldingEditorPopupGroup"/>
+            <reference ref="EditorCopy"/>
+            <separator/>
+            <reference ref="compilerexplorer.FoldingGroup"/>
             <separator/>
             <reference ref="compilerexplorer.AppearanceGroup"/>
+            <separator/>
+            <reference ref="compilerexplorer.SaveCurrentTabAs"/>
         </group>
 
         <group id="compilerexplorer.AppearancePopupGroup" popup="true">

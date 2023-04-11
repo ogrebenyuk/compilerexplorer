@@ -125,6 +125,8 @@ public class CompiledText {
         public static final int CODE_GOOD = 0;
         public static final int CODE_NOT_COMPILED = -1;
 
+        @Nullable
+        public String inputFilename;
         public int code = CODE_NOT_COMPILED;
         @Nullable
         public List<CompiledChunk> stdout;
@@ -138,6 +140,7 @@ public class CompiledText {
         @Override
         public int hashCode() {
             return super.hashCode()
+                    + Objects.hashCode(inputFilename)
                     + code
                     + Objects.hashCode(stdout)
                     + Objects.hashCode(stderr)
@@ -152,6 +155,7 @@ public class CompiledText {
                 return false;
             }
             return super.equals(obj)
+                    && Objects.equals(inputFilename, other.inputFilename)
                     && code == other.code
                     && Objects.equals(stdout, other.stdout)
                     && Objects.equals(stderr, other.stderr)

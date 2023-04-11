@@ -17,8 +17,8 @@ public class ExplorerStdoutTabProvider extends BaseExplorerUtilProvider {
     public void provide(@NotNull DataHolder data, @NotNull TabContentConsumer contentConsumer) {
         compiledText(data).ifPresentOrElse(
                 compiledText -> {
-                    CompiledText.CompiledResult result = compiledText.getCompiledResultIfGood().orElse(null);
-                    content(result == null, () -> result != null ? getTextFromChunks(result.stdout) : "", contentConsumer);
+                    CompiledText.CompiledResult result = compiledText.getCompiledResult().orElse(null);
+                    content(compiledText.getCompiledResultIfGood().isEmpty(), () -> result != null ? getTextFromChunks(result.stdout) : "", contentConsumer);
                 },
                 () -> message(() -> Bundle.get("compilerexplorer.ExplorerStdoutTabProvider.WasNotRun"), contentConsumer)
         );

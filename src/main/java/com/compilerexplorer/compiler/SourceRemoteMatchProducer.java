@@ -63,8 +63,8 @@ public class SourceRemoteMatchProducer extends BaseComponent {
                     String localVersionFull = localCompilerSettings.getVersion();
                     String localVersion = localName.equals(GCC_NAME) ? stripLastGCCVersionDigitIfNeeded(localVersionFull) : localVersionFull;
                     String localTarget = localCompilerSettings.getTarget();
-                    String language = selectedSource.getSelectedSource().language;
-                    List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, language);
+                    String sourceLanguage = selectedSource.getSelectedSource().language;
+                    List<CompilerMatch> remoteCompilerMatches = findRemoteCompilerMatches(state.getRemoteCompilers(), localName, localVersion, localVersionFull, localTarget, sourceLanguage);
                     data.put(SourceRemoteMatched.KEY, new SourceRemoteMatched(false, new CompilerMatches(findBestMatch(remoteCompilerMatches), remoteCompilerMatches)));
                 }, () -> LOG.debug("cannot find input: local compiler"));
             }
@@ -77,9 +77,9 @@ public class SourceRemoteMatchProducer extends BaseComponent {
                                                                  @NotNull String localVersion,
                                                                  @NotNull String localVersionFull,
                                                                  @NotNull String localTarget,
-                                                                 @NotNull String language) {
+                                                                 @NotNull String sourceLanguage) {
         return remoteCompilers.stream()
-                .filter(s -> s.getLanguage().equalsIgnoreCase(language))
+                .filter(s -> LanguageUtil.isSourceLanguageCompatibleWithRemote(sourceLanguage, s.getLanguage()))
                 .map(s -> findCompilerVersionMatch(s, localName, localVersion, localVersionFull, localTarget))
                 .collect(Collectors.toList());
     }

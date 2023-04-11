@@ -58,6 +58,21 @@ public interface CompilerKind {
         return DEFAULT_INCLUDE_OPTION;
     }
 
+    @NotNull
+    default List<String> adjustSourceSwitches(@NotNull List<String> sourceSwitches) {
+        return sourceSwitches;
+    }
+
+    @NonNls
+    @NotNull
+    default String adjustSourceLanguage(@NonNls @NotNull String sourceLanguage) {
+        return sourceLanguage;
+    }
+
+    default boolean allowSourceFilenameMarker() {
+        return true;
+    }
+
     @NonNls
     @NotNull
     default List<String> getPreprocessOptions() {

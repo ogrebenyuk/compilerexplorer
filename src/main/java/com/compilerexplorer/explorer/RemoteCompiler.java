@@ -42,6 +42,9 @@ public class RemoteCompiler extends BaseRefreshableComponent {
     @NonNls
     @NotNull
     private static final String LOCATION_HEADER = "Location";
+    @NonNls
+    @NotNull
+    private static final String STDIN_FILENAME_MARKER = "<stdin>";
 
     @NotNull
     private final Project project;
@@ -92,10 +95,17 @@ public class RemoteCompiler extends BaseRefreshableComponent {
                     String url = state.getUrl();
                     Filters filters = state.getFilters();
                     boolean preprocessedLocally = data.get(PreprocessedSource.KEY).map(PreprocessedSource::getPreprocessLocally).orElse(false);
-                    String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches(), preprocessedLocally);
+                    @Nullable CompilerKind kind = CompilerKindFactory.findCompilerKind(selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getCompilerType()).orElse(null);
+                    if (kind == null) {
+                        kind = CompilerKindFactory.findCompilerKind(selectedSource.getSelectedSource().compilerKind).orElse(null);
+                    }
+                    String switches = getCompilerOptions(selectedSource.getSelectedSource(), state.getAdditionalSwitches(), state.getIgnoreSwitches(), preprocessedLocally, kind);
                     String remoteCompilerId = selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getId();
                     String endpoint = url + ExplorerUtil.COMPILER_API_ROOT + UrlEscapers.urlPathSegmentEscaper().escape(remoteCompilerId) + ExplorerUtil.COMPILE_ENDPOINT;
                     String compilerLanguage = selectedSource.getSelectedSource().language;
+                    if (kind != null) {
+                        compilerLanguage = kind.adjustSourceLanguage(compilerLanguage);
+                    }
                     Optional<List<EnabledRemoteLibraryInfo>> enabledLibraries = state.getEnabledRemoteLibrariesForLanguage(compilerLanguage);
                     try {
                         CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -166,11 +176,11 @@ public class RemoteCompiler extends BaseRefreshableComponent {
 
                         if (compiledResult.code == 0) {
                             HostMachine host = selectedSource.getSelectedSource().host;
-                            normalizePaths(compiledResult.stdout, host);
-                            normalizePaths(compiledResult.stderr, host);
-                            normalizePaths(compiledResult.asm, host);
+                            normalizePaths(compiledResult.stdout, host, compiledResult.inputFilename, selectedSource.getSelectedSource().sourcePath);
+                            normalizePaths(compiledResult.stderr, host, compiledResult.inputFilename, selectedSource.getSelectedSource().sourcePath);
+                            normalizePaths(compiledResult.asm, host, compiledResult.inputFilename, selectedSource.getSelectedSource().sourcePath);
                             if (compiledResult.execResult != null) {
-                                normalizePaths(compiledResult.execResult.stdout, host);
+                                normalizePaths(compiledResult.execResult.stdout, host, compiledResult.inputFilename, selectedSource.getSelectedSource().sourcePath);
                             }
                             LOG.debug("compiled");
                         } else {
@@ -203,14 +213,17 @@ public class RemoteCompiler extends BaseRefreshableComponent {
     }
 
     @NotNull
-    private static String getCompilerOptions(@NotNull SourceSettings selectedSource, @NotNull String additionalSwitches, @NotNull String ignoreSwitches, boolean preprocessedLocally) {
+    private static String getCompilerOptions(@NotNull SourceSettings selectedSource,
+                                             @NotNull String additionalSwitches,
+                                             @NotNull String ignoreSwitches,
+                                             boolean preprocessedLocally,
+                                             @Nullable CompilerKind kind) {
         List<String> ignoreSwitchesList = CommandLineUtil.parseCommandLine(ignoreSwitches);
-        @Nullable CompilerKind kind = CompilerKindFactory.findCompilerKind(selectedSource.compilerKind).orElse(null);
         return CommandLineUtil.formCommandLine(Streams.concat(
-                selectedSource.switches.stream().filter(x -> !ignoreSwitchesList.contains(x)),
-                 (kind != null ? kind.additionalSwitches().stream() : Stream.empty()),
-                 (kind != null ? kind.additionalCompilerSwitches(preprocessedLocally).stream() : Stream.empty()),
-                 (!additionalSwitches.isEmpty() ? CommandLineUtil.parseCommandLine(additionalSwitches).stream().filter(x -> !ignoreSwitchesList.contains(x)) : Stream.empty())
+                (kind != null ? kind.adjustSourceSwitches(selectedSource.switches) : selectedSource.switches).stream().filter(x -> !ignoreSwitchesList.contains(x)),
+                (kind != null ? kind.additionalSwitches().stream() : Stream.empty()),
+                (kind != null ? kind.additionalCompilerSwitches(preprocessedLocally).stream() : Stream.empty()),
+                (!additionalSwitches.isEmpty() ? CommandLineUtil.parseCommandLine(additionalSwitches).stream().filter(x -> !ignoreSwitchesList.contains(x)) : Stream.empty())
         ).toList());
     }
 
@@ -231,10 +244,16 @@ public class RemoteCompiler extends BaseRefreshableComponent {
         String lang;
     }
 
-    private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks, @NotNull HostMachine host) {
+    private void normalizePaths(@Nullable List<CompiledText.CompiledChunk> chunks,
+                                @NotNull HostMachine host,
+                                @NonNls @Nullable String remoteSourceFilename,
+                                @NonNls @NotNull String localSourceFilename) {
         if (chunks != null) {
             chunks.forEach(chunk -> {
                 if (chunk.source != null) {
+                    if (chunk.source.file != null && (chunk.source.file.equals(remoteSourceFilename) || chunk.source.file.equals(STDIN_FILENAME_MARKER))) {
+                        chunk.source.file = localSourceFilename;
+                    }
                     chunk.source.file = tryNormalizePath(chunk.source.file, host);
                 }
             });

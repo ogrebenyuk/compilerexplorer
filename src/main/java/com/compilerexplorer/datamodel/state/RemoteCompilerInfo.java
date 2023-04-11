@@ -25,6 +25,9 @@ public class RemoteCompilerInfo {
     private static final String SEMVER_FIELD = "semver";
     @NonNls
     @NotNull
+    private static final String COMPILER_TYPE_FIELD = "compilerType";
+    @NonNls
+    @NotNull
     public static final String RAW_DATA_FIELD = "rawData";
 
     @Nullable
@@ -43,6 +46,10 @@ public class RemoteCompilerInfo {
     @Property
     @SerializedName(SEMVER_FIELD)
     private String version = "";
+    @Nullable
+    @Property
+    @SerializedName(COMPILER_TYPE_FIELD)
+    private String compilerType = "";
 
     @NotNull
     private String rawData = "";
@@ -92,6 +99,15 @@ public class RemoteCompilerInfo {
     }
 
     @NotNull
+    public String getCompilerType() {
+        return getStringOrEmpty(compilerType);
+    }
+
+    public void setCompilerType(@Nullable String compilerType_) {
+        compilerType = compilerType_;
+    }
+
+    @NotNull
     public String getRawData() {
         return rawData;
     }
@@ -110,6 +126,7 @@ public class RemoteCompilerInfo {
         setName(other.getName());
         setLanguage(other.getLanguage());
         setVersion(other.getVersion());
+        setCompilerType(other.getCompilerType());
         setRawData(other.getRawData());
     }
 
@@ -119,6 +136,7 @@ public class RemoteCompilerInfo {
                 + getName().hashCode()
                 + getLanguage().hashCode()
                 + getVersion().hashCode()
+                + getCompilerType().hashCode()
                 + getRawData().hashCode()
                 ;
     }
@@ -132,6 +150,7 @@ public class RemoteCompilerInfo {
                 && getName().equals(other.getName())
                 && getLanguage().equals(other.getLanguage())
                 && getVersion().equals(other.getVersion())
+                && getCompilerType().equals(other.getCompilerType())
                 && getRawData().equals(other.getRawData())
                 ;
     }

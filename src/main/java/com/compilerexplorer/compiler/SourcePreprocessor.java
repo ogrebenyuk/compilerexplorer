@@ -64,7 +64,14 @@ public class SourcePreprocessor extends BaseRefreshableComponent {
             @Nullable Document document = virtualFile != null ? FileDocumentManager.getInstance().getDocument(virtualFile) : null;
             @Nullable String content = document != null ? document.getText() : null;
             if (content != null) {
-                @NonNls String sourceText = "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + content;
+                boolean allowSourceFilenameMarker = data.get(SourceRemoteMatched.SELECTED_KEY).map(selectedMatch -> {
+                    @Nullable CompilerKind kind = CompilerKindFactory.findCompilerKind(selectedMatch.getMatches().getChosenMatch().getRemoteCompilerInfo().getCompilerType()).orElse(null);
+                    if (kind == null) {
+                        kind = CompilerKindFactory.findCompilerKind(selectedSource.getSelectedSource().compilerKind).orElse(null);
+                    }
+                    return kind == null || kind.allowSourceFilenameMarker();
+                }).orElse(true);
+                @NonNls String sourceText = allowSourceFilenameMarker ? "# 1 \"" + sourceSettings.sourcePath.replaceAll("\\\\", "\\\\\\\\") + "\"\n" + content : content;
                 if (state.getPreprocessLocally()) {
                     needRefreshNext = false;
                     taskRunner.runTask(new Task.Backgroundable(project, Bundle.format("compilerexplorer.SourcePreprocessor.TaskTitle", "Source", sourceSettings.sourceName)) {
