@@ -28,8 +28,6 @@ public class SettingsState {
     @NotNull
     private static final List<String> EMPTY_URL_HISTORY = new ArrayList<>();
 
-    public static final int NO_SAVED_COLOR = -1;
-
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
 
@@ -101,8 +99,6 @@ public class SettingsState {
     @NotNull
     @Property
     private Map<FileTabPair, Set<String>> fileTabFoldedLabels = new HashMap<>();
-    @Property
-    private int highlightColorRGB = NO_SAVED_COLOR;
     @Property
     private long delayMillis = DEFAULT_DELAY_MILLIS;
     @Property
@@ -424,14 +420,6 @@ public class SettingsState {
         }
     }
 
-    synchronized public int getHighlightColorRGB() {
-        return highlightColorRGB;
-    }
-
-    synchronized public void setHighlightColorRGB(int highlightColorRGB_) {
-        highlightColorRGB = highlightColorRGB_;
-    }
-
     synchronized public long getDelayMillis() {
         return delayMillis;
     }
@@ -523,7 +511,6 @@ public class SettingsState {
         setShowOpcodes(other.getShowOpcodes());
         setEnableFolding(other.getEnableFolding());
         setFoldedLabels(other.getFoldedLabels());
-        setHighlightColorRGB(other.getHighlightColorRGB());
         setDelayMillis(other.getDelayMillis());
         setCompilerTimeoutMillis(other.getCompilerTimeoutMillis());
         setShowAllTabs(other.getShowAllTabs());
@@ -558,7 +545,6 @@ public class SettingsState {
                 + (getShowOpcodes() ? 1 : 0)
                 + (getEnableFolding() ? 1 : 0)
                 + getFoldedLabels().hashCode()
-                + getHighlightColorRGB()
                 + ((int) getDelayMillis())
                 + getCompilerTimeoutMillis()
                 + (getShowAllTabs() ? 1 : 0)
@@ -597,7 +583,6 @@ public class SettingsState {
                 && getShowOpcodes() == (other.getShowOpcodes())
                 && getEnableFolding() == (other.getEnableFolding())
                 && getFoldedLabels().equals(other.getFoldedLabels())
-                && getHighlightColorRGB() == other.getHighlightColorRGB()
                 && getDelayMillis() == other.getDelayMillis()
                 && getCompilerTimeoutMillis() == other.getCompilerTimeoutMillis()
                 && getShowAllTabs() == other.getShowAllTabs()

@@ -5,8 +5,6 @@ import com.compilerexplorer.datamodel.state.*;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.colors.*;
-import com.intellij.openapi.editor.markup.*;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Key;
 import org.jetbrains.annotations.NotNull;
@@ -39,8 +37,6 @@ public class ToolWindowGui {
         project.putUserData(ToolWindowGui.KEY, this);
 
         content = new JPanel(new BorderLayout());
-
-        maybeMigrateColorSettings();
 
         JPanel headPanel = new JPanel();
         headPanel.setLayout(new BoxLayout(headPanel, BoxLayout.X_AXIS));
@@ -112,19 +108,5 @@ public class ToolWindowGui {
                 .createNotification(Constants.INITIAL_NOTICE, NotificationType.INFORMATION)
                 .addAction(ActionManager.getInstance().getAction("compilerexplorer.ShowUrlHistoryInSettings"))
                 .notify(project);
-    }
-
-    private void maybeMigrateColorSettings() {
-        if (getState().getHighlightColorRGB() != SettingsState.NO_SAVED_COLOR) {
-            migrateColorSettings();
-            getState().setHighlightColorRGB(SettingsState.NO_SAVED_COLOR);
-        }
-    }
-
-    private void migrateColorSettings() {
-        TextAttributes migrated = new TextAttributes();
-        migrated.copyFrom(EditorColorsManager.getInstance().getGlobalScheme().getAttributes(Constants.HIGHLIGHT_COLOR));
-        migrated.setBackgroundColor(new Color(getState().getHighlightColorRGB()));
-        EditorColorsManager.getInstance().getGlobalScheme().setAttributes(Constants.HIGHLIGHT_COLOR, migrated);
     }
 }
