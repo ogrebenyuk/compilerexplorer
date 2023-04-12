@@ -13,7 +13,7 @@ public class TooltipUtil {
     public static final String HTML_LINE_BREAK = "<br/>";
     @NonNls
     @NotNull
-    public static final String NATIVE_INDENTATION = "  ";
+    public static final String NATIVE_INDENTATION = " {2}";
     @NonNls
     @NotNull
     public static final String HTML_INDENTATION = "&nbsp;&nbsp;&nbsp;&nbsp;";

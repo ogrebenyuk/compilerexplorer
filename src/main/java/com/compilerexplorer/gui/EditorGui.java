@@ -403,12 +403,7 @@ public class EditorGui extends BaseRefreshableComponent {
     }
 
     public void expandAllFolding(boolean isExpanded) {
-        withEditor(ed -> {
-            foldingManager.expandAllFolding(ed, isExpanded);
-            if (getState().getEnableFolding()) {
-                refresh(false);
-            }
-        });
+        withEditor(ed -> foldingManager.expandAllFolding(ed, isExpanded));
     }
 
     private static int findCurrentScrollPosition(@NotNull Editor ed) {

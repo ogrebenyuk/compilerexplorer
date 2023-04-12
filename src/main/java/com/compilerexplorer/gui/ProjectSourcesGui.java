@@ -43,7 +43,8 @@ public class ProjectSourcesGui extends BaseComponent {
         comboBox.setRenderer(new SimpleListCellRenderer<>() {
             @Override
             public void customize(@Nullable JList list, @Nullable SourceSettings value, int index, boolean isSelected, boolean cellHasFocus) {
-                setText((value != null) ? getText(value) : "");
+                setText(value != null ? getText(value) : "");
+                setIcon(value != null ? LanguageUtil.getLanguageIcon(value.language) : null);
             }
             @NotNull
             private String getText(@NotNull SourceSettings value) {

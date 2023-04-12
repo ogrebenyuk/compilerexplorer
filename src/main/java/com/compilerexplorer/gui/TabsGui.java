@@ -60,7 +60,6 @@ public class TabsGui {
         toolbar.setReservePlaceAutoPopupIcon(false);
         toolbar.setTargetComponent(panel);
         ((JPanel) toolbar).setBorder(JBUI.Borders.empty());
-        //((JPanel) toolbar).setOpaque(false);
         panel.setBorder(JBUI.Borders.empty());
         panel.setOpaque(false);
         panel.add(label);

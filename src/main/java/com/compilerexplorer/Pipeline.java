@@ -103,7 +103,7 @@ public class Pipeline {
         preprocessor = new SourcePreprocessor(compileResetInjector, project, taskRunner);
         ResetInjector preprocessResetInjector = new ResetInjector(preprocessor, ResetLevel.PREPROCESS);
         SourceRemoteMatchSaver sourceRemoteMatchSaver = new SourceRemoteMatchSaver(preprocessResetInjector, project);
-        matchesGui = new MatchesGui(sourceRemoteMatchSaver, suppressUpdates);
+        matchesGui = new MatchesGui(sourceRemoteMatchSaver, project, suppressUpdates);
         SourceRemoteMatchProducer sourceRemoteMatchProducer = new SourceRemoteMatchProducer(matchesGui, project);
         CompilerSettingsProducer compilerSettingsProducer = new CompilerSettingsProducer(sourceRemoteMatchProducer, project, taskRunner);
         RemoteLibrariesProducer remoteLibrariesProducer = new RemoteLibrariesProducer(compilerSettingsProducer, project, state, taskRunner);
