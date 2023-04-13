@@ -74,7 +74,7 @@ public class SettingsState {
     @Property
     private boolean autoupdateFromSource = true;
     @Property
-    private boolean shortenTemplates = false;
+    private boolean shortenTemplates = true;
     @Property
     private boolean showLineNumbers = false;
     @Property
@@ -84,7 +84,7 @@ public class SettingsState {
     @Property
     private boolean showOpcodes = true;
     @Property
-    private boolean enableFolding = false;
+    private boolean enableFolding = true;
     private static class FileTabPair implements Serializable {
         @NotNull @Property final String file;
         @NotNull @Property final Tabs tab;

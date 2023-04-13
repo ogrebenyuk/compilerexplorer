@@ -80,7 +80,6 @@ public class Pipeline {
     private boolean compileRequested;
     private boolean refreshRequested;
     private boolean editorReady;
-    private boolean pipelineReady = true;
     private boolean enabled = true;
     private boolean started = false;
     private boolean firstRefreshDone;
@@ -97,7 +96,7 @@ public class Pipeline {
         TaskRunner taskRunner = new TaskRunner();
         SuppressionFlag suppressUpdates = new SuppressionFlag();
 
-        editorGui = new EditorGui(data -> pipelineReady(), project, suppressUpdates, this::editorReady);
+        editorGui = new EditorGui(data -> setPipelineReady(true), project, suppressUpdates, this::editorReady);
         explorer = new RemoteCompiler(editorGui, project, taskRunner);
         ResetInjector compileResetInjector = new ResetInjector(explorer, ResetLevel.COMPILE);
         preprocessor = new SourcePreprocessor(compileResetInjector, project, taskRunner);
@@ -141,7 +140,6 @@ public class Pipeline {
     }
 
     private void setPipelineReady(boolean ready) {
-        pipelineReady = ready;
         editorGui.setSpinningIndicatorVisible(!ready);
     }
 
@@ -254,14 +252,6 @@ public class Pipeline {
         }
     }
 
-    private void pipelineReady() {
-        if (!pipelineReady) {
-            LOG.debug("pipelineReady");
-            setPipelineReady(true);
-            runQueuedRequests();
-        }
-    }
-
     public void setEnabled(boolean enabled_) {
         LOG.debug("enabled " + enabled_);
         enabled = enabled_;
@@ -280,7 +270,7 @@ public class Pipeline {
     }
 
     private boolean readyToRun() {
-        return editorReady && pipelineReady && enabled && started;
+        return editorReady && enabled && started;
     }
 
     private void runQueuedRequests() {

@@ -63,9 +63,8 @@ public class MatchesGui extends BaseComponent {
         button.setVerticalTextPosition(SwingConstants.CENTER);
         button.setHorizontalTextPosition(SwingConstants.LEFT);
         button.setMargin(null);
-        int gap = button.getIconTextGap();
         Insets insets = button.getMargin();
-        button.setMargin(JBUI.insets(insets.top, 0, insets.bottom, gap - insets.right));
+        button.setMargin(JBUI.insets(insets.top, 0, insets.bottom, button.getIconTextGap() - insets.right));
         button.setIconTextGap(insets.right);
         button.setContentAreaFilled(false);
 
@@ -75,11 +74,13 @@ public class MatchesGui extends BaseComponent {
 
         button.addActionListener(e -> {
             JBPopupFactory.getInstance()
-                    .createComponentPopupBuilder(popupPanel, null)
+                    .createComponentPopupBuilder(popupPanel, tree)
                     .setProject(project)
                     .setDimensionServiceKey(project, getDimensionServiceKey(), true)
                     .setResizable(true)
                     .setMovable(true)
+                    .setFocusable(true)
+                    .setRequestFocus(true)
                     .setTitle(Bundle.get("compilerexplorer.MatchesGui.PopupTitle"))
                     .createPopup()
                     .showUnderneathOf(panel);
@@ -215,10 +216,11 @@ public class MatchesGui extends BaseComponent {
         langNode.setUserObject(title);
         parentNode.add(langNode);
 
+        StringBuilder segmentBuilder = new StringBuilder();
         matches.stream().sorted(Comparator.comparing(a -> a.getRemoteCompilerInfo().getName())).forEach(match -> {
             DefaultMutableTreeNode currentParent = langNode;
             StringBuilder segmentPathBuilder = new StringBuilder();
-            for (String segment : splitNameIntoSegments(match.getRemoteCompilerInfo().getName())) {
+            for (String segment : splitNameIntoSegments(match.getRemoteCompilerInfo().getName(), segmentBuilder)) {
                 if (!segmentPathBuilder.isEmpty()) {
                     segmentPathBuilder.append(" ");
                 }
@@ -268,16 +270,15 @@ public class MatchesGui extends BaseComponent {
     }
 
     @NotNull
-    private static List<String> splitNameIntoSegments(@NotNull String name) {
+    private static List<String> splitNameIntoSegments(@NotNull String name, @NotNull StringBuilder segmentBuilder) {
         List<String> segments = new ArrayList<>();
-        StringBuilder currentSegment = null;
         int parenDepth = 0;
         for (int i = 0; i < name.length(); ++i) {
             char c = name.charAt(i);
             if (c == ' ' && parenDepth == 0) {
-                if (currentSegment != null) {
-                    segments.add(currentSegment.toString());
-                    currentSegment = null;
+                if (!segmentBuilder.isEmpty()) {
+                    segments.add(segmentBuilder.toString());
+                    segmentBuilder.delete(0, segmentBuilder.length());
                 }
             } else {
                 if (c == '(') {
@@ -285,14 +286,12 @@ public class MatchesGui extends BaseComponent {
                 } else if (c == ')') {
                     --parenDepth;
                 }
-                if (currentSegment == null) {
-                    currentSegment = new StringBuilder();
-                }
-                currentSegment.append(c);
+                segmentBuilder.append(c);
             }
         }
-        if (currentSegment != null) {
-            segments.add(currentSegment.toString());
+        if (!segmentBuilder.isEmpty()) {
+            segments.add(segmentBuilder.toString());
+            segmentBuilder.delete(0, segmentBuilder.length());
         }
         return segments;
     }

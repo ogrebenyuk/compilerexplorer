@@ -70,7 +70,7 @@ public class Filters {
     private boolean intel = true;
     @Property
     @SerializedName(DEMANGLE_FIELD)
-    private boolean demangle = false;
+    private boolean demangle = true;
 
     Filters() {
         // empty

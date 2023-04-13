@@ -2,6 +2,7 @@ package com.compilerexplorer.gui;
 
 import com.compilerexplorer.common.Bundle;
 import com.compilerexplorer.common.CompilerExplorerSettingsProvider;
+import com.compilerexplorer.common.LanguageUtil;
 import com.compilerexplorer.datamodel.state.EnabledRemoteLibraryInfo;
 import com.compilerexplorer.datamodel.state.RemoteLibraryInfo;
 import com.compilerexplorer.datamodel.state.SettingsState;
@@ -34,6 +35,8 @@ public class EnabledRemoteLibrariesGui extends DialogWrapper {
         super(project, false, IdeModalityType.PROJECT);
         init();
         state = CompilerExplorerSettingsProvider.getInstance(project).getState();
+
+        setTitle(Bundle.get("compilerexplorer.EnabledRemoteLibrariesGui.Title"));
 
         Map<String, List<RemoteLibraryInfo>> availableLibs = state.getRemoteLibraries();
         Map<String, List<EnabledRemoteLibraryInfo>> enabledLibs = state.getEnabledRemoteLibraries();
@@ -81,8 +84,11 @@ public class EnabledRemoteLibrariesGui extends DialogWrapper {
                     } else if (obj instanceof RemoteLibraryInfo.Version remoteLibraryInfoVersion) {
                         getTextRenderer().append(Bundle.format("compilerexplorer.EnabledRemoteLibrariesGui.VersionText", "Id", remoteLibraryInfoVersion.getId(), "Version", remoteLibraryInfoVersion.getVersion()));
                     }
+                    getCheckbox().setSelected(checkedTreeNode.isChecked());
                 } else if (value instanceof DefaultMutableTreeNode defaultMutableTreeNode) {
-                    getTextRenderer().append(Bundle.format("compilerexplorer.EnabledRemoteLibrariesGui.LanguageText", "Language", (String) defaultMutableTreeNode.getUserObject()));
+                    String language = (String) defaultMutableTreeNode.getUserObject();
+                    getTextRenderer().append(Bundle.format("compilerexplorer.EnabledRemoteLibrariesGui.LanguageText", "Language", language));
+                    getTextRenderer().setIcon(LanguageUtil.getLanguageIcon(language));
                 }
             }
         };
