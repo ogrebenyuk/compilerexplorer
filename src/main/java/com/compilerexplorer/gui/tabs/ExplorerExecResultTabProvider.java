@@ -22,7 +22,7 @@ public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
                 if (expectExecResult()) {
                     compiledText.getCompiledResultIfGood().ifPresentOrElse(compiledResult -> execResult(compiledText).ifPresentOrElse(
                         execResult -> content(true, () -> getTextFromChunks(execResult.stdout), contentConsumer),
-                        () -> content(true, () -> "", contentConsumer)
+                        () -> error(true, () -> getExecError(compiledText), contentConsumer)
                     ),
                     () -> {
                         if (compiledText.getCanceled()) {
@@ -45,6 +45,36 @@ public class ExplorerExecResultTabProvider extends BaseExplorerUtilProvider {
 
     @NotNull
     private Optional<CompiledText.ExecResult> execResult(@NotNull CompiledText compiledText) {
-        return compiledText.getExecResult().filter(execResult -> hasText(execResult.stdout));
+        return compiledText.getExecResult().filter(execResult -> execResult.didExecute);
+    }
+
+    @NotNull
+    private String getExecError(@NotNull CompiledText compiledText) {
+        StringBuilder errorMessageBuilder = new StringBuilder();
+        compiledText.getExecResult().ifPresent(execResult -> {
+            if (execResult.buildResult != null) {
+                if (execResult.buildResult.code != 0) {
+                    errorMessageBuilder.append(Bundle.format("compilerexplorer.ExplorerExecResultTabProvider.BuildExitCode", "Code", Integer.toString(execResult.buildResult.code)));
+                    errorMessageBuilder.append("\n");
+                }
+                if (execResult.buildResult.stdout != null) {
+                    buildTextFromChunks(execResult.buildResult.stdout, errorMessageBuilder);
+                }
+                if (execResult.buildResult.stderr != null) {
+                    buildTextFromChunks(execResult.buildResult.stderr, errorMessageBuilder);
+                }
+            }
+            if (execResult.code != 0) {
+                errorMessageBuilder.append(Bundle.format("compilerexplorer.ExplorerExecResultTabProvider.ExitCode", "Code", Integer.toString(execResult.code)));
+                errorMessageBuilder.append("\n");
+            }
+            if (execResult.stdout != null) {
+                buildTextFromChunks(execResult.stdout, errorMessageBuilder);
+            }
+            if (execResult.stderr != null) {
+                buildTextFromChunks(execResult.stderr, errorMessageBuilder);
+            }
+        });
+        return errorMessageBuilder.toString();
     }
 }

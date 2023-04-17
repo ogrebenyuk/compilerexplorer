@@ -34,6 +34,7 @@ public interface WithRemoteCompiler extends WithPreprocessor, WithMatch {
         CompiledText.CompiledResult goodRunResultWithExec = new CompiledText.CompiledResult();
         goodRunResultWithExec.code = 0;
         goodRunResultWithExec.execResult = new CompiledText.ExecResult();
+        goodRunResultWithExec.execResult.didExecute = true;
         goodRunResultWithExec.execResult.stdout = List.of(output);
         data.get(PreprocessedSource.KEY).flatMap(preprocessedSource -> data.get(SourceRemoteMatched.SELECTED_KEY)).ifPresent(match ->
             data.put(CompiledText.KEY, switch (status) {

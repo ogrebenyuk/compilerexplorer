@@ -12,7 +12,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import static com.compilerexplorer.datamodel.CompiledText.CompiledResult.*;
@@ -42,10 +41,6 @@ public abstract class BaseExplorerUtilProvider extends BaseTabProvider {
             }
         });
         return errorMessageBuilder.toString();
-    }
-
-    protected static boolean hasText(@Nullable List<CompiledText.CompiledChunk> chunks) {
-        return chunks != null && chunks.stream().map(c -> c.text).filter(Objects::nonNull).filter(text -> !text.isEmpty()).findFirst().orElse(null) != null;
     }
 
     @NonNls

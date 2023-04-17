@@ -83,13 +83,44 @@ public class CompiledText {
         }
     }
 
-    public static class ExecResult {
+    public static class ProcessOutput {
+        public int code;
         @Nullable
         public List<CompiledChunk> stdout;
+        @Nullable
+        public List<CompiledChunk> stderr;
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(stdout);
+            return code
+                    + Objects.hashCode(stdout)
+                    + Objects.hashCode(stderr)
+                    ;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof ProcessOutput other)) {
+                return false;
+            }
+            return code == other.code
+                    && Objects.equals(stdout, other.stdout)
+                    && Objects.equals(stderr, other.stderr)
+                    ;
+        }
+    }
+
+    public static class ExecResult extends ProcessOutput {
+        public boolean didExecute;
+        @Nullable
+        public ProcessOutput buildResult;
+
+        @Override
+        public int hashCode() {
+            return super.hashCode()
+                    + (didExecute ? 1 : 0)
+                    + Objects.hashCode(buildResult)
+                    ;
         }
 
         @Override
@@ -97,7 +128,10 @@ public class CompiledText {
             if (!(obj instanceof ExecResult other)) {
                 return false;
             }
-            return Objects.equals(stdout, other.stdout);
+            return super.equals(obj)
+                    && didExecute == other.didExecute
+                    && Objects.equals(buildResult, other.buildResult)
+                    ;
         }
     }
 
