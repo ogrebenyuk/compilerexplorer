@@ -25,8 +25,6 @@ public class SettingsState {
     private static final String DEFAULT_IGNORE_SWITCHES = Constants.DEFAULT_IGNORE_SWITCHES;
     private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
     private static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = Constants.DEFAULT_COMPILER_TIMEOUT_MILLIS;
-    @NotNull
-    private static final List<String> EMPTY_URL_HISTORY = new ArrayList<>();
 
     @NotNull
     public static final SettingsState EMPTY = new SettingsState();
@@ -38,7 +36,7 @@ public class SettingsState {
     private String url = DEFAULT_URL;
     @NotNull
     @Property
-    private List<String> urlHistory = EMPTY_URL_HISTORY;
+    private List<String> urlHistory = new ArrayList<>();
     @Property
     private boolean connected = DEFAULT_CONNECTED;
     @NotNull
@@ -152,7 +150,7 @@ public class SettingsState {
     }
 
     synchronized public void clearUrlHistory() {
-        urlHistory = EMPTY_URL_HISTORY;
+        urlHistory = new ArrayList<>();
     }
 
     synchronized public boolean getConnected() {
