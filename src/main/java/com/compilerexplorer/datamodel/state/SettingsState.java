@@ -26,9 +26,6 @@ public class SettingsState {
     private static final long DEFAULT_DELAY_MILLIS = Constants.DEFAULT_DELAY_MILLIS;
     private static final int DEFAULT_COMPILER_TIMEOUT_MILLIS = Constants.DEFAULT_COMPILER_TIMEOUT_MILLIS;
 
-    @NotNull
-    public static final SettingsState EMPTY = new SettingsState();
-
     @Transient
     private boolean enabled = true;
     @NotNull
@@ -174,7 +171,7 @@ public class SettingsState {
     }
 
     synchronized public void clearRemoteCompilers() {
-        setRemoteCompilers(EMPTY.getRemoteCompilers());
+        remoteCompilers = new ArrayList<>();
     }
 
     @NotNull
@@ -190,7 +187,7 @@ public class SettingsState {
     }
 
     synchronized public void clearRemoteLibraries() {
-        setRemoteLibraries(EMPTY.getRemoteLibraries());
+        remoteLibraries = new HashMap<>();
     }
 
     synchronized public void clearRemoteLibrariesForLanguage(@NonNls @NotNull String language) {
@@ -245,7 +242,7 @@ public class SettingsState {
     }
 
     synchronized public void clearLocalCompilerSettings() {
-        setLocalCompilerSettings(EMPTY.getLocalCompilerSettings());
+        localCompilerSettings = new HashMap<>();
     }
 
     @NotNull
@@ -274,7 +271,7 @@ public class SettingsState {
     }
 
     synchronized public void clearCompilerMatches() {
-        setCompilerMatches(EMPTY.getCompilerMatches());
+        compilerMatches = new HashMap<>();
     }
 
     synchronized public boolean getPreprocessLocally() {
