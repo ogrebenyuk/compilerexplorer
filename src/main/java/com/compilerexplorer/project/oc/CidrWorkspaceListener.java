@@ -23,7 +23,7 @@ public class CidrWorkspaceListener implements com.jetbrains.cidr.project.workspa
     @Override
     public void initialized(@NotNull CidrWorkspace workspace) {
         LOG.debug("initialized");
-        project.putUserData(Pipeline.STARTED_KEY, true);
+        project.putUserData(Pipeline.WORKSPACE_INITIALIZED_KEY, true);
         Pipeline pipeline = project.getUserData(Pipeline.KEY);
         if (pipeline != null) {
             pipeline.workspaceInitialized();

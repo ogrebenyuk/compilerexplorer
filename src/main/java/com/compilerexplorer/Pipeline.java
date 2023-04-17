@@ -32,6 +32,7 @@ public class Pipeline {
     @NonNls
     private static final Logger LOG = Logger.getInstance(Pipeline.class);
     public static final Key<Pipeline> KEY = Key.create("compilerexplorer.Pipeline");
+    public static final Key<Boolean> WORKSPACE_INITIALIZED_KEY = Key.create("compilerexplorer.Pipeline.WorkspaceInitialized");
     public static final Key<Boolean> STARTED_KEY = Key.create("compilerexplorer.Pipeline.Started");
 
     private static class ResetInjector extends BaseLinkedComponent {
@@ -114,9 +115,14 @@ public class Pipeline {
         ResetInjector resetResetInjector = new ResetInjector(projectListener, ResetLevel.RESET);
         initiator = new Initiator(resetResetInjector);
 
+        @Nullable Boolean workspaceInitialized_ = project.getUserData(WORKSPACE_INITIALIZED_KEY);
+        if (workspaceInitialized_ != null) {
+            workspaceInitialized = workspaceInitialized_;
+        }
+
         @Nullable Boolean started_ = project.getUserData(STARTED_KEY);
         if (started_ != null) {
-            workspaceInitialized = started_;
+            startupHappened = started_;
         }
     }
 

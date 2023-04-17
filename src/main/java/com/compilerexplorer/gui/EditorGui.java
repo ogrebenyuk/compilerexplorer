@@ -30,7 +30,6 @@ import com.intellij.ui.EditorTextField;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.AsyncProcessIcon;
 import com.intellij.util.ui.JBUI;
-import com.twelvemonkeys.io.FileUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -458,7 +457,7 @@ public class EditorGui extends BaseRefreshableComponent {
                 @NotNull final Path path = Path.of(sourceFilename);
                 directory = path.getParent();
                 if (currentTabProvider.isSourceSpecific()) {
-                    @NotNull String sourceBasename = FileUtil.getBasename(path.getFileName().toString());
+                    @NotNull String sourceBasename = path.getFileName().toString().replaceAll("\\.[^.]*$", "");
                     if (filenameWithPrefix != null) {
                         filenameWithPrefix = Bundle.format("compilerexplorer.EditorGui.SaveTabFilename", "TabName", filenameWithPrefix, "SourceBasename", sourceBasename);
                     } else {

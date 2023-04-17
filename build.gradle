@@ -5,10 +5,16 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.3'
+version '2.4'
 
 patchPluginXml {
     changeNotes = """
+        2.4:<br/>
+        Added support for CUDA compilation. Will now show both host and device assembler output.<br/>
+        Added support for more C++ variants, such as Circle and OpenCL compilation.<br/>
+        Added support for remote libraries.<br/>
+        Emulate terminal colors when showing compiler stdout and stderr.<br/>
+        More big fixes.<br/>
         2.3:<br/>
         More fixes for compatibility issues.<br/>
         2.2:<br/>
