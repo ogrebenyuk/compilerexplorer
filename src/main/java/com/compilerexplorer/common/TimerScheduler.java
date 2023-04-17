@@ -11,7 +11,8 @@ public class TimerScheduler {
     private Timer timer = new Timer();
 
     public void schedule(@NotNull Runnable runnable, long delayMillis) {
-        timer.cancel();
+        cancel();
+
         timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -19,5 +20,9 @@ public class TimerScheduler {
                 ApplicationManager.getApplication().invokeLater(runnable);
             }
         }, delayMillis);
+    }
+
+    public void cancel() {
+        timer.cancel();
     }
 }

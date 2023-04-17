@@ -1,9 +1,6 @@
 package com.compilerexplorer.gui;
 
-import com.compilerexplorer.common.Bundle;
-import com.compilerexplorer.common.LanguageUtil;
-import com.compilerexplorer.common.SuppressionFlag;
-import com.compilerexplorer.common.TooltipUtil;
+import com.compilerexplorer.common.*;
 import com.compilerexplorer.common.component.BaseComponent;
 import com.compilerexplorer.common.component.CEComponent;
 import com.compilerexplorer.common.component.DataHolder;
@@ -13,6 +10,7 @@ import com.compilerexplorer.datamodel.SelectedSourceCompiler;
 import com.compilerexplorer.datamodel.SourceRemoteMatched;
 import com.compilerexplorer.datamodel.state.CompilerMatch;
 import com.compilerexplorer.datamodel.state.CompilerMatchKind;
+import com.compilerexplorer.datamodel.state.SettingsState;
 import com.compilerexplorer.gui.json.JsonSerializer;
 import com.google.gson.JsonParser;
 import com.intellij.icons.AllIcons;
@@ -42,6 +40,8 @@ public class MatchesGui extends BaseComponent {
     private static final Logger LOG = Logger.getInstance(MatchesGui.class);
 
     @NotNull
+    private final SettingsState state;
+    @NotNull
     private final JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
     @NotNull
     private final JButton button = new JButton(AllIcons.Actions.More);
@@ -49,15 +49,18 @@ public class MatchesGui extends BaseComponent {
     private final Tree tree = new Tree();
     @NotNull
     private final SuppressionFlag suppressionFlag;
+    @NotNull
+    private final TimerScheduler selectMatchScheduler = new TimerScheduler();
     @Nullable
     private TreeSelectionListener treeSelectionListener;
     @Nullable
     private String currentlySelectedCompilerId = null;
 
-    public MatchesGui(@NotNull CEComponent nextComponent, @NotNull Project project, @NotNull SuppressionFlag suppressionFlag_) {
+    public MatchesGui(@NotNull CEComponent nextComponent, @NotNull Project project, @NotNull SettingsState state_, @NotNull SuppressionFlag suppressionFlag_) {
         super(nextComponent);
         LOG.debug("created");
 
+        state = state_;
         suppressionFlag = suppressionFlag_;
 
         button.setVerticalTextPosition(SwingConstants.CENTER);
@@ -158,14 +161,16 @@ public class MatchesGui extends BaseComponent {
         if (treeSelectionListener != null) {
             tree.removeTreeSelectionListener(treeSelectionListener);
         }
-        treeSelectionListener = e -> {
+        treeSelectionListener = e -> suppressionFlag.unlessApplied(() -> {
             if (e.isAddedPath()) {
                 Object obj = ((DefaultMutableTreeNode) e.getPath().getLastPathComponent()).getUserObject();
                 if (obj instanceof CompilerMatchWrapper selectedMatchWrapper) {
-                    suppressionFlag.unlessApplied(() -> ApplicationManager.getApplication().invokeLater(() -> selectCompilerMatch(ResetFlag.without(data), sourceRemoteMatched, selectedMatchWrapper.delegate, true)));
+                    selectMatchScheduler.schedule(() -> selectCompilerMatch(ResetFlag.without(data), sourceRemoteMatched, selectedMatchWrapper.delegate, true), state.getDelayMillis());
+                } else {
+                    selectMatchScheduler.cancel();
                 }
             }
-        };
+        });
 
         CompilerMatch chosenMatch = sourceRemoteMatched.getMatches().getChosenMatch();
         List<CompilerMatch> matches = sourceRemoteMatched.getMatches().getOtherMatches();
