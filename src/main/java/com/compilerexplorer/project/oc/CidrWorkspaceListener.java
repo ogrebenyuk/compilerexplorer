@@ -26,7 +26,7 @@ public class CidrWorkspaceListener implements com.jetbrains.cidr.project.workspa
         project.putUserData(Pipeline.STARTED_KEY, true);
         Pipeline pipeline = project.getUserData(Pipeline.KEY);
         if (pipeline != null) {
-            pipeline.started();
+            pipeline.workspaceInitialized();
         }
     }
 }

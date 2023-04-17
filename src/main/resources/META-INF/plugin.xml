@@ -20,6 +20,7 @@
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
         <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
+        <backgroundPostStartupActivity implementation="com.compilerexplorer.project.idea.StartupDetector"/>
     </extensions>
 
     <projectListeners>

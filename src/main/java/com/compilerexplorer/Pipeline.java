@@ -81,7 +81,8 @@ public class Pipeline {
     private boolean refreshRequested;
     private boolean editorReady;
     private boolean enabled = true;
-    private boolean started = false;
+    private boolean workspaceInitialized = false;
+    private boolean startupHappened = false;
     private boolean firstRefreshDone;
     @NotNull
     private final TimerScheduler refreshTimerScheduler = new TimerScheduler();
@@ -115,7 +116,7 @@ public class Pipeline {
 
         @Nullable Boolean started_ = project.getUserData(STARTED_KEY);
         if (started_ != null) {
-            started = started_;
+            workspaceInitialized = started_;
         }
     }
 
@@ -260,17 +261,26 @@ public class Pipeline {
         }
     }
 
-    public void started() {
-        LOG.debug("started " + started + " -> true");
+    public void workspaceInitialized() {
+        LOG.debug("workspaceInitialized " + workspaceInitialized + " -> true");
         refreshTimerScheduler.schedule(() -> {
             LOG.debug("running earlier scheduled startup activity");
-            started = true;
+            workspaceInitialized = true;
+            runQueuedRequests();
+        }, state.getDelayMillis());
+    }
+
+    public void startupHappened() {
+        LOG.debug("startupHappened " + startupHappened + " -> true");
+        refreshTimerScheduler.schedule(() -> {
+            LOG.debug("running earlier scheduled startup activity");
+            startupHappened = true;
             runQueuedRequests();
         }, state.getDelayMillis());
     }
 
     private boolean readyToRun() {
-        return editorReady && enabled && started;
+        return editorReady && enabled && workspaceInitialized && startupHappened;
     }
 
     private void runQueuedRequests() {
