@@ -38,6 +38,7 @@ public class EditorChangeListener {
                 @Nullable EditorEx excludedEditor = excludedEditorProducer.produce();
                 return Arrays.stream(EditorFactory.getInstance().getEditors(document, project))
                         .filter(ed -> ed != excludedEditor)
+                        .filter(ed -> !ed.isViewer())
                         .findFirst();
             }
         }, DisposableParentProjectService.getInstance(project));

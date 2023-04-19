@@ -50,6 +50,13 @@ public class NvccCompilerKind implements CompilerKind {
     @Override
     @NonNls
     @NotNull
+    public String parseCompilerName(@NonNls @NotNull String versionText) {
+        return NVCC_COMPILER_KIND;
+    }
+
+    @Override
+    @NonNls
+    @NotNull
     public String parseCompilerVersion(@NonNls @NotNull String versionText) {
         return versionText.replace('\n', ' ').replaceAll(".*, release [^,]*, V([^ ]*).*", "$1");
     }

@@ -33,6 +33,10 @@ public interface CompilerKind {
 
     @NonNls
     @NotNull
+    String parseCompilerName(@NonNls @NotNull String versionText);
+
+    @NonNls
+    @NotNull
     String parseCompilerVersion(@NonNls @NotNull String versionText);
 
     @NonNls

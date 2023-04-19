@@ -41,6 +41,13 @@ public class GccLikeCompilerKind implements CompilerKind {
     @Override
     @NonNls
     @NotNull
+    public String parseCompilerName(@NonNls @NotNull String versionText) {
+        return compilerKind;
+    }
+
+    @Override
+    @NonNls
+    @NotNull
     public String parseCompilerVersion(@NonNls @NotNull String versionText) {
         return parseCompilerVersion(compilerKind, versionText);
     }
@@ -79,7 +86,7 @@ public class GccLikeCompilerKind implements CompilerKind {
 
     @NonNls
     @NotNull
-    private static String parseCompilerVersion(@NonNls @NotNull String compilerKind, @NonNls @NotNull String versionText) {
+    protected String parseCompilerVersion(@NonNls @NotNull String compilerKind, @NonNls @NotNull String versionText) {
         return versionText.replace('\n', ' ').replaceAll(".*" + compilerKind.toLowerCase() + " version ([^ ]*).*", "$1");
     }
 }

@@ -98,13 +98,14 @@ public class CompilerSettingsProducer extends BaseComponent {
 
                                 String versionText = stdout + '\n' + stderr;
                                 if (exitCode == 0 && !versionText.isEmpty()) {
+                                    String compilerName = kind.parseCompilerName(versionText);
                                     String compilerVersion = kind.parseCompilerVersion(versionText);
                                     String compilerTarget = kind.parseCompilerTarget(versionText);
                                     if (!compilerVersion.isEmpty()) {
-                                        LOG.debug("parsed \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
-                                        localCompilerSettings = new LocalCompilerSettings(source.compilerKind, compilerVersion, compilerTarget);
+                                        LOG.debug("parsed \"" + compilerName + "\" \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
+                                        localCompilerSettings = new LocalCompilerSettings(compilerName, compilerVersion, compilerTarget);
                                     } else {
-                                        LOG.debug("bad parse \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
+                                        LOG.debug("bad parse \"" + compilerName + "\" \"" + compilerVersion + "\" \"" + compilerTarget + "\"");
                                     }
                                 } else {
                                     LOG.debug("bad exit " + exitCode);

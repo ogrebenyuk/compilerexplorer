@@ -3,7 +3,7 @@ package com.compilerexplorer.common.compilerkind;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-public class ClangCompilerKind extends GccLikeCompilerKind {
+public class ClangCompilerKind extends ClangBasedCompilerKind {
     @NonNls
     @NotNull
     private static final String CLANG_COMPILER_KIND = "Clang";
