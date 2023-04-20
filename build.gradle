@@ -5,10 +5,12 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.5'
+version '2.6'
 
 patchPluginXml {
     changeNotes = """
+        2.6:<br/>
+        Upgraded to CLion 2023.1.<br/>
         2.5:<br/>
         Support SYCL compilation with ICX compiler.</br>
         (Not local preprocessing, though, sorry. The method of "integration header" that they chose preculdes that.)</br>
