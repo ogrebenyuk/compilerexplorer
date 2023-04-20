@@ -5,10 +5,14 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.4'
+version '2.5'
 
 patchPluginXml {
     changeNotes = """
+        2.5:<br/>
+        Support SYCL compilation with ICX compiler.</br>
+        (Not local preprocessing, though, sorry. The method of "integration header" that they chose preculdes that.)</br>
+        Few small bug fixes.<br/>
         2.4:<br/>
         Added support for CUDA compilation. Will now show both host and device assembler output.<br/>
         Added support for more C++ variants, such as Circle and OpenCL compilation.<br/>
