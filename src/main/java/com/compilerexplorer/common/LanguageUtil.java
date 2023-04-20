@@ -1,5 +1,6 @@
 package com.compilerexplorer.common;
 
+import icons.CidrAsmIcons;
 import icons.CidrLangIcons;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -85,7 +86,7 @@ public class LanguageUtil {
             return CidrLangIcons.FileTypes.CU;
         }
         if (isAsm(sourceLanguage)) {
-            return CidrLangIcons.FileTypes.Asm;
+            return CidrAsmIcons.Asm;
         }
         return null;
     }

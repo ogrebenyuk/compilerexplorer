@@ -104,13 +104,13 @@ patchPluginXml {
         Added scrolling to/from source.<br/>
     """
 
-    sinceBuild = '223.8836'
+    sinceBuild = '231.8109'
 }
 
 sourceCompatibility = 17
 
 def clionType = 'CL'
-def clionVersion = '2022.3.3'
+def clionVersion = '2023.1'
 
 repositories {
     mavenCentral()

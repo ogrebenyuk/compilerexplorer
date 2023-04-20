@@ -19,7 +19,7 @@ public class ModuleListener implements com.intellij.openapi.project.ModuleListen
     }
 
     @Override
-    public void modulesAdded(@NotNull Project project, @NotNull List<Module> modules) {
+    public void modulesAdded(@NotNull Project project, @NotNull List<? extends Module> modules) {
         LOG.debug("modulesAdded");
         changed(project);
     }
