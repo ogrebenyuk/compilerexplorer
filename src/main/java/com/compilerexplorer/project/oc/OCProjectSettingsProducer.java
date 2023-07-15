@@ -19,6 +19,7 @@ import com.jetbrains.cidr.lang.workspace.OCWorkspaceRunConfigurationListener;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.system.HostMachine;
+import com.jetbrains.cidr.system.LocalHost;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,20 +80,26 @@ public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
 
     @NotNull
     private static HostMachine getHostMachine(@NotNull Project project) {
-        try {
-            CMakeAppRunConfiguration runConfiguration = CMakeAppRunConfiguration.getSelectedRunConfiguration(project);
-            CMakeBuildProfileExecutionTarget executionTarget = CMakeAppRunConfiguration.getSelectedBuildProfile(project);
-            assert runConfiguration != null;
-            assert executionTarget != null;
-            CMakeAppRunConfiguration.BuildAndRunConfigurations buildAndRunConfiguration = runConfiguration.getBuildAndRunConfigurations(executionTarget);
-            CMakeWorkspace cMakeWorkspace = CMakeWorkspace.getInstance(project);
-            assert buildAndRunConfiguration != null;
-            final CMakeProfileInfo cMakeProfileInfo = cMakeWorkspace.getProfileInfoFor(buildAndRunConfiguration.buildConfiguration);
-            final CPPEnvironment environment = cMakeProfileInfo.getEnvironment();
-            assert environment != null;
-            return environment.getHostMachine();
-        } catch (ExecutionException e) {
-            throw new RuntimeException("Fatal error");
+        @Nullable CMakeAppRunConfiguration runConfiguration = CMakeAppRunConfiguration.getSelectedRunConfiguration(project);
+        @Nullable CMakeBuildProfileExecutionTarget executionTarget = CMakeAppRunConfiguration.getSelectedBuildProfile(project);
+        if (runConfiguration != null && executionTarget != null) {
+            @Nullable CMakeAppRunConfiguration.BuildAndRunConfigurations buildAndRunConfiguration = runConfiguration.getBuildAndRunConfigurations(executionTarget);
+            if (buildAndRunConfiguration != null) {
+                @NotNull CMakeWorkspace cMakeWorkspace = CMakeWorkspace.getInstance(project);
+                @Nullable CMakeProfileInfo cMakeProfileInfo = null;
+                try {
+                    cMakeProfileInfo = cMakeWorkspace.getProfileInfoFor(buildAndRunConfiguration.buildConfiguration);
+                } catch (ExecutionException e) {
+                    // empty
+                }
+                if (cMakeProfileInfo != null) {
+                    @Nullable CPPEnvironment environment = cMakeProfileInfo.getEnvironment();
+                    if (environment != null) {
+                        return environment.getHostMachine();
+                    }
+                }
+            }
         }
+        return LocalHost.INSTANCE;
     }
 }

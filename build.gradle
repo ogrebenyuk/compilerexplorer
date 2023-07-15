@@ -5,29 +5,39 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.6'
+version '2.7'
 
 patchPluginXml {
     changeNotes = """
+        2.7:<br/>
+        Fixed the problem with highlight color polluting global color scheme.<br/>
+        Fixed an overzealous assert that fired when no project was detected.<br/>
+        ===<br/>
         2.6:<br/>
         Upgraded to CLion 2023.1.<br/>
+        ===<br/>
         2.5:<br/>
         Support SYCL compilation with ICX compiler.</br>
         (Not local preprocessing, though, sorry. The method of "integration header" that they chose preculdes that.)</br>
         Few small bug fixes.<br/>
+        ===<br/>
         2.4:<br/>
         Added support for CUDA compilation. Will now show both host and device assembler output.<br/>
         Added support for more C++ variants, such as Circle and OpenCL compilation.<br/>
         Added support for remote libraries.<br/>
         Emulate terminal colors when showing compiler stdout and stderr.<br/>
         More big fixes.<br/>
+        ===<br/>
         2.3:<br/>
         More fixes for compatibility issues.<br/>
+        ===<br/>
         2.2:<br/>
         Addressed several compatibility issues from plugin review.<br/>
         Some bug fixes and small improvements.<br/>
+        ===<br/>
         2.1:<br/>
         Bug fixes and small improvements.<br/>
+        ===<br/>
         2.0:<br/>
         Added editor tabs that show varios stages of the compilation pipeline.<br/>
         Added the ability to show line numbers and byte offsets.<br/>

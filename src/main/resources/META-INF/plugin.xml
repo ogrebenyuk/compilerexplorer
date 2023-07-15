@@ -19,6 +19,8 @@
         <notificationGroup id="compilerexplorer" displayType="BALLOON" key="toolwindow.stripe.compilerexplorer"/>
         <iconMapper mappingFile="CompilerExplorerIconMappings.json"/>
         <themeMetadataProvider path="/colorSchemes/CompilerExplorer.themeMetadata.json"/>
+        <additionalTextAttributes scheme="Default" file="colorSchemes/CompilerExplorerDefault.xml"/>
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/CompilerExplorerDarcula.xml"/>
         <colorSettingsPage implementation="com.compilerexplorer.settings.gui.ColorSettings"/>
         <backgroundPostStartupActivity implementation="com.compilerexplorer.project.idea.StartupDetector"/>
     </extensions>

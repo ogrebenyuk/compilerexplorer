@@ -6,7 +6,6 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.ui.IconManager;
-import com.intellij.ui.JBColor;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -33,9 +32,7 @@ public class Constants {
     @NotNull
     public static final String HIGHLIGHT_KEY_NAME = "Editor.compilerExplorerHighlightBackground";
     @NotNull
-    public static final JBColor DEFAULT_HIGHLIGHT_COLOR = new JBColor(JBColor.CYAN.brighter(), JBColor.CYAN.darker());
-    @NotNull
-    public static final TextAttributesKey HIGHLIGHT_COLOR = createHighlightColor();
+    public static final TextAttributesKey HIGHLIGHT_COLOR = TextAttributesKey.createTextAttributesKey(HIGHLIGHT_KEY_NAME);
     @Nls
     @NotNull
     public static final String COLOR_SETTINGS_TITLE = Bundle.get("compilerexplorer.Constants.ColorsTitle");
@@ -57,11 +54,4 @@ public class Constants {
 
     @NotNull
     public static final NotificationGroup NOTIFICATION_GROUP = NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_GROUP_NAME);
-
-    @NotNull
-    private static TextAttributesKey createHighlightColor() {
-        TextAttributesKey key = TextAttributesKey.createTextAttributesKey(HIGHLIGHT_KEY_NAME);
-        key.getDefaultAttributes().setBackgroundColor(DEFAULT_HIGHLIGHT_COLOR);
-        return key;
-    }
 }

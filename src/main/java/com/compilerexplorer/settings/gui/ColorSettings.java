@@ -24,18 +24,18 @@ import static com.compilerexplorer.common.Constants.HIGHLIGHT_COLOR;
 public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable {
     @NonNls
     @NotNull
-    private static final String HIGHLIGHT_TAG_NAME = "highlight";
+    private static final String HIGHLIGHT_TAG_NAME = "compilerexplorer_highlight";
 
     @NotNull
     private static final AttributesDescriptor @NotNull [] DESCRIPTORS = new AttributesDescriptor[] {
-            new AttributesDescriptor(() -> Bundle.get("compilerexplorer.ColorSettings.Highlight"), HIGHLIGHT_COLOR)
+        new AttributesDescriptor(() -> Bundle.get("compilerexplorer.ColorSettings.Highlight"), HIGHLIGHT_COLOR)
     };
 
     @NotNull
     private static final Map<String, TextAttributesKey> TAG_TO_DESCRIPTOR_MAP =
-            ImmutableMap.<String, TextAttributesKey>builder()
-                    .put(HIGHLIGHT_TAG_NAME, HIGHLIGHT_COLOR)
-                    .build();
+        ImmutableMap.<String, TextAttributesKey>builder()
+            .put(HIGHLIGHT_TAG_NAME, HIGHLIGHT_COLOR)
+            .build();
 
     @Override
     @NotNull
@@ -77,12 +77,14 @@ public class ColorSettings implements ColorSettingsPage, DisplayPrioritySortable
                     movq    %rsp, %rbp      #,
                     leaq    .LC0(%rip), %rax        #, tmp85
                     movq    %rax, %rsi      # tmp85,
-                <highlight>    movq    std::cout@GOTPCREL(%rip), %rax  #, tmp87
+                <""" + HIGHLIGHT_TAG_NAME + """
+                >    movq    std::cout@GOTPCREL(%rip), %rax  #, tmp87
                     movq    %rax, %rdi      # tmp86,
                     call    std::basic_ostream<...>& std::operator<< <...>(std::basic_ostream<...>&, char const*)@PLT     #
                     movq    std::basic_ostream<...>& std::endl<...>(std::basic_ostream<...>&)@GOTPCREL(%rip), %rdx #, tmp89
                     movq    %rdx, %rsi      # tmp88,
-                </highlight>    movq    %rax, %rdi      # _1,
+                </""" + HIGHLIGHT_TAG_NAME + """
+                >    movq    %rax, %rdi      # _1,
                     call    std::basic_ostream<...>::operator<<(std::basic_ostream<...>& (*)(std::basic_ostream<...>&))@PLT    #
                     movl    $0, %eax        #, _6
                     popq    %rbp    #
