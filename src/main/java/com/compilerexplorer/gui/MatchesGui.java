@@ -174,7 +174,7 @@ public class MatchesGui extends BaseComponent {
 
         CompilerMatch chosenMatch = sourceRemoteMatched.getMatches().getChosenMatch();
         List<CompilerMatch> matches = sourceRemoteMatched.getMatches().getOtherMatches();
-        CompilerMatch newSelection = !chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (matches.size() != 0 ? matches.get(0) : null);
+        CompilerMatch newSelection = !chosenMatch.getRemoteCompilerInfo().getId().isEmpty() ? chosenMatch : (!matches.isEmpty() ? matches.get(0) : null);
 
         Map<String, List<CompilerMatch>> model = new HashMap<>();
         matches.forEach(match -> model.computeIfAbsent(match.getRemoteCompilerInfo().getLanguage(), unused -> new ArrayList<>()).add(match));
@@ -213,7 +213,7 @@ public class MatchesGui extends BaseComponent {
             }
         });
 
-        button.setEnabled(matches.size() > 0);
+        button.setEnabled(!matches.isEmpty());
     }
 
     private static void populateLangPrefixTree(@NotNull DefaultMutableTreeNode parentNode, String title, List<CompilerMatch> matches) {

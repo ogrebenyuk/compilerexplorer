@@ -18,7 +18,10 @@ public class Bundle {
             String result = format;
             for (int i = 0; i + 1 < map.length; i += 2) {
                 if (map[i] != null) {
-                    @NotNull String replacement = map[i + 1] != null ? map[i + 1] : "";
+                    String replacement = map[i + 1];
+                    if (replacement == null) {
+                        replacement = "";
+                    }
                     result = result.replace("${" + map[i] + "}", replacement);
                 }
             }

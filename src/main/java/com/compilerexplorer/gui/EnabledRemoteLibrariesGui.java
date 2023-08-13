@@ -63,7 +63,25 @@ public class EnabledRemoteLibrariesGui extends DialogWrapper {
             root.add(langNode);
         });
 
-        CheckboxTree.CheckboxTreeCellRenderer renderer = new CheckboxTree.CheckboxTreeCellRenderer() {
+        CheckboxTree tree = createTree(enabledLibs);
+
+        for (int i = 0; i < root.getChildCount(); i++) {
+            TreeNode langNode = root.getChildAt(i);
+            for (int j = 0; j < langNode.getChildCount(); ++j) {
+                CheckedTreeNode libNode = (CheckedTreeNode) langNode.getChildAt(j);
+                if (libNode.isChecked()) {
+                    tree.expandPath(new TreePath(libNode.getPath()));
+                }
+            }
+        }
+
+        JBScrollPane scrollPane = new JBScrollPane(tree);
+        panel.add(scrollPane);
+    }
+
+    @NotNull
+    private static CheckboxTree.CheckboxTreeCellRenderer createRenderer() {
+        return new CheckboxTree.CheckboxTreeCellRenderer() {
             @Override
             public void customizeRenderer(JTree tree,
                                           Object value,
@@ -92,10 +110,11 @@ public class EnabledRemoteLibrariesGui extends DialogWrapper {
                 }
             }
         };
+    }
 
-        CheckboxTree tree = new CheckboxTree(renderer, root, new CheckboxTreeBase.CheckPolicy(false, false, false, false));
-
-        tree.addCheckboxTreeListener(new CheckboxTreeListener() {
+    @NotNull
+    private CheckboxTreeListener createListener(Map<String, List<EnabledRemoteLibraryInfo>> enabledLibs) {
+        return new CheckboxTreeListener() {
             @Override
             public void nodeStateChanged(@NotNull CheckedTreeNode node) {
                 boolean wasAdded = node.isChecked();
@@ -144,20 +163,14 @@ public class EnabledRemoteLibrariesGui extends DialogWrapper {
                     }
                 }
             }
-        });
+        };
+    }
 
-        for (int i = 0; i < root.getChildCount(); i++) {
-            TreeNode langNode = root.getChildAt(i);
-            for (int j = 0; j < langNode.getChildCount(); ++j) {
-                CheckedTreeNode libNode = (CheckedTreeNode) langNode.getChildAt(j);
-                if (libNode.isChecked()) {
-                    tree.expandPath(new TreePath(libNode.getPath()));
-                }
-            }
-        }
-
-        JBScrollPane scrollPane = new JBScrollPane(tree);
-        panel.add(scrollPane);
+    @NotNull
+    private CheckboxTree createTree(Map<String, List<EnabledRemoteLibraryInfo>> enabledLibs) {
+        CheckboxTree tree = new CheckboxTree(createRenderer(), root, new CheckboxTreeBase.CheckPolicy(false, false, false, false));
+        tree.addCheckboxTreeListener(createListener(enabledLibs));
+        return tree;
     }
 
     @Override

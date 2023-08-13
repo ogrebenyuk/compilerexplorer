@@ -80,7 +80,7 @@ public class SettingsState {
     private boolean showOpcodes = true;
     @Property
     private boolean enableFolding = true;
-    private static class FileTabPair implements Serializable {
+    public static class FileTabPair implements Serializable {
         @NotNull @Property final String file;
         @NotNull @Property final Tabs tab;
         FileTabPair() {file = ""; tab = Tabs.EVERYTHING;}

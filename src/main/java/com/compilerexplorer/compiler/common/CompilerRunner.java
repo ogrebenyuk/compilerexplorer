@@ -13,7 +13,6 @@ import com.intellij.openapi.util.ShutDownTracker;
 import com.jetbrains.cidr.system.HostMachine;
 import org.jetbrains.annotations.Nullable;
 
-@SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class CompilerRunner {
     @NotNull
     private final String stdout;

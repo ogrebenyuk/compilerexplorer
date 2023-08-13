@@ -100,7 +100,7 @@ public class ProjectSourcesGui extends BaseComponent {
         SourceSettings newSelection = projectSources.getSources().stream()
                 .filter(x -> oldSelection != null && Objects.equals(x.sourcePath, oldSelection.sourcePath))
                 .findFirst()
-                .orElse(projectSources.getSources().size() != 0 ? projectSources.getSources().get(0) : null);
+                .orElse(!projectSources.getSources().isEmpty() ? projectSources.getSources().get(0) : null);
         DefaultComboBoxModel<SourceSettings> model = new DefaultComboBoxModel<>(projectSources.getSources().toArray(new SourceSettings[0]));
         model.setSelectedItem(newSelection);
         LOG.debug("showing " + model.getSize() + " sources");

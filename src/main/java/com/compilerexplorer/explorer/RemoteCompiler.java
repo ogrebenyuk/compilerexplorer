@@ -35,7 +35,6 @@ import java.net.URI;
 import java.util.*;
 import java.util.stream.Stream;
 
-@SuppressWarnings("BlockingMethodInNonBlockingContext")
 public class RemoteCompiler extends BaseRefreshableComponent {
     @NonNls
     private static final Logger LOG = Logger.getInstance(RemoteCompiler.class);
