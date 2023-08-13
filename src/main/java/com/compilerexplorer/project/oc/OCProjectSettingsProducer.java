@@ -4,6 +4,7 @@ import com.compilerexplorer.common.PathNormalizer;
 import com.compilerexplorer.common.compilerkind.CompilerKindFactory;
 import com.compilerexplorer.datamodel.ProjectSources;
 import com.compilerexplorer.datamodel.SourceSettings;
+import com.compilerexplorer.project.ProjectSettingsProducer;
 import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -27,19 +28,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
-import java.util.function.Supplier;
 
-public class OCProjectSettingsProducer implements Supplier<ProjectSources> {
-    @NotNull
-    private final Project project;
-
-    public OCProjectSettingsProducer(@NotNull Project project_) {
-        project = project_;
-    }
-
+public class OCProjectSettingsProducer implements ProjectSettingsProducer {
     @Override
     @NotNull
-    public ProjectSources get() {
+    public ProjectSources get(@NotNull Project project) {
         return collect(project);
     }
 
