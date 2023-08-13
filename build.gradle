@@ -145,8 +145,8 @@ intellij {
     plugins.set([
             "com.intellij.clion",
             "com.intellij.cidr.base",
-            "com.intellij.cidr.lang"]
-    )
+            "com.intellij.cidr.lang",
+    ])
 }
 
 publishPlugin {

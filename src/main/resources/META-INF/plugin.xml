@@ -20,6 +20,8 @@
         <projectSettingsProducer implementation = "com.compilerexplorer.project.oc.OCProjectSettingsProducer"/>
     </extensions>
 
+    <depends optional="true" config-file="compilerexplorer_withBazel.xml">com.google.idea.bazel.clwb</depends>
+
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable groupId="tools" instance="com.compilerexplorer.settings.CompilerExplorerSettingsConfigurable" id="compilerexplorer" key="toolwindow.stripe.compilerexplorer"/>
         <projectService serviceImplementation="com.compilerexplorer.common.CompilerExplorerSettingsProvider"/>

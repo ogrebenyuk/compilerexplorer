@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.compilerexplorer.compilerexplorer">
+        <projectSettingsProducer implementation = "com.compilerexplorer.project.bazel.BazelProjectSettingsProducer"/>
+    </extensions>
+</idea-plugin>
