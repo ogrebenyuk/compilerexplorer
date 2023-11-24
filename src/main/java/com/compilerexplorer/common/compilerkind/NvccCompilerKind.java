@@ -1,6 +1,7 @@
 package com.compilerexplorer.common.compilerkind;
 
 import com.compilerexplorer.common.CommandLineUtil;
+import com.google.common.collect.ImmutableList;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +15,10 @@ public class NvccCompilerKind implements CompilerKind {
     @NonNls
     @NotNull
     private static final String NVCC_COMPILER_KIND = "NVCC";
+
+    @NonNls
+    @NotNull
+    private static final List<String> NVCC_COMPILER_FILENAMES = ImmutableList.of("nvcc");
     @NonNls
     @NotNull
     private static final String VERSION_OPTION = "--version";
@@ -28,9 +33,6 @@ public class NvccCompilerKind implements CompilerKind {
     private static final String STDIN_TMP_FILE_SUFFIX = "_stdin";
     @NonNls
     @NotNull
-    private static final String DEFINE_OPTION = "-D";
-    @NonNls
-    @NotNull
     private static final String CUDA_RUNTIME_INCLUDE_GUARD = "__CUDA_RUNTIME_H__";
 
     @Override
@@ -38,6 +40,18 @@ public class NvccCompilerKind implements CompilerKind {
     @NotNull
     public String getKind() {
         return NVCC_COMPILER_KIND;
+    }
+
+    @Override
+    @NonNls
+    @NotNull
+    public List<String> getExecutableFilenames() {
+        return NVCC_COMPILER_FILENAMES;
+    }
+
+    @Override
+    public boolean isCuda() {
+        return true;
     }
 
     @Override
@@ -80,7 +94,7 @@ public class NvccCompilerKind implements CompilerKind {
     @NotNull
     public List<String> additionalCompilerSwitches(boolean preprocessed) {
         if (preprocessed) {
-            return List.of(DEFINE_OPTION, CUDA_RUNTIME_INCLUDE_GUARD);
+            return List.of(getDefineOption(), CUDA_RUNTIME_INCLUDE_GUARD);
         } else {
             return NO_OPTIONS;
         }

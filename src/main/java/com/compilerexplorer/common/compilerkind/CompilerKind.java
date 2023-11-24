@@ -12,6 +12,15 @@ public interface CompilerKind {
     String DEFAULT_INCLUDE_OPTION = "-I";
     @NonNls
     @NotNull
+    String DEFAULT_SYSTEM_INCLUDE_OPTION = "-isystem";
+    @NonNls
+    @NotNull
+    String DEFAULT_QUOTE_INCLUDE_OPTION = "-iquote";
+    @NonNls
+    @NotNull
+    String DEFAULT_DEFINE_OPTION = "-D";
+    @NonNls
+    @NotNull
     String DEFAULT_STDIN_FILE_MARKER = "-";
     @NonNls
     @NotNull
@@ -26,6 +35,12 @@ public interface CompilerKind {
     @NonNls
     @NotNull
     String getKind();
+
+    @NonNls
+    @NotNull
+    List<String> getExecutableFilenames();
+
+    boolean isCuda();
 
     @NonNls
     @NotNull
@@ -60,6 +75,27 @@ public interface CompilerKind {
     @NotNull
     default String getIncludeOption() {
         return DEFAULT_INCLUDE_OPTION;
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    @NonNls
+    @NotNull
+    default String getSystemIncludeOption() {
+        return DEFAULT_SYSTEM_INCLUDE_OPTION;
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    @NonNls
+    @NotNull
+    default String getQuoteIncludeOption() {
+        return DEFAULT_QUOTE_INCLUDE_OPTION;
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    @NonNls
+    @NotNull
+    default String getDefineOption() {
+        return DEFAULT_DEFINE_OPTION;
     }
 
     @NotNull

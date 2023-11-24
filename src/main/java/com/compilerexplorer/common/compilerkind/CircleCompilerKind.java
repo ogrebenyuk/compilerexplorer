@@ -1,6 +1,7 @@
 package com.compilerexplorer.common.compilerkind;
 
 import com.compilerexplorer.common.LanguageUtil;
+import com.google.common.collect.ImmutableList;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -14,12 +15,15 @@ public class CircleCompilerKind extends GccLikeCompilerKind {
     private static final String CIRCLE_COMPILER_KIND = "Circle";
     @NonNls
     @NotNull
+    private static final List<String> CIRCLE_COMPILER_FILENAMES = ImmutableList.of("circle");
+    @NonNls
+    @NotNull
     private static final Set<String> UNRECOGNIZED_OPTIONS = Set.of(
             "-fdiagnostics-color"
     );
 
     public CircleCompilerKind() {
-        super(CIRCLE_COMPILER_KIND);
+        super(CIRCLE_COMPILER_KIND, CIRCLE_COMPILER_FILENAMES);
     }
 
     @Override

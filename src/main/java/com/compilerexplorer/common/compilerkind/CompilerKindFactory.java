@@ -19,4 +19,9 @@ public class CompilerKindFactory {
     public static Optional<CompilerKind> findCompilerKind(@NonNls @NotNull String compilerKind) {
         return KNOWN_COMPILER_KINDS.stream().filter(kind -> kind.getKind().equalsIgnoreCase(compilerKind)).findFirst();
     }
+
+    @NotNull
+    public static Optional<CompilerKind> findCompilerKindFromExecutableFilename(@NonNls @NotNull String executableFilename) {
+        return KNOWN_COMPILER_KINDS.stream().filter(kind -> kind.getExecutableFilenames().contains(executableFilename)).findFirst();
+    }
 }

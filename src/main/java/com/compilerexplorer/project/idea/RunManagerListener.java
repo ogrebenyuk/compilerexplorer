@@ -1,13 +1,15 @@
 package com.compilerexplorer.project.idea;
 
 import com.compilerexplorer.Pipeline;
+import com.compilerexplorer.project.PipelineNotifierOnProjectChange;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public class RunManagerListener implements com.intellij.execution.RunManagerListener {
+public class RunManagerListener extends PipelineNotifierOnProjectChange implements com.intellij.execution.RunManagerListener {
     @NonNls
     private static final Logger LOG = Logger.getInstance(RunManagerListener.class);
 
@@ -15,6 +17,7 @@ public class RunManagerListener implements com.intellij.execution.RunManagerList
     private final Project project;
 
     public RunManagerListener(@NotNull Project project_) {
+        super(Pipeline::scheduleRefresh);
         LOG.debug("created");
         project = project_;
     }
@@ -37,10 +40,9 @@ public class RunManagerListener implements com.intellij.execution.RunManagerList
         changed(project);
     }
 
-    private void changed(@NotNull Project project) {
-        Pipeline pipeline = project.getUserData(Pipeline.KEY);
-        if (pipeline != null) {
-            pipeline.scheduleRefresh();
-        }
+    @Override
+    public void runConfigurationSelected(@Nullable RunnerAndConfigurationSettings conf) {
+        LOG.debug("runConfigurationSelected");
+        changed(project);
     }
 }

@@ -1,13 +1,14 @@
 package com.compilerexplorer.project.idea;
 
 import com.compilerexplorer.Pipeline;
+import com.compilerexplorer.project.PipelineNotifierOnProjectChange;
 import com.intellij.execution.ExecutionTarget;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-public class ExecutionTargetListener implements com.intellij.execution.ExecutionTargetListener {
+public class ExecutionTargetListener extends PipelineNotifierOnProjectChange implements com.intellij.execution.ExecutionTargetListener {
     @NonNls
     private static final Logger LOG = Logger.getInstance(ExecutionTargetListener.class);
 
@@ -15,6 +16,7 @@ public class ExecutionTargetListener implements com.intellij.execution.Execution
     private final Project project;
 
     public ExecutionTargetListener(@NotNull Project project_) {
+        super(Pipeline::scheduleRefresh);
         LOG.debug("created");
         project = project_;
     }
@@ -23,12 +25,5 @@ public class ExecutionTargetListener implements com.intellij.execution.Execution
     public void activeTargetChanged(@NotNull ExecutionTarget newTarget) {
         LOG.debug("activeTargetChanged");
         changed(project);
-    }
-
-    private void changed(@NotNull Project project) {
-        Pipeline pipeline = project.getUserData(Pipeline.KEY);
-        if (pipeline != null) {
-            pipeline.scheduleRefresh();
-        }
     }
 }

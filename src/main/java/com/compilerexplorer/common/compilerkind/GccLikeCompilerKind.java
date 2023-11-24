@@ -20,8 +20,13 @@ public class GccLikeCompilerKind implements CompilerKind {
     @NotNull
     private final String compilerKind;
 
-    public GccLikeCompilerKind(@NonNls @NotNull String compilerKind_) {
+    @NonNls
+    @NotNull
+    private final List<String> executableFilenames;
+
+    public GccLikeCompilerKind(@NonNls @NotNull String compilerKind_, @NonNls @NotNull List<String> executableFilenames_) {
         compilerKind = compilerKind_;
+        executableFilenames = executableFilenames_;
     }
 
     @Override
@@ -29,6 +34,18 @@ public class GccLikeCompilerKind implements CompilerKind {
     @NotNull
     public String getKind() {
         return compilerKind;
+    }
+
+    @Override
+    @NonNls
+    @NotNull
+    public List<String> getExecutableFilenames() {
+        return executableFilenames;
+    }
+
+    @Override
+    public boolean isCuda() {
+        return false;
     }
 
     @Override

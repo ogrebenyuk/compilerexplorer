@@ -3,6 +3,8 @@ package com.compilerexplorer.common.compilerkind;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+
 public class ClangBasedCompilerKind extends GccLikeCompilerKind {
     @NonNls
     @NotNull
@@ -11,8 +13,8 @@ public class ClangBasedCompilerKind extends GccLikeCompilerKind {
     @NotNull
     private static final String ICX_VERSION_BANNER = "Intel(R) oneAPI DPC++/C++ Compiler";
 
-    public ClangBasedCompilerKind(@NonNls @NotNull String compilerKind) {
-        super(compilerKind);
+    public ClangBasedCompilerKind(@NonNls @NotNull String compilerKind, @NonNls @NotNull List<String> executableFilenames_) {
+        super(compilerKind, executableFilenames_);
     }
 
     @Override

@@ -1,13 +1,14 @@
 package com.compilerexplorer.project.oc;
 
 import com.compilerexplorer.Pipeline;
+import com.compilerexplorer.project.PipelineNotifierOnProjectChange;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 
-public class OCWorkspaceListener implements com.jetbrains.cidr.lang.workspace.OCWorkspaceListener {
+public class OCWorkspaceListener extends PipelineNotifierOnProjectChange implements com.jetbrains.cidr.lang.workspace.OCWorkspaceListener {
     @NonNls
     private static final Logger LOG = Logger.getInstance(OCWorkspaceListener.class);
 
@@ -15,6 +16,7 @@ public class OCWorkspaceListener implements com.jetbrains.cidr.lang.workspace.OC
     private final Project project;
 
     public OCWorkspaceListener(@NotNull Project project_) {
+        super(Pipeline::scheduleRefresh);
         LOG.debug("created");
         project = project_;
     }
@@ -29,12 +31,5 @@ public class OCWorkspaceListener implements com.jetbrains.cidr.lang.workspace.OC
     public void selectedResolveConfigurationChanged() {
         LOG.debug("selectedResolveConfigurationChanged");
         changed(project);
-    }
-
-    private void changed(@NotNull Project project) {
-        Pipeline pipeline = project.getUserData(Pipeline.KEY);
-        if (pipeline != null) {
-            pipeline.scheduleRefresh();
-        }
     }
 }

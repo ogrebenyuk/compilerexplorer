@@ -5,10 +5,13 @@ plugins {
 }
 
 group 'com.compilerexplorer'
-version '2.7'
+version '2.8'
 
 patchPluginXml {
     changeNotes = """
+        2.8:<br/>
+        Initial support for Bazel.<br/>
+        ===<br/>
         2.7:<br/>
         Fixed the problem with highlight color polluting global color scheme.<br/>
         Fixed an overzealous assert that fired when no project was detected.<br/>
@@ -119,8 +122,6 @@ patchPluginXml {
     sinceBuild = '231.8109'
 }
 
-sourceCompatibility = 17
-
 def clionType = 'CL'
 def clionVersion = '2023.1'
 
@@ -129,6 +130,7 @@ repositories {
 }
 
 dependencies {
+    compileOnly files("clwb_bazel-2023.10.24.0.2-api-version-231/clwb_bazel.jar")
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
     testImplementation 'org.mockito:mockito-core:4.6.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

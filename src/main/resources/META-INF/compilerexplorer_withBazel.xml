@@ -2,4 +2,9 @@
     <extensions defaultExtensionNs="com.compilerexplorer.compilerexplorer">
         <projectSettingsProducer implementation = "com.compilerexplorer.project.bazel.BazelProjectSettingsProducer"/>
     </extensions>
+
+    <extensions defaultExtensionNs="com.google.idea.blaze">
+        <SyncListener implementation="com.compilerexplorer.project.bazel.BazelInitializationDetector"/>
+        <SyncListener implementation="com.compilerexplorer.project.bazel.BazelSyncListener"/>
+    </extensions>
 </idea-plugin>

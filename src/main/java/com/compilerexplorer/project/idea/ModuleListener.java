@@ -1,6 +1,7 @@
 package com.compilerexplorer.project.idea;
 
 import com.compilerexplorer.Pipeline;
+import com.compilerexplorer.project.PipelineNotifierOnProjectChange;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -10,11 +11,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class ModuleListener implements com.intellij.openapi.project.ModuleListener {
+public class ModuleListener extends PipelineNotifierOnProjectChange implements com.intellij.openapi.project.ModuleListener {
     @NonNls
     private static final Logger LOG = Logger.getInstance(ModuleListener.class);
 
     public ModuleListener(@SuppressWarnings("unused") @NotNull Project project) {
+        super(Pipeline::scheduleRefresh);
         LOG.debug("created");
     }
 
@@ -39,12 +41,5 @@ public class ModuleListener implements com.intellij.openapi.project.ModuleListen
     public void modulesRenamed(@NotNull Project project, @NotNull List<? extends Module> modules, @NotNull Function<? super Module, String> oldNameProvider) {
         LOG.debug("modulesRenamed");
         changed(project);
-    }
-
-    private void changed(@NotNull Project project) {
-        Pipeline pipeline = project.getUserData(Pipeline.KEY);
-        if (pipeline != null) {
-            pipeline.scheduleRefresh();
-        }
     }
 }

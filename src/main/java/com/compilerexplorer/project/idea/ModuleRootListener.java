@@ -1,13 +1,14 @@
 package com.compilerexplorer.project.idea;
 
 import com.compilerexplorer.Pipeline;
+import com.compilerexplorer.project.PipelineNotifierOnProjectChange;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootEvent;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
-public class ModuleRootListener implements com.intellij.openapi.roots.ModuleRootListener {
+public class ModuleRootListener extends PipelineNotifierOnProjectChange implements com.intellij.openapi.roots.ModuleRootListener {
     @NonNls
     private static final Logger LOG = Logger.getInstance(ModuleRootListener.class);
 
@@ -15,6 +16,7 @@ public class ModuleRootListener implements com.intellij.openapi.roots.ModuleRoot
     private final Project project;
 
     public ModuleRootListener(@NotNull Project project_) {
+        super(Pipeline::scheduleRefresh);
         LOG.debug("created");
         project = project_;
     }
@@ -23,12 +25,5 @@ public class ModuleRootListener implements com.intellij.openapi.roots.ModuleRoot
     public void rootsChanged(@NotNull ModuleRootEvent event) {
         LOG.debug("rootsChanged");
         changed(project);
-    }
-
-    private void changed(@NotNull Project project) {
-        Pipeline pipeline = project.getUserData(Pipeline.KEY);
-        if (pipeline != null) {
-            pipeline.scheduleRefresh();
-        }
     }
 }
