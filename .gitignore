@@ -17,6 +17,7 @@ gradle-app.setting
 
 .idea
 .run
+.intellijPlatform
 
 gradle.properties
 local.properties
