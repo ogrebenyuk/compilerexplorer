@@ -41,6 +41,10 @@ intellijPlatform {
         }
 
         changeNotes = """
+            2.9:<br/>
+            Support CLion Nova.<br/>
+            Upgraded to CLion 2026.1.<br/>
+            ===<br/>
             2.8:<br/>
             Initial support for Bazel.<br/>
             ===<br/>

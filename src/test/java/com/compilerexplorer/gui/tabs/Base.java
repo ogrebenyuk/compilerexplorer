@@ -5,8 +5,8 @@ import com.compilerexplorer.common.Tabs;
 import com.intellij.json.JsonFileType;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.jetbrains.cidr.lang.OCFileType;
 import com.jetbrains.cidr.lang.asm.AsmFileType;
+import com.jetbrains.rider.cpp.fileType.CppSourceFileType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,7 +24,7 @@ public interface Base {
     @NotNull
     FileType JSON = JsonFileType.INSTANCE;
     @NotNull
-    FileType SOURCE = OCFileType.INSTANCE;
+    FileType SOURCE = CppSourceFileType.INSTANCE;
     @NotNull
     FileType ASM = AsmFileType.INSTANCE;
 

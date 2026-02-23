@@ -9,7 +9,7 @@ import com.compilerexplorer.datamodel.PreprocessedSource;
 import com.compilerexplorer.datamodel.state.SettingsState;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.jetbrains.cidr.lang.OCFileType;
+import com.jetbrains.rider.cpp.fileType.CppSourceFileType;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
@@ -21,7 +21,7 @@ public abstract class BasePreprocessorTabProvider extends BasePreprocessorUtilPr
 
     public BasePreprocessorTabProvider(@NotNull SettingsState state, @NotNull Tabs tab, @NonNls @NotNull String actionId, boolean isCpp,
                                        @NotNull Function<CompilerResult.Output, String> textProducer_) {
-        super(state, tab, actionId, isCpp ? OCFileType.INSTANCE : PlainTextFileType.INSTANCE);
+        super(state, tab, actionId, isCpp ? CppSourceFileType.INSTANCE : PlainTextFileType.INSTANCE);
         textProducer = textProducer_;
     }
 
