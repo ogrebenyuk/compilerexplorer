@@ -17,8 +17,8 @@ gradle-app.setting
 
 .idea
 .run
+.intellijPlatform
 
-gradle.properties
 local.properties
 /gradle/wrapper/gradle-wrapper.jar
 /gradle/wrapper/gradle-wrapper.properties

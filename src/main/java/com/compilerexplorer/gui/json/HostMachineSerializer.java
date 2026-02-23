@@ -20,7 +20,7 @@ public class HostMachineSerializer implements JsonSerializer<HostMachine> {
         object.addProperty("isRemote", host.isRemote());
         object.addProperty("isWsl", host.isWsl());
         object.addProperty("hasRemoteFS", host.hasRemoteFS());
-        object.add("OSType", context.serialize(host.getOSType()));
+        object.add("OSType", context.serialize(host.getOs()));
         object.addProperty("id", host.getHostId());
         return object;
     }

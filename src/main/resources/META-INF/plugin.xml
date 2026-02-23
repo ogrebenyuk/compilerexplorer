@@ -10,7 +10,9 @@
     ]]></description>
 
     <depends>com.intellij.modules.clion</depends>
-    <depends>com.intellij.modules.cidr.lang</depends>
+    <depends>com.intellij.cmake</depends>
+    <depends>com.intellij.modules.json</depends>
+    <depends>org.jetbrains.plugins.clion.radler</depends>
 
     <extensionPoints>
         <extensionPoint name="projectSettingsProducer" interface="com.compilerexplorer.project.ProjectSettingsProducer" dynamic="true"/>
