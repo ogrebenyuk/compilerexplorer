@@ -1,0 +1,185 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
+plugins {
+    id("java")
+    id("org.jetbrains.intellij.platform") version ("2.11.0")
+    id("de.undercouch.download") version ("3.4.2")
+}
+
+group = providers.gradleProperty("pluginGroup").get()
+version = providers.gradleProperty("pluginVersion").get()
+
+repositories {
+    mavenCentral()
+
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
+dependencies {
+    compileOnly(files("clwb_bazel-2023.10.24.0.2-api-version-231/clwb_bazel.jar"))
+    compileOnly("org.jetbrains:annotations:26.1.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.2")
+    testImplementation("org.mockito:mockito-core:5.21.0")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.2")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    intellijPlatform {
+        clion(providers.gradleProperty("platformVersion"))
+        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
+    }
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        name = providers.gradleProperty("pluginName")
+        version = providers.gradleProperty("pluginVersion")
+
+        ideaVersion {
+            sinceBuild = providers.gradleProperty("pluginSinceBuild")
+        }
+
+        changeNotes = """
+            2.8:<br/>
+            Initial support for Bazel.<br/>
+            ===<br/>
+            2.7:<br/>
+            Fixed the problem with highlight color polluting global color scheme.<br/>
+            Fixed an overzealous assert that fired when no project was detected.<br/>
+            ===<br/>
+            2.6:<br/>
+            Upgraded to CLion 2023.1.<br/>
+            ===<br/>
+            2.5:<br/>
+            Support SYCL compilation with ICX compiler.</br>
+            (Not local preprocessing, though, sorry. The method of "integration header" that they chose preculdes that.)</br>
+            Few small bug fixes.<br/>
+            ===<br/>
+            2.4:<br/>
+            Added support for CUDA compilation. Will now show both host and device assembler output.<br/>
+            Added support for more C++ variants, such as Circle and OpenCL compilation.<br/>
+            Added support for remote libraries.<br/>
+            Emulate terminal colors when showing compiler stdout and stderr.<br/>
+            More big fixes.<br/>
+            ===<br/>
+            2.3:<br/>
+            More fixes for compatibility issues.<br/>
+            ===<br/>
+            2.2:<br/>
+            Addressed several compatibility issues from plugin review.<br/>
+            Some bug fixes and small improvements.<br/>
+            ===<br/>
+            2.1:<br/>
+            Bug fixes and small improvements.<br/>
+            ===<br/>
+            2.0:<br/>
+            Added editor tabs that show varios stages of the compilation pipeline.<br/>
+            Added the ability to show line numbers and byte offsets.<br/>
+            Updated tool window icons to conform to IntelliJ UI guidelines.<br/>
+            Moved highlight color setting to editor color scheme.<br/>
+            Implemented code folding.<br/>
+            ===<br/>
+            1.21:<br/>
+            Added the missing "library functions" filter.<br/>
+            Added the missing "link to binary" output toggle.<br/>
+            Added the missing "execute the code" functionality.<br/>
+            Print opcodes when present (when disassembling the binary code).<br/>
+            Added an "options" button, otherwise the options are not accessible in remote running (such as WSL).<br/>
+            ===<br/>
+            1.20:<br/>
+            Updated to CLion 2022.3.3.<br/>
+            Fixed several small bugs.<br/>
+            ===<br/>
+            1.19:<br/>
+            Remote toolchain support.<br/>
+            Updated to CLion 2022.3.2.<br/>
+            Contributed by Boris Yakuboff.<br/>
+            ===<br/>
+            1.18:<br/>
+            Updated to CLion 2021.1.<br/>
+            ===<br/>
+            1.17:<br/>
+            Fixed line breaks in some tooltips.<br/>
+            Stopped using the remote compiler"s "exe" property.<br/>
+            ===<br/>
+            1.16:<br/>
+            Fixed a problem of missing executorRequest parameter.<br/>
+            Added a privacy notification about using localhost URL by default, which shows up on first start.<br/>
+            Updated to CLion 2020.1.<br/>
+            ===<br/>
+            1.15:<br/>
+            Added a feature to ignore certain compiler switches, configured on the Settings page.<br/>
+            ===<br/>
+            1.14:<br/>
+            Updated to work with CLion 2019.1.<br/>
+            ===<br/>
+            1.13:<br/>
+            Fixed NullPointerException when using public server <a href="https://godbolt.org">godbolt.org</a>.<br/>
+            ===<br/>
+            1.12:<br/>
+            Upgraded to CLion 2018.3.<br/>
+            Show a sorted list of sources in the drop down box.<br/>
+            ===<br/>
+            1.11:<br/>
+            Small bug fix in local preprocessor.<br/>
+            Better cleanup in remote compiler invocation.<br/>
+            ===<br/>
+            1.10:<br/>
+            Added a selection of the highligh color.<br/>
+            Added a selection of the autoupdate delay.<br/>
+            Improve responsiveness to a cancel during remote compilation.<br/>
+            Renamed several classes to reduce a chance of conflict with other plugins.<br/>
+            ===<br/>
+            1.9:<br/>
+            Track source selection changes, in addition to caret changes, for highlighting.<br/>
+            Fix plugin icon to show always, even before first use.<br/>
+            Fix occasional assertion that highlighted range not found.<br/>
+            ===<br/>
+            1.8:<br/>
+            Added "Shorten Templates" feature.<br/>
+            Improved local to remote compiler matching heuristics.<br/> 
+            ===<br/>
+            1.7:<br/>
+            Fixed several minor bugs.<br/>
+            ===<br/>
+            1.6:<br/>
+            Fixed several bugs.<br/>
+            ===<br/>
+            1.5:<br/>
+            Added source line highlighing.<br/>
+            Added scrolling to/from source.<br/>
+        """
+    }
+
+    publishing {
+        token = providers.environmentVariable("ORG_GRADLE_PROJECT_intellijPublishToken")
+    }
+
+    pluginVerification {
+        ides {
+            create {
+                type = IntelliJPlatformType.CLion
+                version = providers.gradleProperty("platformVersion")
+            }
+        }
+    }
+}
+
+tasks {
+    wrapper {
+        gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    runIde {
+        jvmArgs = listOf("-Xms2048m", "-Xmx8192m")
+    }
+
+    withType<Test> {
+        useJUnitPlatform()
+    }
+
+    withType<JavaCompile> {
+        options.compilerArgs.add("-Xlint:deprecation")
+    }
+}
